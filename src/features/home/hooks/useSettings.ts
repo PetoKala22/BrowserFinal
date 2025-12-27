@@ -10,6 +10,10 @@ interface UseSettingsResult {
   setCustomSearchUrl: (url: string) => void;
   layout: Layout;
   setLayout: (layout: Layout) => void;
+  wallpaper: string;
+  setWallpaper: (wallpaper: string) => void;
+  wallpaperBlur: boolean;
+  setWallpaperBlur: (blur: boolean) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -26,12 +30,14 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
   );
   const [customSearchUrl, setCustomSearchUrl] = useState(defaultSettings.customSearchUrl);
   const [layout, setLayout] = useState<Layout>(defaultSettings.layout);
+  const [wallpaper, setWallpaper] = useState(defaultSettings.wallpaper);
+  const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const currentSettings = useMemo(
-    () => ({ theme, searchEngine, customSearchUrl, layout }),
-    [theme, searchEngine, customSearchUrl, layout]
+    () => ({ theme, searchEngine, customSearchUrl, layout, wallpaper, wallpaperBlur }),
+    [theme, searchEngine, customSearchUrl, layout, wallpaper, wallpaperBlur]
   );
 
   const hasUnsavedChanges = useMemo(() => {
@@ -39,7 +45,9 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.theme !== currentSettings.theme ||
       savedSettings.searchEngine !== currentSettings.searchEngine ||
       savedSettings.customSearchUrl !== currentSettings.customSearchUrl ||
-      savedSettings.layout !== currentSettings.layout
+      savedSettings.layout !== currentSettings.layout ||
+      savedSettings.wallpaper !== currentSettings.wallpaper ||
+      savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur
     );
   }, [currentSettings, savedSettings]);
 
@@ -60,6 +68,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       setSearchEngine(settings.searchEngine);
       setCustomSearchUrl(settings.customSearchUrl);
       setLayout(settings.layout);
+      setWallpaper(settings.wallpaper);
+      setWallpaperBlur(settings.wallpaperBlur);
     },
     []
   );
@@ -98,6 +108,10 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setCustomSearchUrl,
     layout,
     setLayout,
+    wallpaper,
+    setWallpaper,
+    wallpaperBlur,
+    setWallpaperBlur,
     currentSettings,
     savedSettings,
     setSavedSettings,

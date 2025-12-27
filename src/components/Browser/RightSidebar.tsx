@@ -49,8 +49,8 @@ export const RightSidebar = memo<RightSidebarProps>(
     onToggleLeftSidebar
   }) => {
     return (
-      <aside className="w-[300px] shrink-0 border-l border-neutral-200 dark:border-neutral-800 bg-neutral-100/70 dark:bg-neutral-900/60 flex flex-col">
-        <div className="px-3 pt-3 pb-4 border-b border-neutral-200/70 dark:border-neutral-800/70">
+      <aside className="w-[300px] shrink-0 border-l border-white/30 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-950/70 backdrop-blur-xl flex flex-col">
+        <div className="px-3 pt-3 pb-4 border-b border-white/30 dark:border-neutral-800/70">
           <div className="flex items-center justify-between gap-2 electron-drag">
             <div className="flex items-center gap-1 electron-no-drag">
               <IconButton onClick={onToggleLeftSidebar} active={sidebarOpen}>
@@ -96,7 +96,7 @@ export const RightSidebar = memo<RightSidebarProps>(
         <div className="px-2 pb-3">
           <button
             onClick={onNewTab}
-            className="w-full rounded-lg border border-neutral-200/70 dark:border-neutral-800/70 px-3 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 transition-colors"
+            className="w-full rounded-lg border border-white/40 dark:border-neutral-800/70 px-3 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-white/50 dark:hover:bg-neutral-800/60 transition-colors"
           >
             <span className="inline-flex items-center gap-2">
               <Plus size={14} />

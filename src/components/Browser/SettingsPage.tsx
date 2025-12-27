@@ -9,6 +9,10 @@ interface SettingsPageProps {
   onThemeChange: (theme: Theme) => void;
   layout: Layout;
   onLayoutChange: (layout: Layout) => void;
+  wallpaper: string;
+  onWallpaperChange: (wallpaper: string) => void;
+  wallpaperBlur: boolean;
+  onWallpaperBlurChange: (blur: boolean) => void;
   searchEngine: SearchEngine;
   onSearchEngineChange: (engine: SearchEngine) => void;
   customSearchUrl: string;
@@ -66,6 +70,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onThemeChange,
   layout,
   onLayoutChange,
+  wallpaper,
+  onWallpaperChange,
+  wallpaperBlur,
+  onWallpaperBlurChange,
   searchEngine,
   onSearchEngineChange,
   customSearchUrl,
@@ -77,10 +85,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
 
   return (
-    <div className="h-full w-full bg-neutral-100/70 dark:bg-neutral-900/60 text-neutral-800 dark:text-neutral-200">
+    <div className="h-full w-full bg-transparent text-neutral-900 dark:text-neutral-100">
       <div className="flex h-full gap-6 p-8">
         {/* Sidebar */}
-        <aside className="w-[220px] shrink-0">
+        <aside className="w-[220px] shrink-0 rounded-2xl border border-white/30 dark:border-neutral-800/70 bg-white/60 dark:bg-neutral-950/60 backdrop-blur-xl p-3">
           <div className="text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
             Settings
           </div>
@@ -93,8 +101,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 className={`rounded-lg px-3 py-2 text-sm text-left transition-colors
                   ${
                     activeSection === section.id
-                      ? 'bg-neutral-200/70 text-neutral-900 dark:bg-neutral-800/70 dark:text-neutral-100'
-                      : 'text-neutral-600 hover:bg-neutral-200/40 dark:text-neutral-400 dark:hover:bg-neutral-800/40'
+                      ? 'bg-white/70 text-neutral-900 dark:bg-neutral-800/70 dark:text-neutral-100'
+                      : 'text-neutral-700 hover:bg-white/50 dark:text-neutral-300 dark:hover:bg-neutral-800/40'
                   }`}
               >
                 {section.label}
@@ -104,9 +112,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </aside>
 
         {/* Content */}
-        <section className="flex-1 rounded-2xl bg-neutral-50/70 dark:bg-neutral-900/60 p-3">
+        <section className="flex-1 rounded-2xl border border-white/30 dark:border-neutral-800/70 bg-white/70 dark:bg-neutral-950/70 backdrop-blur-xl p-4">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-neutral-200/70 dark:border-neutral-800/70 pb-4">
+          <div className="flex items-center justify-between border-b border-white/30 dark:border-neutral-800/70 pb-4">
             <div>
               <div className="text-sm font-semibold">Settings</div>
               <div className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
@@ -123,9 +131,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 disabled={!hasUnsavedChanges || isSaving}
                 className="rounded-full px-4 py-1 text-xs font-semibold transition-colors
                   enabled:bg-neutral-900 enabled:text-white enabled:hover:bg-neutral-800
-                  disabled:bg-neutral-200 disabled:text-neutral-400
+                  disabled:bg-white/60 disabled:text-neutral-400
                   dark:enabled:bg-neutral-100 dark:enabled:text-neutral-900
-                  dark:disabled:bg-neutral-800 dark:disabled:text-neutral-500"
+                  dark:disabled:bg-neutral-800/70 dark:disabled:text-neutral-500"
               >
                 {isSaving ? 'Saving…' : 'Save'}
               </button>
@@ -148,8 +156,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       className={`rounded-xl p-2 transition-colors
                         ${
                           theme === option.id
-                            ? 'bg-neutral-200/70 dark:bg-neutral-800/70'
-                            : 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/40'
+                            ? 'bg-white/80 dark:bg-neutral-800/70'
+                            : 'hover:bg-white/60 dark:hover:bg-neutral-800/40'
                         }`}
                     >
                       <div className="aspect-[16/10] overflow-hidden rounded-lg">
@@ -179,8 +187,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         className={`w-full rounded-xl px-4 py-3 text-left transition-colors
                           ${
                             layout === option.id
-                              ? 'bg-neutral-200/70 dark:bg-neutral-800/70'
-                              : 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/40'
+                              ? 'bg-white/80 dark:bg-neutral-800/70'
+                              : 'hover:bg-white/60 dark:hover:bg-neutral-800/40'
                           }`}
                       >
                         <div className="text-sm font-medium">{option.label}</div>
@@ -189,6 +197,70 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <div className="mb-3 text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                    Wallpaper
+                  </div>
+
+                  <div className="rounded-xl border border-white/30 dark:border-neutral-800/70 p-4 bg-white/70 dark:bg-neutral-950/60 backdrop-blur">
+                    {wallpaper ? (
+                      <div className="overflow-hidden rounded-lg border border-white/30 dark:border-neutral-800/70">
+                        <div
+                          className={`h-32 w-full bg-center bg-cover ${
+                            wallpaperBlur ? 'blur-sm scale-105' : ''
+                          }`}
+                          style={{ backgroundImage: `url(${wallpaper})` }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-32 rounded-lg border border-dashed border-white/40 dark:border-neutral-700/80 flex items-center justify-center text-xs text-neutral-500 dark:text-neutral-400">
+                        No wallpaper selected
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <label className="inline-flex items-center gap-2 rounded-lg border border-white/40 dark:border-neutral-800/70 px-3 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-white/60 dark:hover:bg-neutral-800/60 cursor-pointer transition-colors">
+                        Upload wallpaper
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === 'string') {
+                                onWallpaperChange(reader.result);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                            event.currentTarget.value = '';
+                          }}
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => onWallpaperChange('')}
+                        className="rounded-lg border border-white/40 dark:border-neutral-800/70 px-3 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-colors"
+                      >
+                        Remove
+                      </button>
+
+                      <label className="ml-auto inline-flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
+                        <input
+                          type="checkbox"
+                          checked={wallpaperBlur}
+                          onChange={(event) => onWallpaperBlurChange(event.target.checked)}
+                          className="h-4 w-4 accent-neutral-800 dark:accent-neutral-200"
+                        />
+                        Blur wallpaper
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -208,8 +280,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       className={`w-full rounded-xl px-4 py-3 text-left transition-colors
                         ${
                           searchEngine === option.id
-                            ? 'bg-neutral-200/70 dark:bg-neutral-800/70'
-                            : 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/40'
+                            ? 'bg-white/80 dark:bg-neutral-800/70'
+                            : 'hover:bg-white/60 dark:hover:bg-neutral-800/40'
                         }`}
                     >
                       <div className="text-sm font-medium">{option.label}</div>
@@ -231,8 +303,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       onChange={(e) => onCustomSearchUrlChange(e.target.value)}
                       placeholder="https://example.com/search?q={query}"
                       spellCheck={false}
-                      className="w-full rounded-xl border border-neutral-200/70 bg-white px-3 py-2 text-sm
-                        dark:border-neutral-800/70 dark:bg-neutral-900"
+                      className="w-full rounded-xl border border-white/40 bg-white/70 px-3 py-2 text-sm
+                        dark:border-neutral-800/70 dark:bg-neutral-950/70 backdrop-blur"
                     />
                     <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                       Use {'{query}'} as the placeholder.

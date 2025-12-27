@@ -131,15 +131,15 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative w-full h-full"
         >
           <div
-            className={`relative flex items-center w-full h-8 rounded-lg border overflow-hidden transition-all duration-300
+            className={`relative flex items-center w-full h-8 rounded-lg border overflow-hidden transition-all duration-300 backdrop-blur-xl
               ${
                 isFocused
-                  ? "bg-white/80 dark:bg-neutral-950/50 border-transparent shadow ring-1 ring-neutral-200/80 dark:ring-neutral-700/80"
-                  : "bg-neutral-100/70 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800 hover:bg-white/70"
+                  ? "bg-white/80 dark:bg-neutral-950/70 border-white/40 shadow ring-1 ring-white/40 dark:ring-neutral-700/80"
+                  : "bg-white/60 dark:bg-neutral-950/50 border-white/30 dark:border-neutral-800/70 hover:bg-white/70"
               }`}
           >
             {!isWelcome && (
-              <div className="absolute left-2 flex items-center text-neutral-400 dark:text-neutral-500">
+              <div className="absolute left-2 flex items-center text-neutral-500 dark:text-neutral-400">
                 {secure ? (
                   <Search size={12} strokeWidth={3} />
                 ) : (
@@ -151,7 +151,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
             <input
               ref={inputRef}
               type="text"
-              className={`w-full h-full bg-transparent border-none outline-none text-sm pr-6 text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-600 dark:placeholder:text-neutral-500 electron-no-drag ${
+              className={`w-full h-full bg-transparent border-none outline-none text-sm pr-6 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-600 dark:placeholder:text-neutral-400 electron-no-drag ${
                 isWelcome ? 'pl-3' : 'pl-7'
               }`}
               value={inputVal}

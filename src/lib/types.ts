@@ -38,4 +38,6 @@ export interface AppSettings {
   searchEngine: SearchEngine;
   customSearchUrl: string;
   layout: Layout;
+  wallpaper: string;
+  wallpaperBlur: boolean;
 }

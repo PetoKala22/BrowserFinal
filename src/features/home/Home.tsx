@@ -15,7 +15,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.SYSTEM,
   searchEngine: SearchEngine.GOOGLE,
   customSearchUrl: '',
-  layout: Layout.GENERIC
+  layout: Layout.GENERIC,
+  wallpaper: '',
+  wallpaperBlur: false
 };
 
 const isInternalUrl = (url: string) => url.startsWith('browser://');
@@ -40,6 +42,10 @@ const Home: React.FC = () => {
     setCustomSearchUrl,
     layout,
     setLayout,
+    wallpaper,
+    setWallpaper,
+    wallpaperBlur,
+    setWallpaperBlur,
     savedSettings,
     setSavedSettings,
     hasUnsavedChanges,
@@ -213,6 +219,17 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-neutral-800 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-900">
+      {wallpaper && (
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          <div
+            className={`h-full w-full bg-center bg-cover ${
+              wallpaperBlur ? 'blur-2xl scale-105' : ''
+            }`}
+            style={{ backgroundImage: `url(${wallpaper})` }}
+          />
+          <div className="absolute inset-0 bg-white/25 dark:bg-black/70" />
+        </div>
+      )}
       {layout === Layout.GENERIC && (
         <div
           className={
@@ -285,6 +302,10 @@ const Home: React.FC = () => {
                 onThemeChange={setTheme}
                 layout={layout}
                 onLayoutChange={setLayout}
+                wallpaper={wallpaper}
+                onWallpaperChange={setWallpaper}
+                wallpaperBlur={wallpaperBlur}
+                onWallpaperBlurChange={setWallpaperBlur}
                 searchEngine={searchEngine}
                 onSearchEngineChange={setSearchEngine}
                 customSearchUrl={customSearchUrl}

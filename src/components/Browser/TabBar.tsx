@@ -24,7 +24,7 @@ export const TabBar = memo<TabBarProps>(({
   return (
     <div
       className={[
-        "electron-no-drag bg-neutral-100/70 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-lg",
+        "electron-no-drag bg-white/60 dark:bg-neutral-950/60 border border-white/30 dark:border-neutral-800/70 rounded-lg backdrop-blur-xl",
         isVertical
           ? "flex flex-col gap-1 overflow-y-auto no-scrollbar p-1"
           : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
@@ -40,8 +40,8 @@ export const TabBar = memo<TabBarProps>(({
               group relative flex items-center rounded-md px-2.5 text-xs select-none cursor-default transition-all duration-200
               ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
-                ? 'bg-white/80 dark:bg-neutral-700/60 shadow-sm text-neutral-800 dark:text-neutral-100' 
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100'
+                ? 'bg-white/85 dark:bg-neutral-800/70 shadow-sm text-neutral-900 dark:text-neutral-100' 
+                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100'
               }
             `}
           >
@@ -64,17 +64,17 @@ export const TabBar = memo<TabBarProps>(({
                     onClose(tab.id, e);
                 }}
                 className={`
-                    ml-1 rounded-lg p-0.5 hover:bg-neutral-200/70 dark:hover:bg-neutral-700/60
+                    ml-1 rounded-lg p-0.5 hover:bg-white/60 dark:hover:bg-neutral-700/60
                     ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                     transition-opacity
                 `}
             >
-                <X size={14} className="text-neutral-400 dark:text-neutral-500" />
+                <X size={14} className="text-neutral-500 dark:text-neutral-400" />
             </div>
             
             {/* Separator (visual trick for non-active tabs) */}
             {!isVertical && !isActive && (
-              <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-neutral-300/80 dark:bg-neutral-700/70 group-hover:hidden" />
+              <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-white/50 dark:bg-neutral-700/70 group-hover:hidden" />
             )}
           </div>
         );

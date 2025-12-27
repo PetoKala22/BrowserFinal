@@ -10,7 +10,7 @@ export const UnsavedChangesDialog = memo<UnsavedChangesDialogProps>(
   ({ onStay, onDiscard, onSaveAndContinue }) => {
     return (
       <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-        <div className="w-[360px] rounded-2xl border border-neutral-200/70 bg-white p-5 text-neutral-800 shadow-xl dark:border-neutral-800/70 dark:bg-neutral-900 dark:text-neutral-100">
+        <div className="w-[360px] rounded-2xl border border-white/30 bg-white/70 p-5 text-neutral-900 shadow-xl backdrop-blur-xl dark:border-neutral-800/70 dark:bg-neutral-950/70 dark:text-neutral-100">
           <div className="text-sm font-semibold">Unsaved changes</div>
           <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
             You have unsaved changes. Save before leaving?
@@ -19,14 +19,14 @@ export const UnsavedChangesDialog = memo<UnsavedChangesDialogProps>(
             <button
               type="button"
               onClick={onStay}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-700 transition-colors hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-800/60"
             >
               Stay
             </button>
             <button
               type="button"
               onClick={onDiscard}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-700 transition-colors hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-800/60"
             >
               Discard
             </button>
