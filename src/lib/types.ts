@@ -28,8 +28,14 @@ export enum SearchEngine {
   CUSTOM = 'custom'
 }
 
+export enum Layout {
+  GENERIC = 'generic',
+  SIDEBAR = 'sidebar'
+}
+
 export interface AppSettings {
   theme: Theme;
   searchEngine: SearchEngine;
   customSearchUrl: string;
+  layout: Layout;
 }

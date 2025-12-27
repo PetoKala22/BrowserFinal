@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppSettings, Theme } from '@/lib/types';
+import { AppSettings, Layout, Theme } from '@/lib/types';
 
 interface UseSettingsResult {
   theme: Theme;
@@ -8,6 +8,8 @@ interface UseSettingsResult {
   setSearchEngine: (engine: AppSettings['searchEngine']) => void;
   customSearchUrl: string;
   setCustomSearchUrl: (url: string) => void;
+  layout: Layout;
+  setLayout: (layout: Layout) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -23,19 +25,21 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     defaultSettings.searchEngine
   );
   const [customSearchUrl, setCustomSearchUrl] = useState(defaultSettings.customSearchUrl);
+  const [layout, setLayout] = useState<Layout>(defaultSettings.layout);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const currentSettings = useMemo(
-    () => ({ theme, searchEngine, customSearchUrl }),
-    [theme, searchEngine, customSearchUrl]
+    () => ({ theme, searchEngine, customSearchUrl, layout }),
+    [theme, searchEngine, customSearchUrl, layout]
   );
 
   const hasUnsavedChanges = useMemo(() => {
     return (
       savedSettings.theme !== currentSettings.theme ||
       savedSettings.searchEngine !== currentSettings.searchEngine ||
-      savedSettings.customSearchUrl !== currentSettings.customSearchUrl
+      savedSettings.customSearchUrl !== currentSettings.customSearchUrl ||
+      savedSettings.layout !== currentSettings.layout
     );
   }, [currentSettings, savedSettings]);
 
@@ -55,6 +59,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       setTheme(settings.theme);
       setSearchEngine(settings.searchEngine);
       setCustomSearchUrl(settings.customSearchUrl);
+      setLayout(settings.layout);
     },
     []
   );
@@ -91,6 +96,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setSearchEngine,
     customSearchUrl,
     setCustomSearchUrl,
+    layout,
+    setLayout,
     currentSettings,
     savedSettings,
     setSavedSettings,

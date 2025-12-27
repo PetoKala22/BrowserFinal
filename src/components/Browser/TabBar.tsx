@@ -8,11 +8,28 @@ interface TabBarProps {
   onSwitch: (id: string) => void;
   onClose: (id: string, e: React.MouseEvent) => void;
   onNewTab: () => void;
+  orientation?: 'horizontal' | 'vertical';
 }
 
-export const TabBar = memo<TabBarProps>(({ tabs, activeTabId, onSwitch, onClose, onNewTab }) => {
+export const TabBar = memo<TabBarProps>(({
+  tabs,
+  activeTabId,
+  onSwitch,
+  onClose,
+  onNewTab,
+  orientation = 'horizontal'
+}) => {
+  const isVertical = orientation === 'vertical';
+
   return (
-    <div className="flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1 electron-no-drag bg-neutral-100/70 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+    <div
+      className={[
+        "electron-no-drag bg-neutral-100/70 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-lg",
+        isVertical
+          ? "flex flex-col gap-1 overflow-y-auto no-scrollbar p-1"
+          : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
+      ].join(" ")}
+    >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         return (
@@ -20,7 +37,8 @@ export const TabBar = memo<TabBarProps>(({ tabs, activeTabId, onSwitch, onClose,
             key={tab.id}
             onClick={() => onSwitch(tab.id)}
             className={`
-              group relative flex items-center min-w-[140px] max-w-[240px] flex-1 h-full rounded-md px-2.5 text-xs select-none cursor-default transition-all duration-200
+              group relative flex items-center rounded-md px-2.5 text-xs select-none cursor-default transition-all duration-200
+              ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
                 ? 'bg-white/80 dark:bg-neutral-700/60 shadow-sm text-neutral-800 dark:text-neutral-100' 
                 : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100'
@@ -55,7 +73,9 @@ export const TabBar = memo<TabBarProps>(({ tabs, activeTabId, onSwitch, onClose,
             </div>
             
             {/* Separator (visual trick for non-active tabs) */}
-            {!isActive && <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-neutral-300/80 dark:bg-neutral-700/70 group-hover:hidden" />}
+            {!isVertical && !isActive && (
+              <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-neutral-300/80 dark:bg-neutral-700/70 group-hover:hidden" />
+            )}
           </div>
         );
       })}

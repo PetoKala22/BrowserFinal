@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SearchEngine, Theme } from '@/lib/types';
+import { Layout, SearchEngine, Theme } from '@/lib/types';
 import exampleLight from '@/assets/ExampleLight.png';
 import exampleDark from '@/assets/ExampleDark.png';
 import exampleSystem from '@/assets/ExampleSystem.png';
@@ -7,6 +7,8 @@ import exampleSystem from '@/assets/ExampleSystem.png';
 interface SettingsPageProps {
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
+  layout: Layout;
+  onLayoutChange: (layout: Layout) => void;
   searchEngine: SearchEngine;
   onSearchEngineChange: (engine: SearchEngine) => void;
   customSearchUrl: string;
@@ -36,6 +38,19 @@ const searchOptions = [
   { id: SearchEngine.CUSTOM, label: 'Custom', description: 'Use any search engine URL.' }
 ];
 
+const layoutOptions = [
+  {
+    id: Layout.GENERIC,
+    label: 'Generic',
+    description: 'Standard layout with top tabs and left sidebar toggle.'
+  },
+  {
+    id: Layout.SIDEBAR,
+    label: 'Sidebar',
+    description: 'Zen-style sidebar docked to the right.'
+  }
+];
+
 type SettingsSection = 'general' | 'appearance' | 'search' | 'privacy' | 'advanced';
 
 const settingsSections: { id: SettingsSection; label: string }[] = [
@@ -49,6 +64,8 @@ const settingsSections: { id: SettingsSection; label: string }[] = [
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   theme,
   onThemeChange,
+  layout,
+  onLayoutChange,
   searchEngine,
   onSearchEngineChange,
   customSearchUrl,
@@ -147,6 +164,32 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       </div>
                     </button>
                   ))}
+                </div>
+
+                <div className="mt-8">
+                  <div className="mb-3 text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                    Layout
+                  </div>
+
+                  <div className="space-y-2">
+                    {layoutOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => onLayoutChange(option.id)}
+                        className={`w-full rounded-xl px-4 py-3 text-left transition-colors
+                          ${
+                            layout === option.id
+                              ? 'bg-neutral-200/70 dark:bg-neutral-800/70'
+                              : 'hover:bg-neutral-100/70 dark:hover:bg-neutral-800/40'
+                          }`}
+                      >
+                        <div className="text-sm font-medium">{option.label}</div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {option.description}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

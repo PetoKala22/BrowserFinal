@@ -10,6 +10,7 @@ interface AddressBarProps {
   loading: boolean;
   searchEngine: SearchEngine;
   customSearchUrl: string;
+  variant?: "toolbar" | "sidebar";
 }
 
 export const AddressBar: React.FC<AddressBarProps> = ({
@@ -20,6 +21,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   loading,
   searchEngine,
   customSearchUrl,
+  variant = "toolbar"
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputVal, setInputVal] = useState("");
@@ -105,15 +107,22 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   };
 
   const secure = url.startsWith("https") || isWelcome;
+  const isSidebar = variant === "sidebar";
 
   return (
-    <div className="flex-1 flex justify-center w-full relative z-20 electron-drag">
+    <div
+      className={`flex-1 flex w-full relative z-20 electron-drag ${
+        isSidebar ? "justify-start" : "justify-center"
+      }`}
+    >
       <div
         className={`relative flex justify-center w-full transition-[max-width,transform,filter] duration-300 ease-in-out
           ${
-            isFocused
-              ? "max-w-2xl scale-100 drop-shadow-md"
-              : "max-w-[240px] hover:max-w-[260px] scale-95"
+            isSidebar
+              ? "max-w-full scale-100"
+              : isFocused
+                ? "max-w-2xl scale-100 drop-shadow-md"
+                : "max-w-[240px] hover:max-w-[260px] scale-95"
           }
         `}
       >

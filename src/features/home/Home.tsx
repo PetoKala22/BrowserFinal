@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { BrowserContent, BrowserContentHandle } from '@/components/Browser/BrowserContent';
 import { HistoryPage } from '@/components/Browser/HistoryPage';
+import { RightSidebar } from '@/components/Browser/RightSidebar';
 import { SettingsPage } from '@/components/Browser/SettingsPage';
 import { TabBar } from '@/components/Browser/TabBar';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
-import { AppSettings, SearchEngine, Tab, Theme } from '@/lib/types';
+import { AppSettings, Layout, SearchEngine, Tab, Theme } from '@/lib/types';
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
@@ -13,7 +14,8 @@ import { useSettings } from '@/features/home/hooks/useSettings';
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.SYSTEM,
   searchEngine: SearchEngine.GOOGLE,
-  customSearchUrl: ''
+  customSearchUrl: '',
+  layout: Layout.GENERIC
 };
 
 const isInternalUrl = (url: string) => url.startsWith('browser://');
@@ -36,6 +38,8 @@ const Home: React.FC = () => {
     setSearchEngine,
     customSearchUrl,
     setCustomSearchUrl,
+    layout,
+    setLayout,
     savedSettings,
     setSavedSettings,
     hasUnsavedChanges,
@@ -209,45 +213,46 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-neutral-800 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-900">
-
-      <div
-        className={
-          '\n        flex flex-col flex-shrink-0 z-50 transition-colors duration-300\n        bg-transparent\n        electron-drag\n      '
-        }
-      >
-        <BrowserToolbar
-          sidebarOpen={sidebarOpen}
-          onSidebarToggle={handleSidebarToggle}
-          canGoBack={canGoBack}
-          canGoForward={canGoForward}
-          onGoBack={handleGoBack}
-          onGoForward={handleGoForward}
-          address={activeTab.url}
-          onNavigate={handleNavigate}
-          onReload={handleReload}
-          onStop={handleStop}
-          loading={activeTab.loading}
-          searchEngine={searchEngine}
-          customSearchUrl={customSearchUrl}
-          onNewTab={handleNewTab}
-        />
-
+      {layout === Layout.GENERIC && (
         <div
-          className={`electron-no-drag overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
-            tabs.length > 1
-              ? 'opacity-100 max-h-16 translate-y-0'
-              : 'opacity-0 max-h-0 -translate-y-1 pointer-events-none'
-          }`}
+          className={
+            '\n        flex flex-col flex-shrink-0 z-50 transition-colors duration-300\n        bg-transparent\n        electron-drag\n      '
+          }
         >
-          <TabBar
-            tabs={tabs}
-            activeTabId={activeTabId}
-            onSwitch={handleSwitchTab}
-            onClose={handleCloseTab}
+          <BrowserToolbar
+            sidebarOpen={sidebarOpen}
+            onSidebarToggle={handleSidebarToggle}
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onGoBack={handleGoBack}
+            onGoForward={handleGoForward}
+            address={activeTab.url}
+            onNavigate={handleNavigate}
+            onReload={handleReload}
+            onStop={handleStop}
+            loading={activeTab.loading}
+            searchEngine={searchEngine}
+            customSearchUrl={customSearchUrl}
             onNewTab={handleNewTab}
           />
+
+          <div
+            className={`electron-no-drag overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
+              tabs.length > 1
+                ? 'opacity-100 max-h-16 translate-y-0'
+                : 'opacity-0 max-h-0 -translate-y-1 pointer-events-none'
+            }`}
+          >
+            <TabBar
+              tabs={tabs}
+              activeTabId={activeTabId}
+              onSwitch={handleSwitchTab}
+              onClose={handleCloseTab}
+              onNewTab={handleNewTab}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="relative z-50 flex flex-1">
         <Sidebar
@@ -256,6 +261,7 @@ const Home: React.FC = () => {
           onOpenSettings={handleOpenSettings}
           historyActive={historyOpen}
           settingsActive={settingsOpen}
+          position="left"
         />
 
         <main className="flex-1 relative bg-transparent overflow-hidden">
@@ -277,6 +283,8 @@ const Home: React.FC = () => {
               <SettingsPage
                 theme={theme}
                 onThemeChange={setTheme}
+                layout={layout}
+                onLayoutChange={setLayout}
                 searchEngine={searchEngine}
                 onSearchEngineChange={setSearchEngine}
                 customSearchUrl={customSearchUrl}
@@ -288,6 +296,29 @@ const Home: React.FC = () => {
             </div>
           )}
         </main>
+
+        {layout === Layout.SIDEBAR && (
+          <RightSidebar
+            tabs={tabs}
+            activeTabId={activeTabId}
+            address={activeTab.url}
+            loading={activeTab.loading}
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            sidebarOpen={sidebarOpen}
+            searchEngine={searchEngine}
+            customSearchUrl={customSearchUrl}
+            onNavigate={handleNavigate}
+            onGoBack={handleGoBack}
+            onGoForward={handleGoForward}
+            onReload={handleReload}
+            onStop={handleStop}
+            onSwitchTab={handleSwitchTab}
+            onCloseTab={handleCloseTab}
+            onNewTab={handleNewTab}
+            onToggleLeftSidebar={handleSidebarToggle}
+          />
+        )}
       </div>
 
       {confirmUnsavedOpen && (

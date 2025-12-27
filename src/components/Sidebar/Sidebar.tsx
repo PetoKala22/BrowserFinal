@@ -7,6 +7,7 @@ interface SidebarProps {
   onOpenSettings: () => void;
   historyActive: boolean;
   settingsActive: boolean;
+  position?: 'left' | 'right';
 }
 
 interface MenuItemProps {
@@ -36,17 +37,24 @@ export const Sidebar = memo<SidebarProps>(({
   onOpenHistory,
   onOpenSettings,
   historyActive,
-  settingsActive
+  settingsActive,
+  position = 'left'
 }) => {
+  const isRight = position === 'right';
+
   return (
     <div
       className={[
-        "h-full bg-neutral-100/70 dark:bg-neutral-900/60 border-r border-t border-neutral-200 dark:border-neutral-800 rounded-tr-lg",
+        "h-full bg-neutral-100/70 dark:bg-neutral-900/60 border-t border-neutral-200 dark:border-neutral-800",
+        isRight ? "border-l rounded-tl-lg" : "border-r rounded-tr-lg",
         "flex flex-col pt-3 pb-4 relative z-20 self-start overflow-hidden",
         "transition-[transform,opacity,width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen
           ? "w-[240px] translate-x-0 opacity-100"
-          : "w-0 -translate-x-4 opacity-0 pointer-events-none overflow-hidden border-r-0"
+          : [
+              "w-0 opacity-0 pointer-events-none overflow-hidden",
+              isRight ? "translate-x-4 border-l-0" : "-translate-x-4 border-r-0"
+            ].join(" ")
       ].join(" ")}
       aria-hidden={!isOpen}
     >
