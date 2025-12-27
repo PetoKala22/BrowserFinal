@@ -41,7 +41,7 @@ export const Sidebar = memo<SidebarProps>(({
   return (
     <div
       className={[
-        "h-full bg-neutral-100/70 dark:bg-neutral-900/60",
+        "h-full bg-neutral-100/70 dark:bg-neutral-900/60 border-r border-t border-neutral-200 dark:border-neutral-800 rounded-tr-lg",
         "flex flex-col pt-3 pb-4 relative z-20 self-start overflow-hidden",
         "transition-[transform,opacity,width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isOpen

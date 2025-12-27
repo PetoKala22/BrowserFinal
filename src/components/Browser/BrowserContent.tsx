@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { Tab } from '@/lib/types';
 import { HistoryPage } from './HistoryPage';
+import { NewTabPage } from './NewTabPage';
 
 interface BrowserContentProps {
   tabs: Tab[];
@@ -134,7 +135,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           if (isInternal) {
             if (!shouldShow) return null;
             if (tab.url === 'browser://welcome') {
-              return <div key={tab.id} className="w-full h-full"></div>;
+              return <NewTabPage key={tab.id} />;
             }
             if (tab.url === 'browser://history') {
               return <HistoryPage key={tab.id} />;
