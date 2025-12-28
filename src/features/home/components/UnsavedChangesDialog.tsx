@@ -10,30 +10,30 @@ export const UnsavedChangesDialog = memo<UnsavedChangesDialogProps>(
   ({ onStay, onDiscard, onSaveAndContinue }) => {
     return (
       <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-        <div className="w-[360px] rounded-2xl border border-white/30 bg-white/70 p-5 text-neutral-900 shadow-xl backdrop-blur-xl dark:border-neutral-800/70 dark:bg-neutral-950/70 dark:text-neutral-100">
+        <div className="w-[360px] rounded-2xl bg-[color:var(--ui-surface-strong)] p-5 text-[color:var(--ui-text)] shadow-xl backdrop-blur-xl">
           <div className="text-sm font-semibold">Unsaved changes</div>
-          <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="mt-2 text-xs text-[color:var(--ui-text-muted)]">
             You have unsaved changes. Save before leaving?
           </div>
           <div className="mt-4 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onStay}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-700 transition-colors hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-800/60"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-[color:var(--ui-text-muted)] transition-colors hover:bg-[color:var(--ui-hover)]"
             >
               Stay
             </button>
             <button
               type="button"
               onClick={onDiscard}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-neutral-700 transition-colors hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-800/60"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-[color:var(--ui-text-muted)] transition-colors hover:bg-[color:var(--ui-hover)]"
             >
               Discard
             </button>
             <button
               type="button"
               onClick={onSaveAndContinue}
-              className="rounded-full px-3 py-1 text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+              className="rounded-full px-3 py-1 text-xs font-semibold text-[color:var(--ui-accent-contrast)] bg-[color:var(--ui-accent)] hover:brightness-95"
             >
               Save & Continue
             </button>

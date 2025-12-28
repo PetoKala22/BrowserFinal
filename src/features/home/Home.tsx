@@ -34,8 +34,6 @@ const Home: React.FC = () => {
   const browserRef = useRef<BrowserContentHandle>(null);
 
   const {
-    theme,
-    setTheme,
     searchEngine,
     setSearchEngine,
     customSearchUrl,
@@ -142,6 +140,10 @@ const Home: React.FC = () => {
     setHistoryOpen(false);
   }, []);
 
+  const handleCloseSettings = useCallback(() => {
+    requestCloseSettings();
+  }, [requestCloseSettings]);
+
   const handleSwitchTab = useCallback(
     (id: string) => {
       requestCloseSettings(() => {
@@ -218,16 +220,16 @@ const Home: React.FC = () => {
   }, [handleSaveSettings, pendingSettingsAction]);
 
   return (
-    <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-neutral-800 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-900">
+    <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-[color:var(--ui-text)] bg-[color:var(--ui-base)]">
       {wallpaper && (
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
           <div
             className={`h-full w-full bg-center bg-cover ${
-              wallpaperBlur ? 'blur-2xl scale-105' : ''
+              wallpaperBlur ? 'blur-lg scale-105' : ''
             }`}
             style={{ backgroundImage: `url(${wallpaper})` }}
           />
-          <div className="absolute inset-0 bg-white/25 dark:bg-black/70" />
+          <div className="absolute inset-0 bg-[color:var(--ui-wallpaper-overlay)]" />
         </div>
       )}
       {layout === Layout.GENERIC && (
@@ -272,23 +274,37 @@ const Home: React.FC = () => {
       )}
 
       <div className="relative z-50 flex flex-1">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onOpenHistory={handleOpenHistory}
-          onOpenSettings={handleOpenSettings}
-          historyActive={historyOpen}
-          settingsActive={settingsOpen}
-          position="left"
-        />
+        {layout === Layout.GENERIC && (
+          <Sidebar
+            isOpen={sidebarOpen}
+            onOpenHistory={handleOpenHistory}
+            onOpenSettings={handleOpenSettings}
+            historyActive={historyOpen}
+            settingsActive={settingsOpen}
+            position="left"
+          />
+        )}
 
-        <main className="flex-1 relative bg-transparent overflow-hidden">
+        <main
+          className={`flex-1 relative bg-transparent overflow-hidden ${
+            layout === Layout.SIDEBAR ? 'p-2' : ''
+          }`}
+        >
           {!settingsOpen && (
-            <BrowserContent
-              ref={browserRef}
-              tabs={tabs}
-              activeTabId={activeTabId}
-              onTabUpdate={handleTabUpdate}
-            />
+            <div
+              className={
+                layout === Layout.SIDEBAR
+                  ? 'h-full w-full rounded-xl overflow-hidden'
+                  : 'h-full w-full'
+              }
+            >
+              <BrowserContent
+                ref={browserRef}
+                tabs={tabs}
+                activeTabId={activeTabId}
+                onTabUpdate={handleTabUpdate}
+              />
+            </div>
           )}
           {historyOpen && (
             <div className="absolute inset-0 z-10">
@@ -298,8 +314,6 @@ const Home: React.FC = () => {
           {settingsOpen && (
             <div className="absolute inset-0 z-10">
               <SettingsPage
-                theme={theme}
-                onThemeChange={setTheme}
                 layout={layout}
                 onLayoutChange={setLayout}
                 wallpaper={wallpaper}
@@ -313,6 +327,7 @@ const Home: React.FC = () => {
                 hasUnsavedChanges={hasUnsavedChanges}
                 isSaving={isSavingSettings}
                 onSave={handleSaveSettings}
+                onClose={handleCloseSettings}
               />
             </div>
           )}
@@ -326,7 +341,6 @@ const Home: React.FC = () => {
             loading={activeTab.loading}
             canGoBack={canGoBack}
             canGoForward={canGoForward}
-            sidebarOpen={sidebarOpen}
             searchEngine={searchEngine}
             customSearchUrl={customSearchUrl}
             onNavigate={handleNavigate}
@@ -337,7 +351,8 @@ const Home: React.FC = () => {
             onSwitchTab={handleSwitchTab}
             onCloseTab={handleCloseTab}
             onNewTab={handleNewTab}
-            onToggleLeftSidebar={handleSidebarToggle}
+            onOpenSettings={handleOpenSettings}
+            settingsActive={settingsOpen}
           />
         )}
       </div>

@@ -131,15 +131,17 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative w-full h-full"
         >
           <div
-            className={`relative flex items-center w-full h-8 rounded-lg border overflow-hidden transition-all duration-300 backdrop-blur-xl
+            className={`relative flex items-center w-full ${
+              isSidebar ? "h-9 rounded-lg" : "h-8 rounded-lg"
+            } overflow-hidden transition-all duration-300 backdrop-blur-xl
               ${
                 isFocused
-                  ? "bg-white/80 dark:bg-neutral-950/70 border-white/40 shadow ring-1 ring-white/40 dark:ring-neutral-700/80"
-                  : "bg-white/60 dark:bg-neutral-950/50 border-white/30 dark:border-neutral-800/70 hover:bg-white/70"
+                  ? "bg-[color:var(--ui-surface-strong)] shadow ring-1 ring-[color:var(--ui-ring)]"
+                  : "bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-hover)]"
               }`}
           >
             {!isWelcome && (
-              <div className="absolute left-2 flex items-center text-neutral-500 dark:text-neutral-400">
+              <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
                 {secure ? (
                   <Search size={12} strokeWidth={3} />
                 ) : (
@@ -151,7 +153,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
             <input
               ref={inputRef}
               type="text"
-              className={`w-full h-full bg-transparent border-none outline-none text-sm pr-6 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-600 dark:placeholder:text-neutral-400 electron-no-drag ${
+              className={`w-full h-full bg-transparent border-none outline-none text-sm pr-6 text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)] electron-no-drag ${
                 isWelcome ? 'pl-3' : 'pl-7'
               }`}
               value={inputVal}
@@ -167,13 +169,13 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               {loading ? (
                 <X
                   size={14}
-                  className="cursor-pointer text-neutral-600 dark:text-neutral-500"
+                  className="cursor-pointer text-[color:var(--ui-text-subtle)]"
                   onClick={onStop}
                 />
               ) : (
                 <RotateCw
                   size={14}
-                  className="cursor-pointer text-neutral-600 dark:text-neutral-500"
+                  className="cursor-pointer text-[color:var(--ui-text-subtle)]"
                   onClick={onReload}
                 />
               )}
@@ -181,7 +183,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
 
             {loading && (
               <div
-                className="absolute bottom-0 left-0 h-[2px] bg-neutral-800/80 dark:bg-neutral-100/80 transition-all duration-300"
+                className="absolute bottom-0 left-0 h-[2px] bg-[color:var(--ui-accent)] transition-all duration-300"
                 style={{ width: "35%" }}
               />
             )}

@@ -141,8 +141,8 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
               return <HistoryPage key={tab.id} />;
             }
             return (
-              <div key={tab.id} className="p-10 text-neutral-800 dark:text-neutral-100">
-                <div className="inline-flex rounded-2xl border border-white/30 dark:border-neutral-800/70 bg-white/60 dark:bg-neutral-950/60 backdrop-blur-xl px-6 py-4">
+              <div key={tab.id} className="p-10 text-[color:var(--ui-text)]">
+                <div className="inline-flex rounded-2xl bg-[color:var(--ui-surface)] backdrop-blur-xl px-6 py-4">
                   Internal Page: {tab.url}
                 </div>
               </div>
@@ -152,7 +152,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           if (!isElectron && shouldShow) {
             return (
               <div key={tab.id} className="w-full h-full flex items-center justify-center p-6">
-                <div className="max-w-md text-center text-neutral-800 dark:text-neutral-100 rounded-2xl border border-white/30 dark:border-neutral-800/70 bg-white/60 dark:bg-neutral-950/60 backdrop-blur-xl px-6 py-4">
+                <div className="max-w-md text-center text-[color:var(--ui-text)] rounded-2xl bg-[color:var(--ui-surface)] backdrop-blur-xl px-6 py-4">
                   This UI needs Electron to render full web pages. Run `npm run electron:dev`.
                 </div>
               </div>
@@ -176,8 +176,8 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           );
         })}
         {!activeTab && (
-          <div className="p-10 text-neutral-800 dark:text-neutral-100">
-            <div className="inline-flex rounded-2xl border border-white/30 dark:border-neutral-800/70 bg-white/60 dark:bg-neutral-950/60 backdrop-blur-xl px-6 py-4">
+          <div className="p-10 text-[color:var(--ui-text)]">
+            <div className="inline-flex rounded-2xl bg-[color:var(--ui-surface)] backdrop-blur-xl px-6 py-4">
               No active tab.
             </div>
           </div>

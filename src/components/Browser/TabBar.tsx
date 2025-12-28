@@ -24,10 +24,10 @@ export const TabBar = memo<TabBarProps>(({
   return (
     <div
       className={[
-        "electron-no-drag bg-white/60 dark:bg-neutral-950/60 border border-white/30 dark:border-neutral-800/70 rounded-lg backdrop-blur-xl",
+        "electron-no-drag",
         isVertical
-          ? "flex flex-col gap-1 overflow-y-auto no-scrollbar p-1"
-          : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
+          ? "flex flex-col gap-1 overflow-y-auto no-scrollbar"
+          : "bg-[color:var(--ui-surface)] rounded-lg backdrop-blur-xl flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
       ].join(" ")}
     >
       {tabs.map((tab) => {
@@ -37,11 +37,11 @@ export const TabBar = memo<TabBarProps>(({
             key={tab.id}
             onClick={() => onSwitch(tab.id)}
             className={`
-              group relative flex items-center rounded-md px-2.5 text-xs select-none cursor-default transition-all duration-200
+              group relative flex items-center rounded-lg px-2.5 text-xs select-none cursor-default transition-all duration-200
               ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
-                ? 'bg-white/85 dark:bg-neutral-800/70 shadow-sm text-neutral-900 dark:text-neutral-100' 
-                : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100'
+                ? 'bg-[color:var(--ui-surface-strong)] shadow-sm text-[color:var(--ui-text)]' 
+                : 'text-[color:var(--ui-text-muted)] hover:text-[color:var(--ui-text)]'
               }
             `}
           >
@@ -64,17 +64,17 @@ export const TabBar = memo<TabBarProps>(({
                     onClose(tab.id, e);
                 }}
                 className={`
-                    ml-1 rounded-lg p-0.5 hover:bg-white/60 dark:hover:bg-neutral-700/60
+                    ml-1 rounded-lg p-0.5 hover:bg-[color:var(--ui-hover)]
                     ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                     transition-opacity
                 `}
             >
-                <X size={14} className="text-neutral-500 dark:text-neutral-400" />
+                <X size={14} className="text-[color:var(--ui-text-subtle)]" />
             </div>
             
             {/* Separator (visual trick for non-active tabs) */}
             {!isVertical && !isActive && (
-              <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-white/50 dark:bg-neutral-700/70 group-hover:hidden" />
+              <div className="absolute right-0 top-1.5 bottom-1.5 w-[1px] bg-[color:var(--ui-border)] group-hover:hidden" />
             )}
           </div>
         );

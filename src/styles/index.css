@@ -2,6 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================
+   Apple-style Light Mode
+   ========================= */
+:root {
+  /* Accent (used sparingly, neutral by default) */
+  --ui-accent: #1d1d1f;
+  --ui-accent-contrast: #ffffff;
+
+  /* Backgrounds */
+  --ui-wallpaper-overlay: rgba(0, 0, 0, 0.28);
+  --ui-base: #f5f5f7;
+
+  /* Surfaces (Apple-like frosted layers) */
+  --ui-surface: rgba(255, 255, 255, 0.72);
+  --ui-surface-strong: rgba(255, 255, 255, 0.85);
+  --ui-surface-muted: rgba(255, 255, 255, 0.6);
+  --ui-surface-subtle: rgba(255, 255, 255, 0.4);
+
+  /* Interaction */
+  --ui-hover: rgba(0, 0, 0, 0.04);
+  --ui-hover-strong: rgba(0, 0, 0, 0.07);
+
+  /* Borders & focus */
+  --ui-border: rgba(0, 0, 0, 0.08);
+  --ui-ring: rgba(0, 0, 0, 0.16);
+
+  /* Text */
+  --ui-text: #1d1d1f;
+  --ui-text-muted: #6e6e73;
+  --ui-text-subtle: #86868b;
+}
+
+/* =========================
+   Apple-style Dark Mode
+   ========================= */
+.dark {
+  /* Accent */
+  --ui-accent: #f5f5f7;
+  --ui-accent-contrast: #1d1d1f;
+
+  /* Backgrounds */
+  --ui-wallpaper-overlay: rgba(0, 0, 0, 0.55);
+  --ui-base: #000000;
+
+  /* Surfaces (macOS graphite + translucency) */
+  --ui-surface: rgba(28, 28, 30, 0.75);
+  --ui-surface-strong: rgba(44, 44, 46, 0.9);
+  --ui-surface-muted: rgba(28, 28, 30, 0.6);
+  --ui-surface-subtle: rgba(28, 28, 30, 0.45);
+
+  /* Interaction */
+  --ui-hover: rgba(255, 255, 255, 0.06);
+  --ui-hover-strong: rgba(255, 255, 255, 0.12);
+
+  /* Borders & focus */
+  --ui-border: rgba(255, 255, 255, 0.14);
+  --ui-ring: rgba(255, 255, 255, 0.22);
+
+  /* Text */
+  --ui-text: #f5f5f7;
+  --ui-text-muted: #a1a1a6;
+  --ui-text-subtle: #8e8e93;
+}
+
+/* =========================
+   Electron helpers
+   ========================= */
 .electron-drag {
   -webkit-app-region: drag;
 }

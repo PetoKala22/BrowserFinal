@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ChevronLeft, ChevronRight, PanelLeft, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Settings } from 'lucide-react';
 import { AddressBar } from '@/components/Browser/AddressBar';
 import { TabBar } from '@/components/Browser/TabBar';
 import { WindowControls } from '@/components/Browser/WindowControls';
@@ -13,7 +13,6 @@ interface RightSidebarProps {
   loading: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
-  sidebarOpen: boolean;
   searchEngine: SearchEngine;
   customSearchUrl: string;
   onNavigate: (url: string) => void;
@@ -24,7 +23,8 @@ interface RightSidebarProps {
   onSwitchTab: (id: string) => void;
   onCloseTab: (id: string, event: React.MouseEvent) => void;
   onNewTab: () => void;
-  onToggleLeftSidebar: () => void;
+  onOpenSettings: () => void;
+  settingsActive: boolean;
 }
 
 export const RightSidebar = memo<RightSidebarProps>(
@@ -35,7 +35,6 @@ export const RightSidebar = memo<RightSidebarProps>(
     loading,
     canGoBack,
     canGoForward,
-    sidebarOpen,
     searchEngine,
     customSearchUrl,
     onNavigate,
@@ -46,16 +45,14 @@ export const RightSidebar = memo<RightSidebarProps>(
     onSwitchTab,
     onCloseTab,
     onNewTab,
-    onToggleLeftSidebar
+    onOpenSettings,
+    settingsActive
   }) => {
     return (
-      <aside className="w-[300px] shrink-0 border-l border-white/30 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-950/70 backdrop-blur-xl flex flex-col">
-        <div className="px-3 pt-3 pb-4 border-b border-white/30 dark:border-neutral-800/70">
+      <aside className="w-[300px] shrink-0 bg-transparent flex flex-col">
+        <div className="px-2 pt-3 pb-4">
           <div className="flex items-center justify-between gap-2 electron-drag">
             <div className="flex items-center gap-1 electron-no-drag">
-              <IconButton onClick={onToggleLeftSidebar} active={sidebarOpen}>
-                <PanelLeft size={18} strokeWidth={2} />
-              </IconButton>
               <IconButton disabled={!canGoBack} onClick={onGoBack}>
                 <ChevronLeft size={18} strokeWidth={2.5} />
               </IconButton>
@@ -96,11 +93,28 @@ export const RightSidebar = memo<RightSidebarProps>(
         <div className="px-2 pb-3">
           <button
             onClick={onNewTab}
-            className="w-full rounded-lg border border-white/40 dark:border-neutral-800/70 px-3 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-100 hover:bg-white/50 dark:hover:bg-neutral-800/60 transition-colors"
+            className="w-full rounded-lg px-3 py-2 text-xs font-semibold text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] transition-colors flex items-center justify-center"
           >
             <span className="inline-flex items-center gap-2">
               <Plus size={14} />
               New tab
+            </span>
+          </button>
+        </div>
+
+        <div className="px-2 pb-3 pt-2">
+          <button
+            onClick={onOpenSettings}
+            className={`w-full rounded-lg px-3 py-2 text-xs font-semibold transition-colors flex items-center justify-center
+              ${
+                settingsActive
+                  ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)]'
+                  : 'text-[color:var(--ui-text-muted)] hover:bg-[color:var(--ui-hover)]'
+              }`}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Settings size={14} />
+              Settings
             </span>
           </button>
         </div>

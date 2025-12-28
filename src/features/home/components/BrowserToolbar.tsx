@@ -40,7 +40,7 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
     onNewTab
   }) => {
     return (
-      <div className="h-[42px] flex items-center w-full px-2 gap-2 electron-no-drag relative bg-white/60 dark:bg-neutral-950/60 backdrop-blur-xl border-b border-white/30 dark:border-neutral-800/70">
+      <div className="h-[42px] flex items-center w-full px-2 gap-2 electron-no-drag relative bg-[color:var(--ui-surface)] backdrop-blur-xl">
         <div className="flex items-center gap-4 min-w-[140px] z-10">
           <div className="flex items-center gap-1">
             <IconButton onClick={onSidebarToggle} active={sidebarOpen}>
@@ -75,7 +75,7 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
             <Plus size={16} strokeWidth={2.5} />
           </IconButton>
 
-          <div className="ml-2 pl-2 border-l border-white/40 dark:border-neutral-700/70">
+          <div className="ml-2 pl-2">
             <WindowControls />
           </div>
         </div>
