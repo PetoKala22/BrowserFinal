@@ -157,19 +157,34 @@ const Home: React.FC = () => {
     [requestCloseSettings]
   );
 
-  const handleNewTab = useCallback(() => {
+  const createTab = useCallback((url: string) => {
+    const isInternal = isInternalUrl(url);
+    const title = isInternal
+      ? 'Start Page'
+      : url.replace('https://', '').replace('http://', '').split('/')[0];
     const newId = Math.random().toString(36).slice(2, 9);
     const newTab: Tab = {
       id: newId,
-      title: 'Start Page',
-      url: 'browser://welcome',
-      loading: false,
+      title,
+      url,
+      loading: !isInternal,
       canGoBack: false,
       canGoForward: false
     };
     setTabs((prev) => [...prev, newTab]);
     setActiveTabId(newId);
   }, []);
+
+  const handleNewTab = useCallback(() => {
+    createTab('browser://welcome');
+  }, [createTab]);
+
+  const handleOpenNewTab = useCallback(
+    (url: string) => {
+      createTab(url);
+    },
+    [createTab]
+  );
 
   const handleCloseTab = useCallback(
     (id: string, event: React.MouseEvent) => {
@@ -291,6 +306,7 @@ const Home: React.FC = () => {
                 tabs={tabs}
                 activeTabId={activeTabId}
                 onTabUpdate={handleTabUpdate}
+                onOpenNewTab={handleOpenNewTab}
               />
             </div>
           )}

@@ -14,6 +14,7 @@ interface BrowserContentProps {
   tabs: Tab[];
   activeTabId: string;
   onTabUpdate: (id: string, patch: Partial<Tab>) => void;
+  onOpenNewTab?: (url: string) => void;
 }
 
 export interface BrowserContentHandle {
@@ -30,7 +31,7 @@ const isElectronRuntime = () => {
 };
 
 export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentProps>(
-  ({ tabs, activeTabId, onTabUpdate }, ref) => {
+  ({ tabs, activeTabId, onTabUpdate, onOpenNewTab }, ref) => {
     const webviewsRef = useRef<Record<string, WebviewTag | null>>({});
     const cleanupRef = useRef<Record<string, (() => void) | undefined>>({});
     const isElectron = useMemo(() => isElectronRuntime(), []);
@@ -77,6 +78,13 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           updateNavState(tabId, el);
         };
         const handleFail = () => onTabUpdate(tabId, { loading: false });
+        const handleNewWindow = (event: any) => {
+          const url = event?.url;
+          if (typeof event?.preventDefault === 'function') {
+            event.preventDefault();
+          }
+          if (url) onOpenNewTab?.(url);
+        };
 
         el.addEventListener('did-start-loading', handleStart);
         el.addEventListener('did-stop-loading', handleStop);
@@ -85,6 +93,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         el.addEventListener('did-navigate', handleNavigate);
         el.addEventListener('did-navigate-in-page', handleNavigate);
         el.addEventListener('did-fail-load', handleFail);
+        el.addEventListener('new-window', handleNewWindow);
 
         cleanupRef.current[tabId] = () => {
           el.removeEventListener('did-start-loading', handleStart);
@@ -94,9 +103,10 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           el.removeEventListener('did-navigate', handleNavigate);
           el.removeEventListener('did-navigate-in-page', handleNavigate);
           el.removeEventListener('did-fail-load', handleFail);
+          el.removeEventListener('new-window', handleNewWindow);
         };
       },
-      [onTabUpdate, updateNavState]
+      [onOpenNewTab, onTabUpdate, updateNavState]
     );
 
     useImperativeHandle(
