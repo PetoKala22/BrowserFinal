@@ -142,7 +142,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               ref={inputRef}
               type="text"
               size={isFocused ? undefined : inputSize}
-              className="w-full h-full bg-transparent border-none outline-none text-xs text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
+              className="w-full h-full bg-transparent border-none outline-none text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onFocus={handleFocus}

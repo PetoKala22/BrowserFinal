@@ -11,6 +11,7 @@ declare global {
     isMaximized: () => Promise<boolean>;
     loadSettings: () => Promise<AppSettings | null>;
     saveSettings: (settings: AppSettings) => Promise<void>;
+    onNewWindow: (handler: (url: string) => void) => () => void;
   }
 
   interface Window {

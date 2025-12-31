@@ -99,6 +99,14 @@ const registerIpc = () => {
 
 app.whenReady().then(() => {
   registerIpc();
+  app.on('web-contents-created', (_event, contents) => {
+    contents.setWindowOpenHandler(({ url }) => {
+      if (mainWindow && url) {
+        mainWindow.webContents.send('tabs:new-window', url);
+      }
+      return { action: 'deny' };
+    });
+  });
   createWindow();
 
   app.on('activate', () => {

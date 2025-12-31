@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserContent, BrowserContentHandle } from '@/components/Browser/BrowserContent';
 import { HistoryPage } from '@/components/Browser/HistoryPage';
 import { SettingsPage } from '@/components/Browser/SettingsPage';
@@ -185,6 +185,11 @@ const Home: React.FC = () => {
     },
     [createTab]
   );
+
+  useEffect(() => {
+    if (!window.electronAPI?.onNewWindow) return undefined;
+    return window.electronAPI.onNewWindow(handleOpenNewTab);
+  }, [handleOpenNewTab]);
 
   const handleCloseTab = useCallback(
     (id: string, event: React.MouseEvent) => {
