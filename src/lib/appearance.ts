@@ -1,22 +1,21 @@
 export const solidColorOptions = [
-  // macOS dark materials
-  "#1C1C1E", // systemBackground (dark)
-  "#2C2C2E", // secondarySystemBackground
-  "#3A3A3C", // tertiarySystemBackground
-  "#48484A", // quaternarySystemBackground
+  "default", // default theme base
+  "#131313", // near-black charcoal
+  "#313131", // dark gray
+  "#d6d6d6", // light gray
 
-  // macOS light materials
-  "#F2F2F7", // systemBackground (light)
-  "#E5E5EA", // secondarySystemBackground
-  "#D1D1D6", // tertiarySystemBackground
-  "#FFFFFF", // pure system surface
+  "#1e2a33", // deep blue-gray
+  "#24312b", // muted forest green
+  "#2a242e", // dark desaturated purple
+  "#2e2623", // warm espresso brown
+  "#1f2e2e", // dark teal gray
 
-  // Apple accent colors (muted for backgrounds)
-  "#0A84FF", // systemBlue
-  "#5E5CE6", // systemIndigo
-  "#30D158", // systemGreen
-  "#FF9F0A", // systemOrange
-  "#FF453A", // systemRed
-  "#BF5AF2", // systemPurple
-  "#64D2FF"  // systemTeal
+  "#3a4450", // slate blue-gray
+  "#3b403c", // cool muted green-gray
+  "#4a3f46", // dusty plum
+  "#4a433b", // soft warm taupe
+
+  "#6b7280", // calm cool gray-blue
+  "#6b645c", // warm stone
+  "#5f6a63", // muted eucalyptus
 ];

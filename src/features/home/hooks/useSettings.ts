@@ -110,11 +110,14 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
         g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, 0.08)),
         b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, 0.08))
       };
+      const borderMix = isDark ? 0.22 : 0.18;
       const borderTint = {
-        r: clamp(mix(surfaceTint.r, isDark ? 255 : 0, isDark ? 0.18 : 0.12)),
-        g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, isDark ? 0.18 : 0.12)),
-        b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, isDark ? 0.18 : 0.12))
+        r: clamp(mix(surfaceTint.r, isDark ? 255 : 0, borderMix)),
+        g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, borderMix)),
+        b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, borderMix))
       };
+      const borderAlpha = isDark ? 0.32 : 0.24;
+      const ringAlpha = isDark ? 0.46 : 0.34;
 
       root.style.setProperty('--ui-base', makeRgba(base, 1));
       root.style.setProperty('--ui-surface', makeRgba(surfaceTint, isDark ? 0.72 : 0.68));
@@ -123,8 +126,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-surface-subtle', makeRgba(surfaceTint, isDark ? 0.35 : 0.3));
       root.style.setProperty('--ui-hover', makeRgba(hoverTint, isDark ? 0.78 : 0.72));
       root.style.setProperty('--ui-hover-strong', makeRgba(hoverTint, isDark ? 0.88 : 0.82));
-      root.style.setProperty('--ui-border', makeRgba(borderTint, isDark ? 0.28 : 0.2));
-      root.style.setProperty('--ui-ring', makeRgba(borderTint, isDark ? 0.4 : 0.3));
+      root.style.setProperty('--ui-border', makeRgba(borderTint, borderAlpha));
+      root.style.setProperty('--ui-ring', makeRgba(borderTint, ringAlpha));
       root.style.setProperty('--ui-text', isDark ? '#f8fafc' : '#0f172a');
       root.style.setProperty('--ui-text-muted', isDark ? '#cbd5e1' : '#475569');
       root.style.setProperty('--ui-text-subtle', isDark ? '#94a3b8' : '#64748b');
@@ -160,9 +163,23 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     const activeColor = backgroundType === 'solid' ? wallpaperColor : '';
 
     if (!activeWallpaper && !activeColor) {
-      const shouldUseDark = theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark);
       clearDynamicVars();
-      root.classList.toggle('dark', shouldUseDark);
+      root.classList.toggle('dark', true);
+      root.style.setProperty('--ui-wallpaper-overlay', 'rgba(0, 0, 0, 0.35)');
+      root.style.setProperty('--ui-base', '#181716');
+      root.style.setProperty('--ui-surface', 'rgba(30, 29, 27, 0.82)');
+      root.style.setProperty('--ui-surface-strong', 'rgba(36, 35, 33, 0.88)');
+      root.style.setProperty('--ui-surface-muted', 'rgba(36, 35, 33, 0.72)');
+      root.style.setProperty('--ui-surface-subtle', 'rgba(42, 41, 38, 0.55)');
+      root.style.setProperty('--ui-hover', 'rgba(212, 188, 150, 0.14)');
+      root.style.setProperty('--ui-hover-strong', 'rgba(212, 188, 150, 0.22)');
+      root.style.setProperty('--ui-border', '#34322E');
+      root.style.setProperty('--ui-ring', '#B8996E');
+      root.style.setProperty('--ui-text', '#E6E3DE');
+      root.style.setProperty('--ui-text-muted', '#B7B3AC');
+      root.style.setProperty('--ui-text-subtle', '#8C8882');
+      root.style.setProperty('--ui-accent', '#C2A67E');
+      root.style.setProperty('--ui-accent-contrast', '#1E1D1B');
       return;
     }
 

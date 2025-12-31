@@ -54,20 +54,19 @@ export const Sidebar = memo(
     const isRight = position === "right";
 
     const openClasses = [
-      "h-[calc(100%-4rem)] w-[240px] translate-x-0 opacity-100 rounded-2xl my-8",
-      isRight ? "mr-4" : "ml-4"
+      "h-[calc(100%-4rem)] w-[240px] translate-x-0 opacity-100 rounded-2xl my-8 mx-4"
     ].join(" ");
 
     const closedClasses = [
-      "h-[calc(100%-4rem)] w-0 opacity-0 pointer-events-none overflow-hidden rounded-2xl my-8",
-      isRight ? "mr-4 translate-x-4" : "ml-4 -translate-x-4"
+      "h-[calc(100%-4rem)] w-0 opacity-0 pointer-events-none overflow-hidden rounded-2xl my-8 mx-0",
+      isRight ? "translate-x-4" : "-translate-x-4"
     ].join(" ");
 
     return (
       <div
         aria-hidden={!isOpen}
         className={[
-          "bg-[color:var(--ui-surface)] backdrop-blur-xl",
+          "bg-[color:var(--ui-surface)] border border-[color:var(--ui-border)] backdrop-blur-xl",
           "flex flex-col pt-3 pb-4 relative z-20 self-start overflow-hidden",
           "transition-[transform,opacity,width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
           isOpen ? openClasses : closedClasses

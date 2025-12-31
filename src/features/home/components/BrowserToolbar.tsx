@@ -79,7 +79,7 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
             <Plus size={16} strokeWidth={2.5} />
           </IconButton>
 
-          <div className="ml-2 pl-2">
+          <div className="ml-2 pl-2 self-start">
             <WindowControls />
           </div>
         </div>

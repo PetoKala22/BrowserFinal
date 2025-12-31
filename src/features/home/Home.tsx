@@ -9,6 +9,7 @@ import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
 import { useSettings } from '@/features/home/hooks/useSettings';
+import { WallpaperNotice } from '@/features/home/components/WallpaperNotice';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.SYSTEM,
@@ -282,7 +283,7 @@ const Home: React.FC = () => {
           position="left"
         />
 
-        <main className="flex-1 relative bg-transparent overflow-hidden">
+        <main className="flex-1 relative bg-transparent overflow-hidden rounded-t-2xl">
           {!settingsOpen && (
             <div className="h-full w-full">
               <BrowserContent
@@ -322,6 +323,10 @@ const Home: React.FC = () => {
           )}
         </main>
 
+      </div>
+
+      <div className="electron-no-drag absolute bottom-6 right-6 z-50">
+        <WallpaperNotice onOpenSettings={handleOpenSettings} />
       </div>
 
       {confirmUnsavedOpen && (

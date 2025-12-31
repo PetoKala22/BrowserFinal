@@ -89,7 +89,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   return (
     <div className="h-full w-full">
       <div className="flex h-full p-8">
-        <div className="flex h-full w-full gap-6 bg-[color:var(--ui-surface)] rounded-2xl backdrop-blur-xl p-4">
+        <div className="flex h-full w-full gap-6 bg-[color:var(--ui-surface)] border border-[color:var(--ui-border)] rounded-2xl backdrop-blur-xl p-4">
 
           {/* Sidebar */}
           <aside className="w-[220px] shrink-0 rounded-2xl p-3">
@@ -119,7 +119,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </aside>
 
           {/* Content */}
-          <section className="relative flex-1 rounded-2xl bg-[color:var(--ui-surface-strong)] border border-[color:var(--ui-border)] backdrop-blur-xl p-6 overflow-y-auto">
+          <section className="relative flex-1 rounded-2xl bg-[color:var(--ui-surface-strong)] shadow-md p-6 overflow-y-auto">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-[color:var(--ui-text)]">
@@ -164,48 +164,73 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </button>
                       </div>
                     </div>
-                    <div />
+                    <div className="flex justify-end">
+                      {backgroundType === 'wallpaper' && hasWallpaper && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[color:var(--ui-text-muted)]">
+                            Blur
+                          </span>
+                          <button
+                            onClick={() => onWallpaperBlurChange(!wallpaperBlur)}
+                            className={`relative w-11 h-6 rounded-full transition-colors ${
+                              wallpaperBlur
+                                ? 'bg-[color:var(--ui-accent)]'
+                                : 'bg-[color:var(--ui-border)]'
+                            }`}
+                            aria-label="Toggle blur effect"
+                          >
+                            <div
+                              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                                wallpaperBlur ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="relative">
-                    {hasActiveWallpaper ? (
-                      <div className="overflow-hidden rounded-lg">
-                        <div
-                          className={`h-48 w-full bg-cover bg-center transition-all duration-300 ${
-                            wallpaperBlur ? 'blur-sm scale-105' : ''
-                          }`}
-                          style={{ backgroundImage: `url(${activeWallpaper})` }}
-                        />
-                      </div>
-                    ) : hasActiveColor ? (
-                      <div className="overflow-hidden rounded-lg">
-                        <div
-                          className="h-48 w-full transition-all duration-300"
-                          style={{ backgroundColor: activeColor }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-48 rounded-lg bg-[color:var(--ui-surface-subtle)] flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="text-sm text-[color:var(--ui-text-muted)] mb-1">
-                            {backgroundType === 'wallpaper'
-                              ? 'No wallpaper selected'
-                              : 'No color selected'}
-                          </div>
-                          <div className="text-xs text-[color:var(--ui-text-subtle)]">
-                            {backgroundType === 'wallpaper'
-                              ? 'Upload an image to customize your background'
-                              : 'Pick a solid color for your background'}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <div className="relative flex justify-center">
+  <div className="w-full max-w-[1120px]">
+    <div className="relative aspect-video overflow-hidden rounded-xl bg-[color:var(--ui-surface-subtle)] border border-[color:var(--ui-border)]">
+
+      {hasActiveWallpaper ? (
+        <div
+          className={`absolute inset-0 bg-cover bg-center transition-transform duration-300 ${
+            wallpaperBlur ? 'blur-sm scale-105' : 'scale-100'
+          }`}
+          style={{ backgroundImage: `url(${activeWallpaper})` }}
+        />
+      ) : hasActiveColor ? (
+        <div
+          className="absolute inset-0 transition-colors duration-300"
+          style={{ backgroundColor: activeColor }}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-center px-4">
+          <div>
+            <div className="text-sm text-[color:var(--ui-text-muted)] mb-1">
+              {backgroundType === 'wallpaper'
+                ? 'No wallpaper selected'
+                : 'No color selected'}
+            </div>
+            <div className="text-xs text-[color:var(--ui-text-subtle)]">
+              {backgroundType === 'wallpaper'
+                ? 'Upload an image to customize your background'
+                : 'Pick a solid color for your background'}
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  </div>
+</div>
 
                   <div className="mt-5 space-y-4">
                     {backgroundType === 'wallpaper' && (
                       <>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full max-w-[520px] mx-auto">
                           <label className="flex-1 cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)] hover:opacity-90 transition text-center">
                             {hasWallpaper ? 'Change Wallpaper' : 'Upload Wallpaper'}
                             <input
@@ -238,65 +263,51 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                           )}
                         </div>
 
-                        {hasWallpaper && (
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-[color:var(--ui-surface-subtle)]">
-                            <div>
-                              <div className="text-sm font-medium">Blur Effect</div>
-                              <div className="text-xs text-[color:var(--ui-text-muted)] mt-0.5">
-                                Apply blur to wallpaper background
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => onWallpaperBlurChange(!wallpaperBlur)}
-                              className={`relative w-11 h-6 rounded-full transition-colors ${
-                                wallpaperBlur
-                                  ? 'bg-[color:var(--ui-accent)]'
-                                  : 'bg-[color:var(--ui-border)]'
-                              }`}
-                            >
-                              <div
-                                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                                  wallpaperBlur ? 'translate-x-5' : 'translate-x-0'
-                                }`}
-                              />
-                            </button>
-                          </div>
-                        )}
                       </>
                     )}
 
                     {backgroundType === 'solid' && (
-                      <div className="flex items-center justify-between gap-3 rounded-lg bg-[color:var(--ui-surface-subtle)] p-3">
+                      <div className="flex items-center justify-center gap-3 rounded-lg p-2">
                         <div>
-                          <div className="text-sm font-medium">Solid Color</div>
-                          <div className="text-xs text-[color:var(--ui-text-muted)] mt-0.5">
-                            Choose a background color instead of an image
-                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex flex-wrap items-center gap-2 max-w-[320px]">
-                            {solidColorOptions.map((color) => (
+                          <div className="flex flex-wrap items-center gap-2">
+                            {solidColorOptions.map((color) => {
+                              const isDefault = color === 'default';
+                              const isSelected = isDefault ? !wallpaperColor : wallpaperColor === color;
+                              return (
                               <button
                                 key={color}
                                 onClick={() => {
+                                  if (isDefault) {
+                                    onWallpaperChange('');
+                                    onWallpaperColorChange('');
+                                    onBackgroundTypeChange('solid');
+                                    return;
+                                  }
                                   onWallpaperColorChange(color);
                                   onBackgroundTypeChange('solid');
                                 }}
-                                className={`relative h-8 w-8 rounded-full border transition ${
-                                  wallpaperColor === color
+                                className={`relative h-6 w-6 rounded-full border transition ${
+                                  isSelected
                                     ? 'border-[color:var(--ui-ring)] ring-2 ring-[color:var(--ui-ring)]'
                                     : 'border-[color:var(--ui-border)] hover:border-[color:var(--ui-ring)]'
                                 }`}
-                                style={{ backgroundColor: color }}
-                                aria-label={`Choose ${color} background color`}
+                                style={{ backgroundColor: isDefault ? '#181716' : color }}
+                                aria-label={
+                                  isDefault
+                                    ? 'Use default theme background'
+                                    : `Choose ${color} background color`
+                                }
                               >
-                                {wallpaperColor === color && (
+                                {isSelected && (
                                   <span className="absolute inset-0 flex items-center justify-center">
                                     <span className="h-1 w-1 rounded-full bg-white/90 shadow-sm ring-1 ring-black/20" />
                                   </span>
                                 )}
                               </button>
-                            ))}
+                            );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -318,14 +329,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       className={`w-full rounded-xl px-4 py-3 text-left transition
                         ${
                           searchEngine === option.id
-                            ? 'bg-[color:var(--ui-surface-strong)]'
+                            ? 'bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)] shadow-sm'
                             : 'hover:bg-[color:var(--ui-hover)]'
                         }`}
                     >
-                      <div className="text-sm font-medium text-[color:var(--ui-text)]">
+                      <div
+                        className={`text-sm font-medium ${
+                          searchEngine === option.id
+                            ? 'text-[color:var(--ui-accent-contrast)]'
+                            : 'text-[color:var(--ui-text)]'
+                        }`}
+                      >
                         {option.label}
                       </div>
-                      <div className="text-xs text-[color:var(--ui-text-muted)]">
+                      <div
+                        className={`text-xs ${
+                          searchEngine === option.id
+                            ? 'text-[color:var(--ui-accent-contrast)]/80'
+                            : 'text-[color:var(--ui-text-muted)]'
+                        }`}
+                      >
                         {option.description}
                       </div>
                     </button>
@@ -363,21 +386,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           {/* Sticky Save Bar */}
           {hasUnsavedChanges && (
-            <div className="sticky bottom-4 mt-10 flex justify-end">
-              <div className="flex items-center gap-3 rounded-full bg-[color:var(--ui-surface-strong)] backdrop-blur px-4 py-2 shadow-sm">
-                <span className="text-xs text-[color:var(--ui-text-muted)]">
-                  Unsaved changes
-                </span>
-                <button
-                  onClick={onSave}
-                  disabled={isSaving}
-                  className="rounded-full px-4 py-1 text-xs font-semibold bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)] hover:brightness-95"
-                >
-                  {isSaving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-          )}
+  <div className="pointer-events-none absolute bottom-6 right-6 z-10">
+    <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-[color:var(--ui-surface-strong)] backdrop-blur px-4 py-2 shadow-sm">
+      <span className="text-xs text-[color:var(--ui-text-muted)]">
+        Unsaved changes
+      </span>
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="rounded-full px-4 py-1 text-xs font-semibold bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)] hover:brightness-95"
+      >
+        {isSaving ? 'Saving...' : 'Save'}
+      </button>
+    </div>
+  </div>
+)}
           </section>
         </div>
       </div>

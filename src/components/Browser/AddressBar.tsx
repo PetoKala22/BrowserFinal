@@ -123,18 +123,18 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative h-full w-full"
         >
           <div
-            className={`relative flex items-center w-full h-7 rounded-lg overflow-hidden transition-all duration-300
+            className={`relative flex items-center w-full h-8 rounded-lg overflow-hidden transition-all duration-300
               ${
                 isFocused
-                  ? "bg-[color:var(--ui-surface-strong)] shadow ring-1 ring-[color:var(--ui-ring)]"
-                  : "bg-[color:var(--ui-surface-subtle)] hover:bg-[color:var(--ui-surface-muted)]"
+                  ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
+                  : "bg-[color:var(--ui-surface-subtle)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
               }`}
           >
-            <div className="absolute left-2 flex items-center text-[color:var(--ui-text-subtle)]">
+            <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
-                <Search size={12} strokeWidth={3} />
+                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               ) : (
-                <Shield size={12} strokeWidth={3} />
+                <Shield size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               )}
             </div>
 
@@ -142,7 +142,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               ref={inputRef}
               type="text"
               size={isFocused ? undefined : inputSize}
-              className="w-full h-full bg-transparent border-none outline-none text-xs text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
+              className="w-full h-full bg-transparent border-none outline-none text-xs text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onFocus={handleFocus}
