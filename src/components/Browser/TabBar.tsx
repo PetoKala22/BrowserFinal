@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { X, Plus, Globe } from 'lucide-react';
+import { X, Globe } from 'lucide-react';
 import { Tab } from '@/lib/types';
 
 interface TabBarProps {
@@ -7,7 +7,6 @@ interface TabBarProps {
   activeTabId: string;
   onSwitch: (id: string) => void;
   onClose: (id: string, e: React.MouseEvent) => void;
-  onNewTab: () => void;
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -16,7 +15,6 @@ export const TabBar = memo<TabBarProps>(({
   activeTabId,
   onSwitch,
   onClose,
-  onNewTab,
   orientation = 'horizontal'
 }) => {
   const isVertical = orientation === 'vertical';
@@ -24,10 +22,10 @@ export const TabBar = memo<TabBarProps>(({
   return (
     <div
       className={[
-        "electron-no-drag",
+        "electron-no-drag mb-1",
         isVertical
           ? "flex flex-col gap-1 overflow-y-auto no-scrollbar"
-          : "bg-[color:var(--ui-surface)] rounded-lg backdrop-blur-xl flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
+          : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5"
       ].join(" ")}
     >
       {tabs.map((tab) => {

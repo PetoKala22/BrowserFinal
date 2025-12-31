@@ -1,27 +1,21 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Shield, Search, RotateCw, X } from "lucide-react";
+import { Shield, Search } from "lucide-react";
 import { SearchEngine } from "@/lib/types";
 
 interface AddressBarProps {
   url: string;
   onNavigate: (url: string) => void;
-  onReload: () => void;
-  onStop: () => void;
   loading: boolean;
   searchEngine: SearchEngine;
   customSearchUrl: string;
-  variant?: "toolbar" | "sidebar";
 }
 
 export const AddressBar: React.FC<AddressBarProps> = ({
   url,
   onNavigate,
-  onReload,
-  onStop,
   loading,
   searchEngine,
-  customSearchUrl,
-  variant = "toolbar"
+  customSearchUrl
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputVal, setInputVal] = useState("");
@@ -107,79 +101,56 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   };
 
   const secure = url.startsWith("https") || isWelcome;
-  const isSidebar = variant === "sidebar";
+  const placeholderText = "Search or enter URL";
+  const displayText = inputVal || placeholderText;
+  const inputSize = Math.max(1, displayText.length + 1);
+  const compactWidth = `calc(${inputSize}ch + 24px)`; // 24px for padding and icon
 
   return (
-    <div
-      className={`flex-1 flex w-full relative z-20 electron-drag ${
-        isSidebar ? "justify-start" : "justify-center"
-      }`}
-    >
+    <div className="flex-1 flex w-full relative z-20 electron-drag justify-center">
       <div
-        className={`relative flex justify-center w-full transition-[max-width,transform,filter] duration-300 ease-in-out
+        className={`relative flex justify-center transition-[width,transform,filter] duration-200 ease-in-out
           ${
-            isSidebar
-              ? "max-w-full scale-100"
-              : isFocused
-                ? "max-w-2xl scale-100 drop-shadow-md"
-                : "max-w-[240px] hover:max-w-[260px] scale-95"
+            isFocused
+              ? "w-full max-w-2xl scale-100 drop-shadow-md"
+              : "max-w-full scale-100"
           }
         `}
+        style={{ width: isFocused ? undefined : compactWidth }}
       >
         <form
           onSubmit={handleSubmit}
-          className="relative w-full h-full"
+          className="relative h-full w-full"
         >
           <div
-            className={`relative flex items-center w-full ${
-              isSidebar ? "h-9 rounded-lg" : "h-8 rounded-lg"
-            } overflow-hidden transition-all duration-300 backdrop-blur-xl
+            className={`relative flex items-center w-full h-7 rounded-lg overflow-hidden transition-all duration-300
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow ring-1 ring-[color:var(--ui-ring)]"
-                  : "bg-[color:var(--ui-surface)] hover:bg-[color:var(--ui-hover)]"
+                  : "bg-[color:var(--ui-surface-subtle)] hover:bg-[color:var(--ui-surface-muted)]"
               }`}
           >
-            {!isWelcome && (
-              <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
-                {secure ? (
-                  <Search size={12} strokeWidth={3} />
-                ) : (
-                  <Shield size={12} strokeWidth={3} />
-                )}
-              </div>
-            )}
+            <div className="absolute left-2 flex items-center text-[color:var(--ui-text-subtle)]">
+              {secure ? (
+                <Search size={12} strokeWidth={3} />
+              ) : (
+                <Shield size={12} strokeWidth={3} />
+              )}
+            </div>
 
             <input
               ref={inputRef}
               type="text"
-              className={`w-full h-full bg-transparent border-none outline-none text-sm pr-6 text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)] electron-no-drag ${
-                isWelcome ? 'pl-3' : 'pl-7'
-              }`}
+              size={isFocused ? undefined : inputSize}
+              className="w-full h-full bg-transparent border-none outline-none text-xs text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              placeholder="Search or enter URL"
+              placeholder={placeholderText}
               spellCheck={false}
               autoComplete="off"
             />
-
-            <div className="absolute right-2 flex items-center">
-              {loading ? (
-                <X
-                  size={14}
-                  className="cursor-pointer text-[color:var(--ui-text-subtle)]"
-                  onClick={onStop}
-                />
-              ) : (
-                <RotateCw
-                  size={14}
-                  className="cursor-pointer text-[color:var(--ui-text-subtle)]"
-                  onClick={onReload}
-                />
-              )}
-            </div>
 
             {loading && (
               <div

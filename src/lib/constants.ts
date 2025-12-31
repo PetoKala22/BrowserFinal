@@ -10,8 +10,3 @@ export const INITIAL_TABS: Tab[] = [
     canGoForward: false,
   }
 ];
-
-export const MOCK_HISTORY = [
-  { url: 'https://apple.com', title: 'Apple', timestamp: Date.now() },
-  { url: 'https://github.com', title: 'GitHub', timestamp: Date.now() - 100000 },
-];

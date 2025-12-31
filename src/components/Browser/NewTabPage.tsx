@@ -2,21 +2,33 @@ import React from 'react';
 
 export const NewTabPage: React.FC = () => {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[color:var(--ui-surface-subtle)] text-[color:var(--ui-text)] backdrop-blur-md">
-      <div className="text-center">
+    <div className="w-full h-full flex items-center justify-center text-[color:var(--ui-text)]">
+      {/* Background with visual detail (required for blur) */}
+      <div className="absolute inset-0 bg-transparent" />
 
-        <div className="text-lg font-medium text-[color:var(--ui-text)]">
-          Ready when you are
-        </div>
+      <div className="relative text-center">
+        <div className="text-lg font-medium">Ready when you are</div>
 
         <div className="mt-2 text-md text-[color:var(--ui-text-muted)]">
           Start typing to search or enter a website
         </div>
 
-        <div className="mt-6 text-xs text-[color:var(--ui-text-muted)]">
-          Press <span className="px-1.5 py-0.5 rounded bg-[color:var(--ui-surface)] text-[color:var(--ui-text)]">Ctrl + L</span>
+        <div className="mt-4 text-xs text-[color:var(--ui-text-muted)]">
+          Press{' '}
+          <span
+            className="
+              inline-flex items-center
+              px-2 py-0.5
+              rounded-md
+              bg-[color:var(--ui-surface)]
+              backdrop-blur-md
+              text-[color:var(--ui-text)]
+              shadow-sm
+            "
+          >
+            Ctrl + L
+          </span>
         </div>
-
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { ChevronLeft, ChevronRight, PanelLeft, Plus, Share } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PanelLeft, Plus, RotateCw, Share, X } from 'lucide-react';
 import { AddressBar } from '@/components/Browser/AddressBar';
 import { WindowControls } from '@/components/Browser/WindowControls';
 import { IconButton } from '@/components/ui/IconButton';
@@ -40,9 +40,9 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
     onNewTab
   }) => {
     return (
-      <div className="h-[42px] flex items-center w-full px-2 gap-2 electron-no-drag relative bg-[color:var(--ui-surface)] backdrop-blur-xl">
+      <div className="h-9 flex items-center w-full gap-2 electron-no-drag relative bg-transparent">
         <div className="flex items-center gap-4 min-w-[140px] z-10">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 pl-1">
             <IconButton onClick={onSidebarToggle} active={sidebarOpen}>
               <PanelLeft size={18} strokeWidth={2} />
             </IconButton>
@@ -52,6 +52,12 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
             <IconButton disabled={!canGoForward} onClick={onGoForward}>
               <ChevronRight size={18} strokeWidth={2.5} />
             </IconButton>
+            <IconButton
+              onClick={loading ? onStop : onReload}
+              aria-label={loading ? 'Stop loading' : 'Reload'}
+            >
+              {loading ? <X size={16} /> : <RotateCw size={16} />}
+            </IconButton>
           </div>
         </div>
 
@@ -59,15 +65,13 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
           <AddressBar
             url={address}
             onNavigate={onNavigate}
-            onReload={onReload}
-            onStop={onStop}
             loading={loading}
             searchEngine={searchEngine}
             customSearchUrl={customSearchUrl}
           />
         </div>
 
-        <div className="flex items-center gap-1 min-w-[140px] justify-end pr-1 ml-auto z-10">
+        <div className="flex items-center gap-1 min-w-[140px] justify-end ml-auto z-10">
           <IconButton>
             <Share size={16} strokeWidth={2} />
           </IconButton>

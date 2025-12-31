@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppSettings, Layout, Theme } from '@/lib/types';
+import { AppSettings, BackgroundType, Theme } from '@/lib/types';
 
 interface UseSettingsResult {
   searchEngine: AppSettings['searchEngine'];
   setSearchEngine: (engine: AppSettings['searchEngine']) => void;
   customSearchUrl: string;
   setCustomSearchUrl: (url: string) => void;
-  layout: Layout;
-  setLayout: (layout: Layout) => void;
+  backgroundType: BackgroundType;
+  setBackgroundType: (type: BackgroundType) => void;
   wallpaper: string;
   setWallpaper: (wallpaper: string) => void;
+  wallpaperColor: string;
+  setWallpaperColor: (color: string) => void;
   wallpaperBlur: boolean;
   setWallpaperBlur: (blur: boolean) => void;
   currentSettings: AppSettings;
@@ -27,8 +29,11 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     defaultSettings.searchEngine
   );
   const [customSearchUrl, setCustomSearchUrl] = useState(defaultSettings.customSearchUrl);
-  const [layout, setLayout] = useState<Layout>(defaultSettings.layout);
+  const [backgroundType, setBackgroundType] = useState<BackgroundType>(
+    defaultSettings.backgroundType
+  );
   const [wallpaper, setWallpaper] = useState(defaultSettings.wallpaper);
+  const [wallpaperColor, setWallpaperColor] = useState(defaultSettings.wallpaperColor);
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -38,11 +43,12 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       theme: Theme.SYSTEM,
       searchEngine,
       customSearchUrl,
-      layout,
+      backgroundType,
       wallpaper,
+      wallpaperColor,
       wallpaperBlur
     }),
-    [searchEngine, customSearchUrl, layout, wallpaper, wallpaperBlur]
+    [searchEngine, customSearchUrl, backgroundType, wallpaper, wallpaperColor, wallpaperBlur]
   );
 
   const hasUnsavedChanges = useMemo(() => {
@@ -50,8 +56,9 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.theme !== currentSettings.theme ||
       savedSettings.searchEngine !== currentSettings.searchEngine ||
       savedSettings.customSearchUrl !== currentSettings.customSearchUrl ||
-      savedSettings.layout !== currentSettings.layout ||
+      savedSettings.backgroundType !== currentSettings.backgroundType ||
       savedSettings.wallpaper !== currentSettings.wallpaper ||
+      savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
       savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur
     );
   }, [currentSettings, savedSettings]);
@@ -138,10 +145,38 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
 
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 
-    if (!wallpaper) {
+    const parseHexColor = (value: string) => {
+      const hex = value.replace('#', '');
+      if (![3, 6].includes(hex.length)) return null;
+      const expand = hex.length === 3;
+      const r = parseInt(expand ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+      const g = parseInt(expand ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+      const b = parseInt(expand ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+      if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+      return { r, g, b };
+    };
+
+    const activeWallpaper = backgroundType === 'wallpaper' ? wallpaper : '';
+    const activeColor = backgroundType === 'solid' ? wallpaperColor : '';
+
+    if (!activeWallpaper && !activeColor) {
       const shouldUseDark = theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark);
       clearDynamicVars();
       root.classList.toggle('dark', shouldUseDark);
+      return;
+    }
+
+    if (!activeWallpaper && activeColor) {
+      const avg = parseHexColor(activeColor.trim());
+      if (!avg) {
+        const shouldUseDark = theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark);
+        clearDynamicVars();
+        root.classList.toggle('dark', shouldUseDark);
+        return;
+      }
+      const luma = (0.2126 * avg.r + 0.7152 * avg.g + 0.0722 * avg.b) / 255;
+      const shouldUseDark = luma < 0.55;
+      applyTheme(shouldUseDark, avg);
       return;
     }
 
@@ -192,19 +227,20 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       clearDynamicVars();
       root.classList.toggle('dark', theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark));
     };
-    img.src = wallpaper;
+    img.src = activeWallpaper;
 
     return () => {
       cancelled = true;
     };
-  }, [theme, wallpaper]);
+  }, [theme, backgroundType, wallpaper, wallpaperColor]);
 
   const applySettings = useCallback((settings: AppSettings) => {
     setTheme(Theme.SYSTEM);
     setSearchEngine(settings.searchEngine);
     setCustomSearchUrl(settings.customSearchUrl);
-    setLayout(settings.layout);
+    setBackgroundType(settings.backgroundType);
     setWallpaper(settings.wallpaper);
+    setWallpaperColor(settings.wallpaperColor);
     setWallpaperBlur(settings.wallpaperBlur);
   }, []);
 
@@ -238,10 +274,12 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setSearchEngine,
     customSearchUrl,
     setCustomSearchUrl,
-    layout,
-    setLayout,
+    backgroundType,
+    setBackgroundType,
     wallpaper,
     setWallpaper,
+    wallpaperColor,
+    setWallpaperColor,
     wallpaperBlur,
     setWallpaperBlur,
     currentSettings,

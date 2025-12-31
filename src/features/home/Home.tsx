@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { BrowserContent, BrowserContentHandle } from '@/components/Browser/BrowserContent';
 import { HistoryPage } from '@/components/Browser/HistoryPage';
-import { RightSidebar } from '@/components/Browser/RightSidebar';
 import { SettingsPage } from '@/components/Browser/SettingsPage';
 import { TabBar } from '@/components/Browser/TabBar';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
-import { AppSettings, Layout, SearchEngine, Tab, Theme } from '@/lib/types';
+import { AppSettings, SearchEngine, Tab, Theme } from '@/lib/types';
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
@@ -15,8 +14,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.SYSTEM,
   searchEngine: SearchEngine.GOOGLE,
   customSearchUrl: '',
-  layout: Layout.GENERIC,
+  backgroundType: 'wallpaper',
   wallpaper: '',
+  wallpaperColor: '',
   wallpaperBlur: false
 };
 
@@ -38,10 +38,12 @@ const Home: React.FC = () => {
     setSearchEngine,
     customSearchUrl,
     setCustomSearchUrl,
-    layout,
-    setLayout,
+    backgroundType,
+    setBackgroundType,
     wallpaper,
     setWallpaper,
+    wallpaperColor,
+    setWallpaperColor,
     wallpaperBlur,
     setWallpaperBlur,
     savedSettings,
@@ -221,7 +223,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-[color:var(--ui-text)] bg-[color:var(--ui-base)]">
-      {wallpaper && (
+      {backgroundType === 'wallpaper' && wallpaper && (
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
           <div
             className={`h-full w-full bg-center bg-cover ${
@@ -232,72 +234,57 @@ const Home: React.FC = () => {
           <div className="absolute inset-0 bg-[color:var(--ui-wallpaper-overlay)]" />
         </div>
       )}
-      {layout === Layout.GENERIC && (
+      <div
+        className={
+          '\n        flex flex-col flex-shrink-0 z-50 transition-colors duration-300\n        bg-transparent\n        electron-drag\n      '
+        }
+      >
+        <BrowserToolbar
+          sidebarOpen={sidebarOpen}
+          onSidebarToggle={handleSidebarToggle}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          onGoBack={handleGoBack}
+          onGoForward={handleGoForward}
+          address={activeTab.url}
+          onNavigate={handleNavigate}
+          onReload={handleReload}
+          onStop={handleStop}
+          loading={activeTab.loading}
+          searchEngine={searchEngine}
+          customSearchUrl={customSearchUrl}
+          onNewTab={handleNewTab}
+        />
+
         <div
-          className={
-            '\n        flex flex-col flex-shrink-0 z-50 transition-colors duration-300\n        bg-transparent\n        electron-drag\n      '
-          }
-        >
-          <BrowserToolbar
-            sidebarOpen={sidebarOpen}
-            onSidebarToggle={handleSidebarToggle}
-            canGoBack={canGoBack}
-            canGoForward={canGoForward}
-            onGoBack={handleGoBack}
-            onGoForward={handleGoForward}
-            address={activeTab.url}
-            onNavigate={handleNavigate}
-            onReload={handleReload}
-            onStop={handleStop}
-            loading={activeTab.loading}
-            searchEngine={searchEngine}
-            customSearchUrl={customSearchUrl}
-            onNewTab={handleNewTab}
-          />
-
-          <div
-            className={`electron-no-drag overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
-              tabs.length > 1
-                ? 'opacity-100 max-h-16 translate-y-0'
-                : 'opacity-0 max-h-0 -translate-y-1 pointer-events-none'
-            }`}
-          >
-            <TabBar
-              tabs={tabs}
-              activeTabId={activeTabId}
-              onSwitch={handleSwitchTab}
-              onClose={handleCloseTab}
-              onNewTab={handleNewTab}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="relative z-50 flex flex-1">
-        {layout === Layout.GENERIC && (
-          <Sidebar
-            isOpen={sidebarOpen}
-            onOpenHistory={handleOpenHistory}
-            onOpenSettings={handleOpenSettings}
-            historyActive={historyOpen}
-            settingsActive={settingsOpen}
-            position="left"
-          />
-        )}
-
-        <main
-          className={`flex-1 relative bg-transparent overflow-hidden ${
-            layout === Layout.SIDEBAR ? 'p-2' : ''
+          className={`electron-no-drag bg-transparent overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
+            tabs.length > 1
+              ? 'opacity-100 max-h-16 translate-y-0'
+              : 'opacity-0 max-h-0 -translate-y-1 pointer-events-none'
           }`}
         >
+          <TabBar
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSwitch={handleSwitchTab}
+            onClose={handleCloseTab}
+          />
+        </div>
+      </div>
+
+      <div className="relative z-50 flex flex-1">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onOpenHistory={handleOpenHistory}
+          onOpenSettings={handleOpenSettings}
+          historyActive={historyOpen}
+          settingsActive={settingsOpen}
+          position="left"
+        />
+
+        <main className="flex-1 relative bg-transparent overflow-hidden">
           {!settingsOpen && (
-            <div
-              className={
-                layout === Layout.SIDEBAR
-                  ? 'h-full w-full rounded-xl overflow-hidden'
-                  : 'h-full w-full'
-              }
-            >
+            <div className="h-full w-full">
               <BrowserContent
                 ref={browserRef}
                 tabs={tabs}
@@ -314,10 +301,12 @@ const Home: React.FC = () => {
           {settingsOpen && (
             <div className="absolute inset-0 z-10">
               <SettingsPage
-                layout={layout}
-                onLayoutChange={setLayout}
                 wallpaper={wallpaper}
                 onWallpaperChange={setWallpaper}
+                wallpaperColor={wallpaperColor}
+                onWallpaperColorChange={setWallpaperColor}
+                backgroundType={backgroundType}
+                onBackgroundTypeChange={setBackgroundType}
                 wallpaperBlur={wallpaperBlur}
                 onWallpaperBlurChange={setWallpaperBlur}
                 searchEngine={searchEngine}
@@ -333,28 +322,6 @@ const Home: React.FC = () => {
           )}
         </main>
 
-        {layout === Layout.SIDEBAR && (
-          <RightSidebar
-            tabs={tabs}
-            activeTabId={activeTabId}
-            address={activeTab.url}
-            loading={activeTab.loading}
-            canGoBack={canGoBack}
-            canGoForward={canGoForward}
-            searchEngine={searchEngine}
-            customSearchUrl={customSearchUrl}
-            onNavigate={handleNavigate}
-            onGoBack={handleGoBack}
-            onGoForward={handleGoForward}
-            onReload={handleReload}
-            onStop={handleStop}
-            onSwitchTab={handleSwitchTab}
-            onCloseTab={handleCloseTab}
-            onNewTab={handleNewTab}
-            onOpenSettings={handleOpenSettings}
-            settingsActive={settingsOpen}
-          />
-        )}
       </div>
 
       {confirmUnsavedOpen && (
