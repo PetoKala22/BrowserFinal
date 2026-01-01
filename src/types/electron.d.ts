@@ -1,5 +1,5 @@
 import type { DetailedHTMLProps, HTMLAttributes } from 'react';
-import type { AppSettings } from '@/lib/types';
+import type { AppSettings, HistoryItem } from '@/lib/types';
 
 export {};
 
@@ -12,7 +12,12 @@ declare global {
     loadSettings: () => Promise<AppSettings | null>;
     saveSettings: (settings: AppSettings) => Promise<void>;
     setAdBlockEnabled: (enabled: boolean) => Promise<boolean>;
+    getAdblockStats: () => Promise<{ blocked: number }>;
     getAdblockCosmetics: (url: string) => Promise<{ styles: string[]; scripts: string[] }>;
+    loadHistory: () => Promise<HistoryItem[]>;
+    addHistory: (entry: HistoryItem) => Promise<HistoryItem[]>;
+    clearHistory: () => Promise<HistoryItem[]>;
+    onAdblockStats: (handler: (stats: { blocked: number }) => void) => () => void;
     onNewWindow: (handler: (url: string) => void) => () => void;
     onFocusAddressBar: (handler: () => void) => () => void;
   }
@@ -24,6 +29,7 @@ declare global {
   interface WebviewTag extends HTMLElement {
     loadURL: (url: string) => void;
     getURL: () => string;
+    getTitle?: () => string;
     canGoBack: () => boolean;
     canGoForward: () => boolean;
     goBack: () => void;

@@ -14,9 +14,10 @@ interface BrowserToolbarProps {
   onStop: () => void;
   loading: boolean;
   onNewTab: () => void;
-  adBlockEnabled: boolean;
-  onToggleAdBlock: () => void;
   onShieldLayout?: (rect: DOMRect) => void;
+  onShieldClick?: () => void;
+  shieldActive?: boolean;
+  onShieldRef?: (node: HTMLDivElement | null) => void;
 }
 
 export const BrowserToolbar = memo<BrowserToolbarProps>(
@@ -31,9 +32,10 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
     onStop,
     loading,
     onNewTab,
-    adBlockEnabled,
-    onToggleAdBlock,
-    onShieldLayout
+    onShieldLayout,
+    onShieldClick,
+    shieldActive,
+    onShieldRef
   }) => {
     const shieldRef = useRef<HTMLDivElement>(null);
 
@@ -49,17 +51,23 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
       return () => window.removeEventListener('resize', update);
     }, [onShieldLayout]);
 
+    useLayoutEffect(() => {
+      if (!onShieldRef) return;
+      onShieldRef(shieldRef.current);
+      return () => onShieldRef(null);
+    }, [onShieldRef]);
+
     return (
-      <div className="h-9 flex items-center w-full gap-2 electron-no-drag relative">
+      <div className="h-[32px] flex items-center w-full gap-2 electron-no-drag relative">
         <div className="flex items-center gap-4 min-w-[140px] z-10">
           <div className="flex items-center gap-1 pl-1">
-            <IconButton onClick={onSidebarToggle} active={sidebarOpen}>
+            <IconButton onClick={onSidebarToggle} active={sidebarOpen} aria-label="Toggle sidebar">
               <PanelLeft size={18} strokeWidth={2} />
             </IconButton>
-            <IconButton disabled={!canGoBack} onClick={onGoBack}>
+            <IconButton disabled={!canGoBack} onClick={onGoBack} aria-label="Back">
               <ChevronLeft size={18} strokeWidth={2.5} />
             </IconButton>
-            <IconButton disabled={!canGoForward} onClick={onGoForward}>
+            <IconButton disabled={!canGoForward} onClick={onGoForward} aria-label="Forward">
               <ChevronRight size={18} strokeWidth={2.5} />
             </IconButton>
             <IconButton
@@ -72,14 +80,14 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
         </div>
 
         <div className="flex items-center gap-1 min-w-[140px] justify-end ml-auto z-10">
-          <IconButton onClick={onNewTab}>
+          <IconButton onClick={onNewTab} aria-label="New tab">
             <Plus size={16} strokeWidth={2.5} />
           </IconButton>
-          <IconButton>
+          <IconButton disabled aria-label="Share (coming soon)">
             <Share size={16} strokeWidth={2} />
           </IconButton>
           <div className="relative" ref={shieldRef}>
-            <IconButton>
+            <IconButton onClick={onShieldClick} active={shieldActive} aria-label="Privacy shield">
               <Shield size={16} strokeWidth={2.5} />
             </IconButton>
           </div>

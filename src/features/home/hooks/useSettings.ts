@@ -16,6 +16,18 @@ interface UseSettingsResult {
   setWallpaperBlur: (blur: boolean) => void;
   adBlockEnabled: boolean;
   setAdBlockEnabled: (enabled: boolean) => void;
+  newTabShowGreeting: boolean;
+  setNewTabShowGreeting: (value: boolean) => void;
+  newTabShowShortcut: boolean;
+  setNewTabShowShortcut: (value: boolean) => void;
+  newTabShowSearch: boolean;
+  setNewTabShowSearch: (value: boolean) => void;
+  newTabShowClock: boolean;
+  setNewTabShowClock: (value: boolean) => void;
+  newTabShowFavorites: boolean;
+  setNewTabShowFavorites: (value: boolean) => void;
+  newTabFavorites: AppSettings['newTabFavorites'];
+  setNewTabFavorites: (value: AppSettings['newTabFavorites']) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -38,6 +50,20 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
   const [wallpaperColor, setWallpaperColor] = useState(defaultSettings.wallpaperColor);
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
   const [adBlockEnabled, setAdBlockEnabled] = useState(defaultSettings.adBlockEnabled);
+  const [newTabShowGreeting, setNewTabShowGreeting] = useState(
+    defaultSettings.newTabShowGreeting
+  );
+  const [newTabShowShortcut, setNewTabShowShortcut] = useState(
+    defaultSettings.newTabShowShortcut
+  );
+  const [newTabShowSearch, setNewTabShowSearch] = useState(
+    defaultSettings.newTabShowSearch
+  );
+  const [newTabShowClock, setNewTabShowClock] = useState(defaultSettings.newTabShowClock);
+  const [newTabShowFavorites, setNewTabShowFavorites] = useState(
+    defaultSettings.newTabShowFavorites
+  );
+  const [newTabFavorites, setNewTabFavorites] = useState(defaultSettings.newTabFavorites);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -50,7 +76,13 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaper,
       wallpaperColor,
       wallpaperBlur,
-      adBlockEnabled
+      adBlockEnabled,
+      newTabShowGreeting,
+      newTabShowShortcut,
+      newTabShowSearch,
+      newTabShowClock,
+      newTabShowFavorites,
+      newTabFavorites
     }),
     [
       searchEngine,
@@ -59,11 +91,20 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaper,
       wallpaperColor,
       wallpaperBlur,
-      adBlockEnabled
+      adBlockEnabled,
+      newTabShowGreeting,
+      newTabShowShortcut,
+      newTabShowSearch,
+      newTabShowClock,
+      newTabShowFavorites,
+      newTabFavorites
     ]
   );
 
   const hasUnsavedChanges = useMemo(() => {
+    const favoritesChanged =
+      JSON.stringify(savedSettings.newTabFavorites) !==
+      JSON.stringify(currentSettings.newTabFavorites);
     return (
       savedSettings.theme !== currentSettings.theme ||
       savedSettings.searchEngine !== currentSettings.searchEngine ||
@@ -72,7 +113,13 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.wallpaper !== currentSettings.wallpaper ||
       savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
       savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur ||
-      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled
+      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled ||
+      savedSettings.newTabShowGreeting !== currentSettings.newTabShowGreeting ||
+      savedSettings.newTabShowShortcut !== currentSettings.newTabShowShortcut ||
+      savedSettings.newTabShowSearch !== currentSettings.newTabShowSearch ||
+      savedSettings.newTabShowClock !== currentSettings.newTabShowClock ||
+      savedSettings.newTabShowFavorites !== currentSettings.newTabShowFavorites ||
+      favoritesChanged
     );
   }, [currentSettings, savedSettings]);
 
@@ -95,6 +142,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       '--ui-newtab-text',
       '--ui-newtab-text-muted',
       '--ui-newtab-text-shadow',
+      '--ui-overlay-text-shadow',
       '--ui-accent',
       '--ui-accent-contrast'
     ];
@@ -156,6 +204,10 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
         '--ui-newtab-text-shadow',
         isDark ? '0 1px 12px rgba(0, 0, 0, 0.55)' : '0 1px 10px rgba(255, 255, 255, 0.35)'
       );
+      root.style.setProperty(
+        '--ui-overlay-text-shadow',
+        isDark ? '0 1px 10px rgba(0, 0, 0, 0.55)' : '0 1px 8px rgba(255, 255, 255, 0.35)'
+      );
 
       if (avg) {
         const liftTarget = isDark ? 255 : 0;
@@ -206,6 +258,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-newtab-text', '#F5F2ED');
       root.style.setProperty('--ui-newtab-text-muted', 'rgba(230, 227, 222, 0.78)');
       root.style.setProperty('--ui-newtab-text-shadow', '0 1px 12px rgba(0, 0, 0, 0.55)');
+      root.style.setProperty('--ui-overlay-text-shadow', '0 1px 10px rgba(0, 0, 0, 0.55)');
       root.style.setProperty('--ui-accent', '#C2A67E');
       root.style.setProperty('--ui-accent-contrast', '#1E1D1B');
       return;
@@ -293,6 +346,12 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaperColor(settings.wallpaperColor);
     setWallpaperBlur(settings.wallpaperBlur);
     setAdBlockEnabled(settings.adBlockEnabled);
+    setNewTabShowGreeting(settings.newTabShowGreeting);
+    setNewTabShowShortcut(settings.newTabShowShortcut);
+    setNewTabShowSearch(settings.newTabShowSearch);
+    setNewTabShowClock(settings.newTabShowClock);
+    setNewTabShowFavorites(settings.newTabShowFavorites);
+    setNewTabFavorites(settings.newTabFavorites);
   }, []);
 
   useEffect(() => {
@@ -335,6 +394,18 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaperBlur,
     adBlockEnabled,
     setAdBlockEnabled,
+    newTabShowGreeting,
+    setNewTabShowGreeting,
+    newTabShowShortcut,
+    setNewTabShowShortcut,
+    newTabShowSearch,
+    setNewTabShowSearch,
+    newTabShowClock,
+    setNewTabShowClock,
+    newTabShowFavorites,
+    setNewTabShowFavorites,
+    newTabFavorites,
+    setNewTabFavorites,
     currentSettings,
     savedSettings,
     setSavedSettings,

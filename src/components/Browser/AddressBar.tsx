@@ -184,6 +184,8 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   const displayText = inputVal || placeholderText;
   const inputSize = Math.max(1, displayText.length + 1);
   const compactWidth = `calc(${inputSize}ch + 24px)`; // 24px for padding and icon
+  const minCompactWidth = '160px';
+  const maxCompactWidth = '420px';
 
   return (
     <div className="flex-1 flex w-full relative z-20 electron-drag justify-center">
@@ -195,7 +197,11 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               : "max-w-full scale-100"
           }
         `}
-        style={{ width: isFocused ? undefined : compactWidth }}
+        style={{
+          width: isFocused
+            ? undefined
+            : `clamp(${minCompactWidth}, ${compactWidth}, ${maxCompactWidth})`
+        }}
       >
         <form
           onSubmit={handleSubmit}
@@ -212,9 +218,9 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
-                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
-              ) : (
                 <Shield size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+              ) : (
+                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               )}
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { SearchEngine } from '@/lib/types';
 import { IconButton } from '@/components/ui/IconButton';
@@ -36,15 +36,31 @@ export const SettingsPage: React.FC<any> = ({
   onAdBlockEnabledChange,
   searchEngine,
   onSearchEngineChange,
-  customSearchUrl,
-  onCustomSearchUrlChange,
+  newTabShowGreeting,
+  onNewTabShowGreetingChange,
+  newTabShowShortcut,
+  onNewTabShowShortcutChange,
+  newTabShowSearch,
+  onNewTabShowSearchChange,
+  newTabShowClock,
+  onNewTabShowClockChange,
+  newTabShowFavorites,
+  onNewTabShowFavoritesChange,
+  newTabFavorites,
+  onNewTabFavoritesChange,
+  initialSection,
   hasUnsavedChanges,
   isSaving,
   onSave,
   onClose
 }) => {
   const [activeSection, setActiveSection] =
-    useState<SettingsSection>('appearance');
+    useState<SettingsSection>(initialSection ?? 'appearance');
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setActiveSection(initialSection);
+  }, [initialSection]);
 
   return (
     <div className="h-full w-full overflow-hidden">
@@ -107,6 +123,18 @@ export const SettingsPage: React.FC<any> = ({
                   onBackgroundTypeChange={onBackgroundTypeChange}
                   wallpaperBlur={wallpaperBlur}
                   onWallpaperBlurChange={onWallpaperBlurChange}
+                  newTabShowGreeting={newTabShowGreeting}
+                  onNewTabShowGreetingChange={onNewTabShowGreetingChange}
+                  newTabShowShortcut={newTabShowShortcut}
+                  onNewTabShowShortcutChange={onNewTabShowShortcutChange}
+                  newTabShowSearch={newTabShowSearch}
+                  onNewTabShowSearchChange={onNewTabShowSearchChange}
+                  newTabShowClock={newTabShowClock}
+                  onNewTabShowClockChange={onNewTabShowClockChange}
+                  newTabShowFavorites={newTabShowFavorites}
+                  onNewTabShowFavoritesChange={onNewTabShowFavoritesChange}
+                  newTabFavorites={newTabFavorites}
+                  onNewTabFavoritesChange={onNewTabFavoritesChange}
                 />
               )}
 
@@ -114,8 +142,6 @@ export const SettingsPage: React.FC<any> = ({
                 <SearchSettingsSection
                   searchEngine={searchEngine}
                   onSearchEngineChange={onSearchEngineChange}
-                  customSearchUrl={customSearchUrl}
-                  onCustomSearchUrlChange={onCustomSearchUrlChange}
                 />
               )}
 

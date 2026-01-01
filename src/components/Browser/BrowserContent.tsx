@@ -14,6 +14,19 @@ interface BrowserContentProps {
   tabs: Tab[];
   activeTabId: string;
   onTabUpdate: (id: string, patch: Partial<Tab>) => void;
+  onHistoryEntry?: (entry: { url: string; title: string }) => void;
+  historyItems?: Array<{ url: string; title: string; timestamp: number }>;
+  onClearHistory?: () => void;
+  newTabSettings?: {
+    showGreeting: boolean;
+    showShortcut: boolean;
+    showSearch: boolean;
+    showClock: boolean;
+    showFavorites: boolean;
+    favorites: Array<{ title: string; url: string }>;
+  };
+  hideNewTabCustomize?: boolean;
+  hideNewTabPage?: boolean;
   onOpenNewTab?: (url: string) => void;
 }
 
@@ -31,10 +44,26 @@ const isElectronRuntime = () => {
 };
 
 export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentProps>(
-  ({ tabs, activeTabId, onTabUpdate, onOpenNewTab }, ref) => {
+  (
+    {
+      tabs,
+      activeTabId,
+      onTabUpdate,
+      onHistoryEntry,
+      historyItems,
+      onClearHistory,
+      newTabSettings,
+      hideNewTabCustomize,
+      hideNewTabPage,
+      onOpenNewTab
+    },
+    ref
+  ) => {
     const webviewsRef = useRef<Record<string, WebviewTag | null>>({});
     const cleanupRef = useRef<Record<string, (() => void) | undefined>>({});
     const cosmeticsUrlRef = useRef<Record<string, string>>({});
+    const cosmeticsCssKeyRef = useRef<Record<string, string[]>>({});
+    const lastHistoryKeyRef = useRef<Record<string, string>>({});
     const isElectron = useMemo(() => isElectronRuntime(), []);
 
     const activeWebview = useCallback(() => {
@@ -58,11 +87,24 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         if (!window.electronAPI?.getAdblockCosmetics) return;
         if (!url.startsWith('http://') && !url.startsWith('https://')) return;
         if (cosmeticsUrlRef.current[tabId] === url) return;
+
+        const existingKeys = cosmeticsCssKeyRef.current[tabId] ?? [];
+        if (existingKeys.length) {
+          for (const key of existingKeys) {
+            try {
+              await webview.removeInsertedCSS(key);
+            } catch {
+              // Ignore removal failures.
+            }
+          }
+        }
+        cosmeticsCssKeyRef.current[tabId] = [];
         cosmeticsUrlRef.current[tabId] = url;
         try {
           const { styles, scripts } = await window.electronAPI.getAdblockCosmetics(url);
           if (styles?.length) {
-            await webview.insertCSS(styles.join('\n'));
+            const key = await webview.insertCSS(styles.join('\n'));
+            if (key) cosmeticsCssKeyRef.current[tabId] = [key];
           }
           if (scripts?.length) {
             await webview.executeJavaScript(scripts.join('\n'), true);
@@ -82,13 +124,24 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         }
 
         webviewsRef.current[tabId] = el;
-
-        if (!el) return;
+        if (!el) {
+          cosmeticsCssKeyRef.current[tabId] = [];
+          cosmeticsUrlRef.current[tabId] = '';
+          return;
+        }
 
         const handleStart = () => onTabUpdate(tabId, { loading: true });
         const handleStop = () => {
           onTabUpdate(tabId, { loading: false });
           updateNavState(tabId, el);
+          const url = el.getURL?.();
+          if (!url || url.startsWith('browser://')) return;
+          if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+          const title = typeof el.getTitle === 'function' ? el.getTitle() : url;
+          const key = `${url}|${title}`;
+          if (lastHistoryKeyRef.current[tabId] === key) return;
+          lastHistoryKeyRef.current[tabId] = key;
+          onHistoryEntry?.({ url, title: title || url });
         };
         const handleTitle = (event: any) =>
           onTabUpdate(tabId, { title: event?.title || 'New Tab' });
@@ -101,7 +154,10 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           updateNavState(tabId, el);
           if (event?.url) applyCosmetics(tabId, el, event.url);
         };
-        const handleFail = () => onTabUpdate(tabId, { loading: false });
+        const handleFail = () => {
+          onTabUpdate(tabId, { loading: false });
+          updateNavState(tabId, el);
+        };
         const handleDomReady = () => {
           applyCosmetics(tabId, el, el.getURL());
         };
@@ -117,12 +173,14 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           if (typeof event.preventDefault === 'function') event.preventDefault();
           window.dispatchEvent(new CustomEvent('browser-focus-address-bar'));
         };
+        const handleWebviewFocus = () => {
+          window.dispatchEvent(new CustomEvent('browser-webview-focus'));
+        };
         const handleNewWindow = (event: any) => {
           const url = event?.url;
           if (typeof event?.preventDefault === 'function') {
             event.preventDefault();
           }
-          if (window.electronAPI?.onNewWindow) return;
           if (url) onOpenNewTab?.(url);
         };
 
@@ -135,6 +193,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         el.addEventListener('did-fail-load', handleFail);
         el.addEventListener('before-input-event', handleBeforeInput);
         el.addEventListener('dom-ready', handleDomReady);
+        el.addEventListener('focus', handleWebviewFocus);
         el.addEventListener('new-window', handleNewWindow);
 
         cleanupRef.current[tabId] = () => {
@@ -147,10 +206,11 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           el.removeEventListener('did-fail-load', handleFail);
           el.removeEventListener('before-input-event', handleBeforeInput);
           el.removeEventListener('dom-ready', handleDomReady);
+          el.removeEventListener('focus', handleWebviewFocus);
           el.removeEventListener('new-window', handleNewWindow);
         };
       },
-      [applyCosmetics, onOpenNewTab, onTabUpdate, updateNavState]
+      [applyCosmetics, onHistoryEntry, onOpenNewTab, onTabUpdate, updateNavState]
     );
 
     useImperativeHandle(
@@ -189,10 +249,23 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           if (isInternal) {
             if (!shouldShow) return null;
             if (tab.url === 'browser://welcome') {
-              return <NewTabPage key={tab.id} />;
+              if (hideNewTabPage) return null;
+              return (
+                <NewTabPage
+                  key={tab.id}
+                  settings={newTabSettings}
+                  hideCustomize={hideNewTabCustomize}
+                />
+              );
             }
             if (tab.url === 'browser://history') {
-              return <HistoryPage key={tab.id} />;
+              return (
+                <HistoryPage
+                  key={tab.id}
+                  items={historyItems ?? []}
+                  onClear={onClearHistory}
+                />
+              );
             }
             return (
               <div key={tab.id} className="p-10 text-[color:var(--ui-text)]">

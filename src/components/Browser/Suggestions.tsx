@@ -1,12 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { RotateCcw, TrendingUp } from 'lucide-react';
 import { SearchEngine, Tab } from '@/lib/types';
 
 type SuggestionItem = {
   id: string;
   label: string;
   value: string;
+  description?: string;
   hint?: string;
-  type: 'search' | 'url' | 'tab' | 'remote';
+  icon?: React.ReactNode;
+  type: 'search' | 'url' | 'tab' | 'top' | 'remote';
+};
+
+type TopSiteSuggestion = {
+  id: string;
+  label: string;
+  value: string;
+  hint: string;
+  type: 'top';
 };
 
 const SEARCH_ENGINE_LABELS: Record<SearchEngine, string> = {
@@ -16,6 +27,10 @@ const SEARCH_ENGINE_LABELS: Record<SearchEngine, string> = {
   [SearchEngine.BING]: 'Bing',
   [SearchEngine.CUSTOM]: 'Search'
 };
+
+const MAX_SUGGESTIONS = 5;
+const REMOTE_CACHE_TTL = 30_000;
+const REMOTE_CACHE_LIMIT = 50;
 
 const isLikelyUrl = (value: string) => {
   const trimmed = value.trim();
@@ -43,12 +58,26 @@ interface SuggestionsBarProps {
   tabs: Tab[];
   searchEngine: SearchEngine;
   isOpen: boolean;
+  historyItems?: Array<{ url: string; title: string; timestamp: number }>;
+  historySorted: Array<{ url: string; title: string; timestamp: number }>;
+  topSites: TopSiteSuggestion[];
 }
 
-export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngine, isOpen }) => {
+export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
+  tabs,
+  searchEngine,
+  isOpen,
+  historyItems = [],
+  historySorted,
+  topSites
+}) => {
   const [query, setQuery] = useState('');
   const [remoteSuggestions, setRemoteSuggestions] = useState<string[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const remoteCacheRef = useRef<Map<string, { items: string[]; ts: number }>>(new Map());
+  const suggestionsRef = useRef<SuggestionItem[]>([]);
+  const selectedIndexRef = useRef(-1);
+  const isOpenRef = useRef(false);
 
   useEffect(() => {
     const handleInput = (event: Event) => {
@@ -62,8 +91,17 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!isOpen || !trimmed) {
+    if (!isOpen || !trimmed || searchEngine !== SearchEngine.DUCKDUCKGO) {
       setRemoteSuggestions([]);
+      return undefined;
+    }
+
+    const key = trimmed.toLowerCase();
+    const cached = remoteCacheRef.current.get(key);
+    if (cached && Date.now() - cached.ts < REMOTE_CACHE_TTL) {
+      remoteCacheRef.current.delete(key);
+      remoteCacheRef.current.set(key, cached);
+      setRemoteSuggestions(cached.items);
       return undefined;
     }
 
@@ -74,7 +112,14 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
           const unique = Array.from(new Set(items)).filter(
             (item) => item.toLowerCase() !== trimmed.toLowerCase()
           );
-          setRemoteSuggestions(unique.slice(0, 6));
+          const nextItems = unique.slice(0, 6);
+          remoteCacheRef.current.set(key, { items: nextItems, ts: Date.now() });
+          while (remoteCacheRef.current.size > REMOTE_CACHE_LIMIT) {
+            const oldestKey = remoteCacheRef.current.keys().next().value;
+            if (!oldestKey) break;
+            remoteCacheRef.current.delete(oldestKey);
+          }
+          setRemoteSuggestions(nextItems);
         })
         .catch(() => {
           if (!controller.signal.aborted) setRemoteSuggestions([]);
@@ -85,7 +130,15 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [isOpen, query]);
+  }, [isOpen, query, searchEngine]);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    selectedIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
 
   const suggestions = useMemo(() => {
     const trimmed = query.trim();
@@ -122,16 +175,57 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
           tab.title.toLowerCase().includes(lower) || tab.url.toLowerCase().includes(lower)
         );
       })
-      .slice(0, trimmed ? 4 : 6)
+      .slice(0, trimmed ? 4 : 3)
       .map((tab) => ({
         id: `tab-${tab.id}`,
         label: tab.title || tab.url,
         value: tab.url,
         hint: 'Open tab',
+        icon: tab.favicon ? (
+          <img
+            src={tab.favicon}
+            alt=""
+            className="h-4 w-4 rounded-sm object-contain"
+            loading="lazy"
+          />
+        ) : undefined,
         type: 'tab' as const
       }));
 
     items.push(...tabMatches);
+
+    if (!trimmed) {
+      items.push(
+        ...topSites.map((item) => ({
+          ...item,
+          icon: <TrendingUp size={14} strokeWidth={2.2} />
+        }))
+      );
+    }
+
+    const historySource = trimmed
+      ? historyItems
+      : historySorted;
+
+    const historyMatches = historySource
+      .filter((item) => !item.url.startsWith('browser://'))
+      .filter((item) => {
+        if (!trimmed) return true;
+        return (
+          item.title.toLowerCase().includes(lower) || item.url.toLowerCase().includes(lower)
+        );
+      })
+      .slice(0, trimmed ? 4 : 3)
+      .map((item, index) => ({
+        id: `history-${index}-${item.url}`,
+        label: item.title || item.url,
+        value: item.url,
+        hint: 'History',
+        icon: <RotateCcw size={14} strokeWidth={2.4} />,
+        type: 'url' as const
+      }));
+
+    items.push(...historyMatches);
 
     if (trimmed) {
       remoteSuggestions.forEach((suggestion, index) => {
@@ -147,11 +241,15 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
 
     const deduped = new Map<string, SuggestionItem>();
     items.forEach((item) => {
-      const key = `${item.type}-${item.value.toLowerCase()}`;
+      const key = item.value.toLowerCase();
       if (!deduped.has(key)) deduped.set(key, item);
     });
-    return Array.from(deduped.values());
-  }, [query, remoteSuggestions, searchEngine, tabs]);
+    return Array.from(deduped.values()).slice(0, MAX_SUGGESTIONS);
+  }, [query, remoteSuggestions, searchEngine, tabs, historyItems, historySorted, topSites]);
+
+  useEffect(() => {
+    suggestionsRef.current = suggestions;
+  }, [suggestions]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -164,20 +262,21 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isOpen || suggestions.length === 0) return;
+      if (!isOpenRef.current) return;
+      const items = suggestionsRef.current;
+      if (items.length === 0) return;
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % suggestions.length);
+        setSelectedIndex((prev) => (prev + 1) % items.length);
       }
       if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setSelectedIndex((prev) =>
-          prev <= 0 ? suggestions.length - 1 : prev - 1
-        );
+        setSelectedIndex((prev) => (prev <= 0 ? items.length - 1 : prev - 1));
       }
-      if (event.key === 'Enter' && selectedIndex >= 0) {
+      if (event.key === 'Enter' && selectedIndexRef.current >= 0) {
         event.preventDefault();
-        const selected = suggestions[selectedIndex];
+        const selected = items[selectedIndexRef.current];
+        if (!selected) return;
         window.dispatchEvent(
           new CustomEvent('browser-suggestion-commit', {
             detail: { value: selected.value }
@@ -191,7 +290,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isOpen, selectedIndex, suggestions]);
+  }, []);
 
   if (!isOpen || suggestions.length === 0) {
     return null;
@@ -200,7 +299,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
   return (
   <div className="pointer-events-auto w-full">
     <div className="w-full rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
-      <div className="flex flex-col py-1.5">
+      <div className="flex flex-col py-1.5 px-1.5">
         {suggestions.map((item, index) => {
           const isActive = index === selectedIndex;
           return (
@@ -216,7 +315,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({ tabs, searchEngi
                   })
                 )
               }
-              className={`group relative flex w-full items-center justify-between gap-3 px-4 py-2.5 mx-1.5 rounded-lg text-left transition-all duration-150 ${
+              className={`group relative flex w-full box-border items-center justify-between gap-3 pl-4 pr-5 py-2.5 rounded-lg text-left transition-all duration-150 ${
                 isActive
                   ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] shadow-sm'
                   : 'text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] hover:shadow-md hover:ring-1 hover:ring-[color:var(--ui-border)]'

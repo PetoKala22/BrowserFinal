@@ -8,7 +8,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings),
   setAdBlockEnabled: (enabled) => ipcRenderer.invoke('adblock:set-enabled', enabled),
+  getAdblockStats: () => ipcRenderer.invoke('adblock:get-stats'),
   getAdblockCosmetics: (url) => ipcRenderer.invoke('adblock:get-cosmetics', url),
+  loadHistory: () => ipcRenderer.invoke('history:load'),
+  addHistory: (entry) => ipcRenderer.invoke('history:add', entry),
+  clearHistory: () => ipcRenderer.invoke('history:clear'),
+  onAdblockStats: (handler) => {
+    const listener = (_event, stats) => handler(stats);
+    ipcRenderer.on('adblock:stats', listener);
+    return () => ipcRenderer.removeListener('adblock:stats', listener);
+  },
   onNewWindow: (handler) => {
     const listener = (_event, url) => handler(url);
     ipcRenderer.on('tabs:new-window', listener);

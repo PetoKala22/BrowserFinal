@@ -18,6 +18,27 @@ let mainWindow;
 let adblockEngine;
 let adBlockEnabled = true;
 let adblockAttached = false;
+let adblockStats = { blocked: 0 };
+const HISTORY_LIMIT = 300;
+
+const getHistoryPath = () => path.join(app.getPath('userData'), 'history.json');
+
+const readHistory = async () => {
+  try {
+    const raw = await fs.readFile(getHistoryPath(), 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    console.error('Failed to read history:', error);
+    return [];
+  }
+};
+
+const writeHistory = async (items) => {
+  const payload = JSON.stringify(items, null, 2);
+  await fs.writeFile(getHistoryPath(), payload, 'utf-8');
+};
 
 const getFilterListPaths = async () => {
   const filtersDir = path.join(__dirname, 'filters');
@@ -79,6 +100,10 @@ const attachAdblocker = () => {
       sourceUrl
     });
     const { match } = adblockEngine.match(request);
+    if (match) {
+      adblockStats.blocked += 1;
+      mainWindow?.webContents.send('adblock:stats', { blocked: adblockStats.blocked });
+    }
     callback({ cancel: Boolean(match) });
   });
 };
@@ -191,6 +216,10 @@ const registerIpc = () => {
     return adBlockEnabled;
   });
 
+  ipcMain.handle('adblock:get-stats', () => {
+    return { blocked: adblockStats.blocked };
+  });
+
   ipcMain.handle('adblock:get-cosmetics', (_event, url) => {
     if (!adBlockEnabled || !adblockEngine || typeof url !== 'string') {
       return { styles: [], scripts: [] };
@@ -209,6 +238,35 @@ const registerIpc = () => {
     } catch {
       return { styles: [], scripts: [] };
     }
+  });
+
+  ipcMain.handle('history:load', async () => {
+    return readHistory();
+  });
+
+  ipcMain.handle('history:add', async (_event, entry) => {
+    if (!entry || typeof entry.url !== 'string') return readHistory();
+    const url = entry.url.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return readHistory();
+    }
+    const title = typeof entry.title === 'string' ? entry.title : url;
+    const timestamp =
+      typeof entry.timestamp === 'number' && Number.isFinite(entry.timestamp)
+        ? entry.timestamp
+        : Date.now();
+    const nextEntry = { url, title, timestamp };
+    const history = await readHistory();
+    const deduped = history.filter((item) => item?.url !== url);
+    deduped.unshift(nextEntry);
+    const trimmed = deduped.slice(0, HISTORY_LIMIT);
+    await writeHistory(trimmed);
+    return trimmed;
+  });
+
+  ipcMain.handle('history:clear', async () => {
+    await writeHistory([]);
+    return [];
   });
 
 };

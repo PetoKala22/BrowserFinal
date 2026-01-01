@@ -4,9 +4,13 @@ import { IconButton } from '@/components/ui/IconButton';
 
 interface WallpaperNoticeProps {
   onOpenSettings?: () => void;
+  isEnabled?: boolean;
 }
 
-export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings }) => {
+export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({
+  onOpenSettings,
+  isEnabled = true
+}) => {
   const [isMounted, setIsMounted] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -17,7 +21,14 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Delay showing the notice by 5 seconds
+    if (!isEnabled) {
+      setIsMounted(false);
+      setIsEntering(false);
+      setIsClosing(false);
+      setIsHidden(false);
+      return undefined;
+    }
+
     showTimerRef.current = window.setTimeout(() => {
       setIsMounted(true);
 
@@ -38,7 +49,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, []);
+  }, [isEnabled]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -52,7 +63,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
     handleClose();
   };
 
-  if (!isMounted || isHidden) {
+  if (!isEnabled || !isMounted || isHidden) {
     return null;
   }
 
@@ -61,7 +72,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
       className={`pointer-events-auto w-[320px] overflow-hidden rounded-3xl
         border border-[color:var(--ui-border)]
         bg-[color:var(--ui-surface)]
-        shadow-lg backdrop-blur-xl
+        shadow-xl backdrop-blur-xl
         transition-[transform,opacity] duration-300
         ${
           isClosing
