@@ -34,6 +34,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
   ({ tabs, activeTabId, onTabUpdate, onOpenNewTab }, ref) => {
     const webviewsRef = useRef<Record<string, WebviewTag | null>>({});
     const cleanupRef = useRef<Record<string, (() => void) | undefined>>({});
+    const cosmeticsUrlRef = useRef<Record<string, string>>({});
     const isElectron = useMemo(() => isElectronRuntime(), []);
 
     const activeWebview = useCallback(() => {
@@ -49,6 +50,28 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         });
       },
       [onTabUpdate]
+    );
+
+    const applyCosmetics = useCallback(
+      async (tabId: string, webview: WebviewTag | null, url?: string) => {
+        if (!webview || !url) return;
+        if (!window.electronAPI?.getAdblockCosmetics) return;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) return;
+        if (cosmeticsUrlRef.current[tabId] === url) return;
+        cosmeticsUrlRef.current[tabId] = url;
+        try {
+          const { styles, scripts } = await window.electronAPI.getAdblockCosmetics(url);
+          if (styles?.length) {
+            await webview.insertCSS(styles.join('\n'));
+          }
+          if (scripts?.length) {
+            await webview.executeJavaScript(scripts.join('\n'), true);
+          }
+        } catch {
+          // Ignore cosmetic injection failures.
+        }
+      },
+      []
     );
 
     const attachWebview = useCallback(
@@ -76,13 +99,30 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         const handleNavigate = (event: any) => {
           if (event?.url) onTabUpdate(tabId, { url: event.url });
           updateNavState(tabId, el);
+          if (event?.url) applyCosmetics(tabId, el, event.url);
         };
         const handleFail = () => onTabUpdate(tabId, { loading: false });
+        const handleDomReady = () => {
+          applyCosmetics(tabId, el, el.getURL());
+        };
+        const handleBeforeInput = (event: any) => {
+          const input = event?.input || event?.detail?.input || event;
+          if (!input) return;
+          const key = String(input.key || input.code || '').toLowerCase();
+          if (key !== 'l' && key !== 'keyl') return;
+          const hasModifier = Boolean(
+            input.control || input.meta || input.ctrlKey || input.metaKey
+          );
+          if (!hasModifier) return;
+          if (typeof event.preventDefault === 'function') event.preventDefault();
+          window.dispatchEvent(new CustomEvent('browser-focus-address-bar'));
+        };
         const handleNewWindow = (event: any) => {
           const url = event?.url;
           if (typeof event?.preventDefault === 'function') {
             event.preventDefault();
           }
+          if (window.electronAPI?.onNewWindow) return;
           if (url) onOpenNewTab?.(url);
         };
 
@@ -93,6 +133,8 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
         el.addEventListener('did-navigate', handleNavigate);
         el.addEventListener('did-navigate-in-page', handleNavigate);
         el.addEventListener('did-fail-load', handleFail);
+        el.addEventListener('before-input-event', handleBeforeInput);
+        el.addEventListener('dom-ready', handleDomReady);
         el.addEventListener('new-window', handleNewWindow);
 
         cleanupRef.current[tabId] = () => {
@@ -103,10 +145,12 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
           el.removeEventListener('did-navigate', handleNavigate);
           el.removeEventListener('did-navigate-in-page', handleNavigate);
           el.removeEventListener('did-fail-load', handleFail);
+          el.removeEventListener('before-input-event', handleBeforeInput);
+          el.removeEventListener('dom-ready', handleDomReady);
           el.removeEventListener('new-window', handleNewWindow);
         };
       },
-      [onOpenNewTab, onTabUpdate, updateNavState]
+      [applyCosmetics, onOpenNewTab, onTabUpdate, updateNavState]
     );
 
     useImperativeHandle(

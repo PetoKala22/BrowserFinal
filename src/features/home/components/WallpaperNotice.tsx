@@ -47,6 +47,11 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
     }, 280);
   };
 
+  const handleOpenSettings = () => {
+    onOpenSettings?.();
+    handleClose();
+  };
+
   if (!isMounted || isHidden) {
     return null;
   }
@@ -56,7 +61,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
       className={`pointer-events-auto w-[320px] overflow-hidden rounded-3xl
         border border-[color:var(--ui-border)]
         bg-[color:var(--ui-surface)]
-        shadow-2xl backdrop-blur-xl
+        shadow-lg backdrop-blur-xl
         transition-[transform,opacity] duration-300
         ${
           isClosing
@@ -81,7 +86,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
         <IconButton
           onClick={handleClose}
           aria-label="Close wallpaper notice"
-          className="absolute right-3 top-3 bg-[color:var(--ui-surface-strong)]/70 backdrop-blur"
+          className="absolute right-3 top-3 bg-[color:var(--ui-surface-muted)]/70 backdrop-blur"
         >
           <X size={14} />
         </IconButton>
@@ -98,7 +103,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({ onOpenSettings
 
         <button
           type="button"
-          onClick={onOpenSettings}
+          onClick={handleOpenSettings}
           className="group w-full rounded-xl bg-[color:var(--ui-accent)] px-5 py-3
             text-sm font-semibold text-[color:var(--ui-accent-contrast)]
             shadow-sm transition hover:brightness-95 active:scale-[0.98]"

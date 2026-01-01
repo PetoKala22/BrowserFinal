@@ -38,4 +38,5 @@ export interface AppSettings {
   wallpaper: string;
   wallpaperColor: string;
   wallpaperBlur: boolean;
+  adBlockEnabled: boolean;
 }

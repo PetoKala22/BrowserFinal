@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Shield, Search } from "lucide-react";
 import { SearchEngine } from "@/lib/types";
 
@@ -42,26 +42,64 @@ export const AddressBar: React.FC<AddressBarProps> = ({
     }
   }, [displayDomain, isFocused, isWelcome]);
 
-  const handleFocus = () => {
+  const focusInput = useCallback(() => {
     setIsFocused(true);
-
-    // When focusing, show the full URL
-    setInputVal(isWelcome ? "" : url);
+    const focusValue = isWelcome ? "" : url;
+    setInputVal(focusValue);
+    window.dispatchEvent(
+      new CustomEvent("browser-addressbar-input", { detail: { value: focusValue } })
+    );
 
     const input = inputRef.current;
     if (!input) return;
 
-    // Wait until after value is applied & rendered, then select
+    input.focus();
     requestAnimationFrame(() => {
       input.select();
     });
+  }, [isWelcome, url]);
+
+  const handleFocus = () => {
+    window.dispatchEvent(new CustomEvent("browser-addressbar-focus"));
+    focusInput();
   };
 
   const handleBlur = () => {
     setIsFocused(false);
+    window.dispatchEvent(new CustomEvent("browser-addressbar-blur"));
   };
 
-  const getSearchUrl = (query: string) => {
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (event.key.toLowerCase() !== "l") return;
+      event.preventDefault();
+      focusInput();
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [focusInput]);
+
+  useEffect(() => {
+    const handleExternalFocus = () => {
+      focusInput();
+    };
+
+    window.addEventListener("browser-focus-address-bar", handleExternalFocus);
+    return () =>
+      window.removeEventListener("browser-focus-address-bar", handleExternalFocus);
+  }, [focusInput]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.onFocusAddressBar) return undefined;
+    return window.electronAPI.onFocusAddressBar(() => {
+      focusInput();
+    });
+  }, [focusInput]);
+
+  const getSearchUrl = useCallback((query: string) => {
     const encoded = encodeURIComponent(query);
     switch (searchEngine) {
       case SearchEngine.YAHOO:
@@ -82,22 +120,63 @@ export const AddressBar: React.FC<AddressBarProps> = ({
       default:
         return `https://www.google.com/search?q=${encoded}`;
     }
-  };
+  }, [customSearchUrl, searchEngine]);
+
+  const normalizeTarget = useCallback(
+    (value: string) => {
+      let target = value.trim();
+      if (!target) return "";
+
+      if (!target.startsWith("http") && !target.startsWith("browser://")) {
+        if (target.includes(".") && !target.includes(" ")) {
+          target = `https://${target}`;
+        } else {
+          target = getSearchUrl(target);
+        }
+      }
+
+      return target;
+    },
+    [getSearchUrl]
+  );
+
+  useEffect(() => {
+    const handleSuggestionCommit = (event: Event) => {
+      const custom = event as CustomEvent<{ value?: string }>;
+      const value = custom.detail?.value ?? "";
+      if (!value) return;
+      setInputVal(value);
+      const target = normalizeTarget(value);
+      if (!target) return;
+      onNavigate(target);
+      inputRef.current?.blur();
+    };
+
+    window.addEventListener(
+      "browser-suggestion-commit",
+      handleSuggestionCommit as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "browser-suggestion-commit",
+        handleSuggestionCommit as EventListener
+      );
+  }, [normalizeTarget, onNavigate]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let target = inputVal.trim();
-
-    if (!target.startsWith("http") && !target.startsWith("browser://")) {
-      if (target.includes(".") && !target.includes(" ")) {
-        target = `https://${target}`;
-      } else {
-        target = getSearchUrl(target);
-      }
-    }
-
+    const target = normalizeTarget(inputVal);
+    if (!target) return;
     onNavigate(target);
     inputRef.current?.blur();
+  };
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setInputVal(value);
+    window.dispatchEvent(
+      new CustomEvent("browser-addressbar-input", { detail: { value } })
+    );
   };
 
   const secure = url.startsWith("https") || isWelcome;
@@ -112,7 +191,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
         className={`relative flex justify-center transition-[width,transform,filter] duration-200 ease-in-out
           ${
             isFocused
-              ? "w-full max-w-2xl scale-100 drop-shadow-md"
+              ? "w-full max-w-5xl scale-100 drop-shadow-md"
               : "max-w-full scale-100"
           }
         `}
@@ -123,12 +202,13 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative h-full w-full"
         >
           <div
-            className={`relative flex items-center w-full h-8 rounded-lg overflow-hidden transition-all duration-300
+            className={`relative flex items-center w-full h-8 overflow-hidden transition-all duration-300
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
                   : "bg-[color:var(--ui-surface-subtle)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
-              }`}
+              }
+              rounded-lg`}
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
@@ -142,9 +222,9 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               ref={inputRef}
               type="text"
               size={isFocused ? undefined : inputSize}
-              className="w-full h-full bg-transparent border-none outline-none text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 text-left"
+              className="w-full h-full bg-transparent border-none outline-none text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 pr-3 text-left"
               value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
+              onChange={handleChange}
               onFocus={handleFocus}
               onBlur={handleBlur}
               placeholder={placeholderText}
@@ -159,6 +239,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               />
             )}
           </div>
+
         </form>
       </div>
     </div>

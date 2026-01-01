@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BrowserContent, BrowserContentHandle } from '@/components/Browser/BrowserContent';
 import { HistoryPage } from '@/components/Browser/HistoryPage';
+import { AddressBar } from '@/components/Browser/AddressBar';
 import { SettingsPage } from '@/components/Browser/SettingsPage';
 import { TabBar } from '@/components/Browser/TabBar';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
+import { SuggestionsBar } from '@/components/Browser/Suggestions';
 import { AppSettings, SearchEngine, Tab, Theme } from '@/lib/types';
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
 import { useSettings } from '@/features/home/hooks/useSettings';
 import { WallpaperNotice } from '@/features/home/components/WallpaperNotice';
+import { AdBlockWidget } from '@/features/home/components/AdBlockWidget';
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: Theme.SYSTEM,
@@ -18,7 +21,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   backgroundType: 'wallpaper',
   wallpaper: '',
   wallpaperColor: '',
-  wallpaperBlur: false
+  wallpaperBlur: false,
+  adBlockEnabled: true
 };
 
 const isInternalUrl = (url: string) => url.startsWith('browser://');
@@ -27,11 +31,13 @@ const Home: React.FC = () => {
   const [tabs, setTabs] = useState<Tab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState<string>(INITIAL_TABS[0].id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [addressBarFocused, setAddressBarFocused] = useState(false);
   const [lastExternalUrlById, setLastExternalUrlById] = useState<Record<string, string>>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmUnsavedOpen, setConfirmUnsavedOpen] = useState(false);
   const [pendingSettingsAction, setPendingSettingsAction] = useState<(() => void) | null>(null);
+  const [shieldRect, setShieldRect] = useState<DOMRect | null>(null);
   const browserRef = useRef<BrowserContentHandle>(null);
 
   const {
@@ -47,6 +53,8 @@ const Home: React.FC = () => {
     setWallpaperColor,
     wallpaperBlur,
     setWallpaperBlur,
+    adBlockEnabled,
+    setAdBlockEnabled,
     savedSettings,
     setSavedSettings,
     hasUnsavedChanges,
@@ -191,6 +199,19 @@ const Home: React.FC = () => {
     return window.electronAPI.onNewWindow(handleOpenNewTab);
   }, [handleOpenNewTab]);
 
+  useEffect(() => {
+    const handleFocus = () => setAddressBarFocused(true);
+    const handleBlur = () => setAddressBarFocused(false);
+
+    window.addEventListener('browser-addressbar-focus', handleFocus);
+    window.addEventListener('browser-addressbar-blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('browser-addressbar-focus', handleFocus);
+      window.removeEventListener('browser-addressbar-blur', handleBlur);
+    };
+  }, []);
+
   const handleCloseTab = useCallback(
     (id: string, event: React.MouseEvent) => {
       event.stopPropagation();
@@ -218,6 +239,14 @@ const Home: React.FC = () => {
   const handleGoForward = useCallback(() => browserRef.current?.goForward(), []);
   const handleReload = useCallback(() => browserRef.current?.reload(), []);
   const handleStop = useCallback(() => browserRef.current?.stop(), []);
+  const handleToggleAdBlock = useCallback(
+    () => setAdBlockEnabled(!adBlockEnabled),
+    [adBlockEnabled, setAdBlockEnabled]
+  );
+
+  const handleShieldLayout = useCallback((rect: DOMRect) => {
+    setShieldRect(rect);
+  }, []);
 
   const handleDiscardChanges = useCallback(() => {
     applySettings(savedSettings);
@@ -267,16 +296,25 @@ const Home: React.FC = () => {
           canGoForward={canGoForward}
           onGoBack={handleGoBack}
           onGoForward={handleGoForward}
-          address={activeTab.url}
-          onNavigate={handleNavigate}
           onReload={handleReload}
           onStop={handleStop}
           loading={activeTab.loading}
-          searchEngine={searchEngine}
-          customSearchUrl={customSearchUrl}
           onNewTab={handleNewTab}
+          adBlockEnabled={adBlockEnabled}
+          onToggleAdBlock={handleToggleAdBlock}
+          onShieldLayout={handleShieldLayout}
         />
-
+        <div className="absolute top-0 left-0 right-0 z-[60] h-9 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto w-[440px]">
+            <AddressBar
+              url={activeTab.url}
+              onNavigate={handleNavigate}
+              loading={activeTab.loading}
+              searchEngine={searchEngine}
+              customSearchUrl={customSearchUrl}
+            />
+          </div>
+        </div>
         <div
           className={`electron-no-drag bg-transparent overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
             tabs.length > 1
@@ -331,6 +369,8 @@ const Home: React.FC = () => {
                 onBackgroundTypeChange={setBackgroundType}
                 wallpaperBlur={wallpaperBlur}
                 onWallpaperBlurChange={setWallpaperBlur}
+                adBlockEnabled={adBlockEnabled}
+                onAdBlockEnabledChange={setAdBlockEnabled}
                 searchEngine={searchEngine}
                 onSearchEngineChange={setSearchEngine}
                 customSearchUrl={customSearchUrl}
@@ -345,6 +385,31 @@ const Home: React.FC = () => {
         </main>
 
       </div>
+
+      <div
+        className={`electron-no-drag absolute top-9 left-0 right-0 z-[65] flex justify-center pointer-events-none transition-[opacity,transform] duration-200 ease-in-out ${
+          addressBarFocused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
+        }`}
+      >
+        <div className="w-[440px] pointer-events-auto">
+          <SuggestionsBar tabs={tabs} searchEngine={searchEngine} isOpen={addressBarFocused} />
+        </div>
+      </div>
+
+      {shieldRect && (
+        <div
+          className="electron-no-drag absolute z-[70] pointer-events-none"
+          style={{
+            top: Math.round(shieldRect.bottom + 8),
+            left: Math.round(shieldRect.left + shieldRect.width / 2 - 112)
+          }}
+        >
+          <AdBlockWidget
+            adBlockEnabled={adBlockEnabled}
+            onToggleAdBlock={handleToggleAdBlock}
+          />
+        </div>
+      )}
 
       <div className="electron-no-drag absolute bottom-6 right-6 z-50">
         <WallpaperNotice onOpenSettings={handleOpenSettings} />

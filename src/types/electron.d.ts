@@ -11,7 +11,10 @@ declare global {
     isMaximized: () => Promise<boolean>;
     loadSettings: () => Promise<AppSettings | null>;
     saveSettings: (settings: AppSettings) => Promise<void>;
+    setAdBlockEnabled: (enabled: boolean) => Promise<boolean>;
+    getAdblockCosmetics: (url: string) => Promise<{ styles: string[]; scripts: string[] }>;
     onNewWindow: (handler: (url: string) => void) => () => void;
+    onFocusAddressBar: (handler: () => void) => () => void;
   }
 
   interface Window {
@@ -27,6 +30,8 @@ declare global {
     goForward: () => void;
     reload: () => void;
     stop: () => void;
+    insertCSS: (css: string) => Promise<string>;
+    executeJavaScript: (code: string, userGesture?: boolean) => Promise<any>;
   }
 }
 

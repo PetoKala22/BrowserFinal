@@ -14,6 +14,8 @@ interface UseSettingsResult {
   setWallpaperColor: (color: string) => void;
   wallpaperBlur: boolean;
   setWallpaperBlur: (blur: boolean) => void;
+  adBlockEnabled: boolean;
+  setAdBlockEnabled: (enabled: boolean) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -35,6 +37,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
   const [wallpaper, setWallpaper] = useState(defaultSettings.wallpaper);
   const [wallpaperColor, setWallpaperColor] = useState(defaultSettings.wallpaperColor);
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
+  const [adBlockEnabled, setAdBlockEnabled] = useState(defaultSettings.adBlockEnabled);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -46,9 +49,18 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       backgroundType,
       wallpaper,
       wallpaperColor,
-      wallpaperBlur
+      wallpaperBlur,
+      adBlockEnabled
     }),
-    [searchEngine, customSearchUrl, backgroundType, wallpaper, wallpaperColor, wallpaperBlur]
+    [
+      searchEngine,
+      customSearchUrl,
+      backgroundType,
+      wallpaper,
+      wallpaperColor,
+      wallpaperBlur,
+      adBlockEnabled
+    ]
   );
 
   const hasUnsavedChanges = useMemo(() => {
@@ -59,7 +71,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.backgroundType !== currentSettings.backgroundType ||
       savedSettings.wallpaper !== currentSettings.wallpaper ||
       savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
-      savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur
+      savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur ||
+      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled
     );
   }, [currentSettings, savedSettings]);
 
@@ -79,6 +92,9 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       '--ui-text',
       '--ui-text-muted',
       '--ui-text-subtle',
+      '--ui-newtab-text',
+      '--ui-newtab-text-muted',
+      '--ui-newtab-text-shadow',
       '--ui-accent',
       '--ui-accent-contrast'
     ];
@@ -131,6 +147,15 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-text', isDark ? '#f8fafc' : '#0f172a');
       root.style.setProperty('--ui-text-muted', isDark ? '#cbd5e1' : '#475569');
       root.style.setProperty('--ui-text-subtle', isDark ? '#94a3b8' : '#64748b');
+      root.style.setProperty('--ui-newtab-text', isDark ? '#f8fafc' : '#0f172a');
+      root.style.setProperty(
+        '--ui-newtab-text-muted',
+        isDark ? 'rgba(226, 232, 240, 0.85)' : 'rgba(15, 23, 42, 0.78)'
+      );
+      root.style.setProperty(
+        '--ui-newtab-text-shadow',
+        isDark ? '0 1px 12px rgba(0, 0, 0, 0.55)' : '0 1px 10px rgba(255, 255, 255, 0.35)'
+      );
 
       if (avg) {
         const liftTarget = isDark ? 255 : 0;
@@ -178,6 +203,9 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-text', '#E6E3DE');
       root.style.setProperty('--ui-text-muted', '#B7B3AC');
       root.style.setProperty('--ui-text-subtle', '#8C8882');
+      root.style.setProperty('--ui-newtab-text', '#F5F2ED');
+      root.style.setProperty('--ui-newtab-text-muted', 'rgba(230, 227, 222, 0.78)');
+      root.style.setProperty('--ui-newtab-text-shadow', '0 1px 12px rgba(0, 0, 0, 0.55)');
       root.style.setProperty('--ui-accent', '#C2A67E');
       root.style.setProperty('--ui-accent-contrast', '#1E1D1B');
       return;
@@ -251,6 +279,11 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     };
   }, [theme, backgroundType, wallpaper, wallpaperColor]);
 
+  useEffect(() => {
+    if (!window.electronAPI?.setAdBlockEnabled) return;
+    window.electronAPI.setAdBlockEnabled(adBlockEnabled).catch(() => undefined);
+  }, [adBlockEnabled]);
+
   const applySettings = useCallback((settings: AppSettings) => {
     setTheme(Theme.SYSTEM);
     setSearchEngine(settings.searchEngine);
@@ -259,6 +292,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaper(settings.wallpaper);
     setWallpaperColor(settings.wallpaperColor);
     setWallpaperBlur(settings.wallpaperBlur);
+    setAdBlockEnabled(settings.adBlockEnabled);
   }, []);
 
   useEffect(() => {
@@ -299,6 +333,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaperColor,
     wallpaperBlur,
     setWallpaperBlur,
+    adBlockEnabled,
+    setAdBlockEnabled,
     currentSettings,
     savedSettings,
     setSavedSettings,

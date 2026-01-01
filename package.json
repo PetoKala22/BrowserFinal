@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "@ghostery/adblocker": "^2.13.2",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -36,6 +37,7 @@
   },
   "build": {
     "appId": "com.example.safariesquebrowserui",
+    "icon": "src/assets/AppIcon.ico",
     "files": [
       "dist/**/*",
       "electron/**/*",

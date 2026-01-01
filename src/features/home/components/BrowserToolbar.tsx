@@ -1,9 +1,7 @@
-import React, { memo } from 'react';
-import { ChevronLeft, ChevronRight, PanelLeft, Plus, RotateCw, Share, X } from 'lucide-react';
-import { AddressBar } from '@/components/Browser/AddressBar';
+import React, { memo, useLayoutEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, PanelLeft, Plus, RotateCw, Share, X, Shield } from 'lucide-react';
 import { WindowControls } from '@/components/Browser/WindowControls';
 import { IconButton } from '@/components/ui/IconButton';
-import { SearchEngine } from '@/lib/types';
 
 interface BrowserToolbarProps {
   sidebarOpen: boolean;
@@ -12,14 +10,13 @@ interface BrowserToolbarProps {
   canGoForward: boolean;
   onGoBack: () => void;
   onGoForward: () => void;
-  address: string;
-  onNavigate: (url: string) => void;
   onReload: () => void;
   onStop: () => void;
   loading: boolean;
-  searchEngine: SearchEngine;
-  customSearchUrl: string;
   onNewTab: () => void;
+  adBlockEnabled: boolean;
+  onToggleAdBlock: () => void;
+  onShieldLayout?: (rect: DOMRect) => void;
 }
 
 export const BrowserToolbar = memo<BrowserToolbarProps>(
@@ -30,17 +27,30 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
     canGoForward,
     onGoBack,
     onGoForward,
-    address,
-    onNavigate,
     onReload,
     onStop,
     loading,
-    searchEngine,
-    customSearchUrl,
-    onNewTab
+    onNewTab,
+    adBlockEnabled,
+    onToggleAdBlock,
+    onShieldLayout
   }) => {
+    const shieldRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+      if (!onShieldLayout) return;
+      const update = () => {
+        const node = shieldRef.current;
+        if (!node) return;
+        onShieldLayout(node.getBoundingClientRect());
+      };
+      update();
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }, [onShieldLayout]);
+
     return (
-      <div className="h-9 flex items-center w-full gap-2 electron-no-drag relative bg-transparent">
+      <div className="h-9 flex items-center w-full gap-2 electron-no-drag relative">
         <div className="flex items-center gap-4 min-w-[140px] z-10">
           <div className="flex items-center gap-1 pl-1">
             <IconButton onClick={onSidebarToggle} active={sidebarOpen}>
@@ -61,23 +71,18 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
           </div>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 w-[440px] max-w-[60vw]">
-          <AddressBar
-            url={address}
-            onNavigate={onNavigate}
-            loading={loading}
-            searchEngine={searchEngine}
-            customSearchUrl={customSearchUrl}
-          />
-        </div>
-
         <div className="flex items-center gap-1 min-w-[140px] justify-end ml-auto z-10">
-          <IconButton>
-            <Share size={16} strokeWidth={2} />
-          </IconButton>
           <IconButton onClick={onNewTab}>
             <Plus size={16} strokeWidth={2.5} />
           </IconButton>
+          <IconButton>
+            <Share size={16} strokeWidth={2} />
+          </IconButton>
+          <div className="relative" ref={shieldRef}>
+            <IconButton>
+              <Shield size={16} strokeWidth={2.5} />
+            </IconButton>
+          </div>
 
           <div className="ml-2 pl-2 self-start">
             <WindowControls />
