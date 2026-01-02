@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, TrendingUp } from 'lucide-react';
+import { LuRotateCcw, LuTrendingUp } from 'react-icons/lu';
 import { SearchEngine, Tab } from '@/lib/types';
 
 type SuggestionItem = {
@@ -198,7 +198,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
       items.push(
         ...topSites.map((item) => ({
           ...item,
-          icon: <TrendingUp size={14} strokeWidth={2.2} />
+          icon: <LuTrendingUp size={14} strokeWidth={2.2} />
         }))
       );
     }
@@ -221,7 +221,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         label: item.title || item.url,
         value: item.url,
         hint: 'History',
-        icon: <RotateCcw size={14} strokeWidth={2.4} />,
+        icon: <LuRotateCcw size={14} strokeWidth={2.4} />,
         type: 'url' as const
       }));
 

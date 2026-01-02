@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Shield, Search } from "lucide-react";
+import { LuSearch } from "react-icons/lu";
 import { SearchEngine } from "@/lib/types";
 
 interface AddressBarProps {
@@ -218,9 +218,9 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
-                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+                <LuSearch size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               ) : (
-                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+                <LuSearch size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               )}
             </div>
 

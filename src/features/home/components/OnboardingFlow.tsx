@@ -326,7 +326,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       {hasWallpaper && (
                         <button
                           onClick={() => onWallpaperChange('')}
-                          className="rounded-lg px-4 py-2.5 text-sm font-medium transition hover:bg-[color:var(--ui-hover)]"
+                          className="rounded-lg mb-6 px-4 py-2.5 text-sm font-medium transition hover:bg-[color:var(--ui-hover)]"
                         >
                           Remove
                         </button>

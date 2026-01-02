@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { X, Globe } from 'lucide-react';
+import { LuX, LuGlobe } from 'react-icons/lu';
 import { Tab } from '@/lib/types';
 
 interface TabBarProps {
@@ -48,7 +48,7 @@ export const TabBar = memo<TabBarProps>(({
                {tab.favicon ? (
                  <img src={tab.favicon} alt="" className="w-3.5 h-3.5 opacity-80" />
                ) : (
-                 <Globe size={14} className="opacity-50" />
+                 <LuGlobe size={14} className="opacity-50" />
                )}
             </div>
 
@@ -67,7 +67,7 @@ export const TabBar = memo<TabBarProps>(({
                     transition-opacity
                 `}
             >
-                <X size={14} className="text-[color:var(--ui-text-subtle)]" />
+                <LuX size={14} className="text-[color:var(--ui-text-subtle)]" />
             </div>
             
             {/* Separator (visual trick for non-active tabs) */}

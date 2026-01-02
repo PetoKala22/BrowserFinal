@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { LuSettings } from 'react-icons/lu';
 
 interface NewTabSettings {
   showGreeting: boolean;
@@ -58,7 +58,7 @@ export const NewTabPage: React.FC<NewTabPageProps> = ({ settings, hideCustomize 
             onClick={handleCustomize}
             className="inline-flex items-center gap-2 rounded-full bg-[color:var(--ui-surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ui-text)] backdrop-blur-md shadow-sm hover:bg-[color:var(--ui-surface-strong)] transition-colors"
           >
-            <Settings size={14} />
+            <LuSettings size={14} />
             Customize
           </button>
         </div>

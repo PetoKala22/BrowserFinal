@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { LuX } from 'react-icons/lu';
 import { IconButton } from '@/components/ui/IconButton';
 
 interface WallpaperNoticeProps {
@@ -99,7 +99,7 @@ export const WallpaperNotice: React.FC<WallpaperNoticeProps> = ({
           aria-label="Close wallpaper notice"
           className="absolute right-3 top-3 bg-[color:var(--ui-surface-muted)]/70 backdrop-blur"
         >
-          <X size={14} />
+        <LuX size={14} />
         </IconButton>
       </div>
 

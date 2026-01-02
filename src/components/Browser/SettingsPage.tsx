@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { LuX } from 'react-icons/lu';
 import { SearchEngine } from '@/lib/types';
 import { IconButton } from '@/components/ui/IconButton';
 import { AppearanceSettingsSection } from './settings/AppearanceSettingsSection';
@@ -107,7 +107,7 @@ export const SettingsPage: React.FC<any> = ({
                 </div>
               </div>
               <IconButton onClick={onClose}>
-                <X size={16} />
+                <LuX size={16} />
               </IconButton>
             </div>
 

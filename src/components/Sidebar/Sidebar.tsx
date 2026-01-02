@@ -1,5 +1,6 @@
 import { memo } from "react";
-import { Book, Glasses, Clock, Settings, LucideIcon } from "lucide-react";
+import { LuBook, LuGlasses, LuClock, LuSettings } from "react-icons/lu";
+import { IconType } from "react-icons";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface SidebarProps {
 }
 
 interface MenuItemProps {
-  icon: LucideIcon;
+  icon: IconType;
   label: string;
   active?: boolean;
   onClick?: () => void;
@@ -80,10 +81,10 @@ export const Sidebar = memo(
 
         {/* Scrollable section */}
         <div className="px-2 flex-1 overflow-y-auto scrollbar-hide">
-          <MenuItem icon={Book} label="Bookmarks" />
-          <MenuItem icon={Glasses} label="Reading List" />
+          <MenuItem icon={LuBook} label="Bookmarks" />
+          <MenuItem icon={LuGlasses} label="Reading List" />
           <MenuItem
-            icon={Clock}
+            icon={LuClock}
             label="History"
             active={historyActive}
             onClick={onOpenHistory}
@@ -93,7 +94,7 @@ export const Sidebar = memo(
         {/* Bottom fixed section */}
         <div className="px-2 mt-4 pt-4">
           <MenuItem
-            icon={Settings}
+            icon={LuSettings}
             label="Settings"
             active={settingsActive}
             onClick={onOpenSettings}
