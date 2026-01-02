@@ -22,6 +22,7 @@ let adblockStats = { blocked: 0 };
 const HISTORY_LIMIT = 300;
 
 const getHistoryPath = () => path.join(app.getPath('userData'), 'history.json');
+const getWindowStatePath = () => path.join(app.getPath('userData'), 'window-state.json');
 
 const readHistory = async () => {
   try {
@@ -38,6 +39,35 @@ const readHistory = async () => {
 const writeHistory = async (items) => {
   const payload = JSON.stringify(items, null, 2);
   await fs.writeFile(getHistoryPath(), payload, 'utf-8');
+};
+
+const readWindowState = async () => {
+  try {
+    const raw = await fs.readFile(getWindowStatePath(), 'utf-8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    console.error('Failed to read window state:', error);
+    return null;
+  }
+};
+
+const writeWindowState = async (state) => {
+  const payload = JSON.stringify(state, null, 2);
+  await fs.writeFile(getWindowStatePath(), payload, 'utf-8');
+};
+
+const toSafeBounds = (bounds) => {
+  if (!bounds || typeof bounds !== 'object') return null;
+  const { x, y, width, height } = bounds;
+  if (![width, height].every((value) => Number.isFinite(value))) return null;
+  const safe = { width: Math.max(640, Math.floor(width)), height: Math.max(480, Math.floor(height)) };
+  if (Number.isFinite(x) && Number.isFinite(y)) {
+    safe.x = Math.floor(x);
+    safe.y = Math.floor(y);
+  }
+  return safe;
 };
 
 const getFilterListPaths = async () => {
@@ -127,9 +157,16 @@ const setAdblockEnabled = (enabled) => {
 };
 
 const createWindow = async () => {
+  const savedWindowState = await readWindowState();
+  const savedBounds = toSafeBounds(savedWindowState?.bounds);
+  const shouldMaximize = Boolean(savedWindowState?.isMaximized);
+  const shouldFullscreen = Boolean(savedWindowState?.isFullScreen);
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: savedBounds?.width ?? 1280,
+    height: savedBounds?.height ?? 800,
+    x: savedBounds?.x,
+    y: savedBounds?.y,
     minWidth: 900,
     minHeight: 600,
     frame: false,
@@ -157,15 +194,35 @@ const createWindow = async () => {
     await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
-  // maximize as soon as ready
+  // show with the last window state
   mainWindow.once('ready-to-show', () => {
-    mainWindow.maximize();
+    if (shouldFullscreen) {
+      mainWindow.setFullScreen(true);
+    } else if (shouldMaximize) {
+      mainWindow.maximize();
+    }
     mainWindow.show();
   });
 
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
+
+  mainWindow.on('close', async () => {
+    if (!mainWindow) return;
+    const isMaximized = mainWindow.isMaximized();
+    const isFullScreen = mainWindow.isFullScreen();
+    const bounds = isMaximized || isFullScreen ? mainWindow.getNormalBounds() : mainWindow.getBounds();
+    try {
+      await writeWindowState({
+        bounds,
+        isMaximized,
+        isFullScreen
+      });
+    } catch (error) {
+      console.error('Failed to write window state:', error);
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;

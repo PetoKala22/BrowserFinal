@@ -69,11 +69,17 @@ export const NewTabPage: React.FC<NewTabPageProps> = ({ settings, hideCustomize 
         style={{ textShadow: 'var(--ui-newtab-text-shadow)' }}
       >
         {active.showClock && (
-          <div className="mb-5">
-            <div className="text-4xl font-semibold tracking-tight">
+          <div className="mb-6">
+            <div
+              className="text-[clamp(3.5rem,7vw,6rem)] font-light tracking-[-0.02em] leading-none"
+              style={{ textShadow: 'var(--ui-newtab-clock-shadow, var(--ui-newtab-text-shadow))' }}
+            >
               {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div className="mt-1 text-xs text-[color:var(--ui-newtab-text-muted)]">
+            <div
+              className="mt-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ui-newtab-text-muted)]"
+              style={{ backgroundColor: 'var(--ui-newtab-clock-pill)' }}
+            >
               {now.toLocaleDateString([], {
                 weekday: 'long',
                 month: 'long',

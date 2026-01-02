@@ -66,7 +66,7 @@ export const Sidebar = memo(
       <div
         aria-hidden={!isOpen}
         className={[
-          "bg-[color:var(--ui-surface)] border border-[color:var(--ui-border)] backdrop-blur-xl",
+          "bg-[color:var(--ui-surface)] shadow-lg backdrop-blur-xl",
           "flex flex-col pt-3 pb-4 relative z-20 self-start overflow-hidden",
           "transition-[transform,opacity,width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
           isOpen ? openClasses : closedClasses

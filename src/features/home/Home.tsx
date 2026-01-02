@@ -81,8 +81,10 @@ const Home: React.FC = () => {
     return localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true';
   });
   const [onboardingClosing, setOnboardingClosing] = useState(false);
+  const [onboardingVisible, setOnboardingVisible] = useState(false);
   const lastActiveUrlRef = useRef<string | null>(null);
   const onboardingTimerRef = useRef<number | null>(null);
+  const onboardingIntroTimerRef = useRef<number | null>(null);
   const adBlockRef = useRef<HTMLDivElement | null>(null);
   const shieldRef = useRef<HTMLDivElement | null>(null);
   const browserRef = useRef<BrowserContentHandle>(null);
@@ -589,8 +591,28 @@ const Home: React.FC = () => {
       if (onboardingTimerRef.current !== null) {
         window.clearTimeout(onboardingTimerRef.current);
       }
+      if (onboardingIntroTimerRef.current !== null) {
+        window.clearTimeout(onboardingIntroTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (!onboardingOpen) {
+      setOnboardingVisible(false);
+      if (onboardingIntroTimerRef.current !== null) {
+        window.clearTimeout(onboardingIntroTimerRef.current);
+      }
+      return;
+    }
+    setOnboardingVisible(false);
+    if (onboardingIntroTimerRef.current !== null) {
+      window.clearTimeout(onboardingIntroTimerRef.current);
+    }
+    onboardingIntroTimerRef.current = window.setTimeout(() => {
+      setOnboardingVisible(true);
+    }, 1000);
+  }, [onboardingOpen]);
 
   return (
       <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-[color:var(--ui-text)] bg-[color:var(--ui-base)]">
@@ -631,7 +653,7 @@ const Home: React.FC = () => {
           />
         )}
         {!onboardingOpen && (
-          <div className="absolute top-0 left-0 right-0 z-[60] h-9 flex items-center justify-center pointer-events-none">
+          <div className="absolute top-1 left-0 right-0 z-[60] h-9 flex items-center justify-center pointer-events-none">
             <div className="pointer-events-auto w-[440px]">
               <AddressBar
                 url={activeTab.url}
@@ -644,7 +666,7 @@ const Home: React.FC = () => {
           </div>
         )}
         <div
-          className={`electron-no-drag bg-transparent overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
+          className={`electron-no-drag mt-2 bg-transparent overflow-hidden transition-[opacity,transform,max-height] duration-200 ease-out ${
             tabs.length > 1
               ? 'opacity-100 max-h-16 translate-y-0'
               : 'opacity-0 max-h-0 -translate-y-1 pointer-events-none'
@@ -736,8 +758,12 @@ const Home: React.FC = () => {
           )}
           {onboardingOpen && (
             <div
-              className={`absolute inset-0 z-20 transition-[opacity,transform] duration-250 ease-out ${
-                onboardingClosing ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
+              className={`absolute inset-0 z-20 will-change-[opacity,transform] transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                onboardingClosing
+                  ? 'opacity-0 translate-y-2 scale-[0.985]'
+                  : onboardingVisible
+                    ? 'opacity-100 translate-y-0 scale-100'
+                    : 'opacity-0 translate-y-3 scale-[0.985] pointer-events-none'
               }`}
             >
               <OnboardingFlow
@@ -751,6 +777,7 @@ const Home: React.FC = () => {
                 onSearchEngineChange={setSearchEngine}
                 adBlockEnabled={adBlockEnabled}
                 onAdBlockEnabledChange={setAdBlockEnabled}
+                isActive={onboardingVisible && !onboardingClosing}
                 onComplete={handleOnboardingComplete}
               />
             </div>
@@ -761,7 +788,7 @@ const Home: React.FC = () => {
 
       {!onboardingOpen && (
         <div
-          className={`electron-no-drag absolute top-9 left-0 right-0 z-[65] flex justify-center pointer-events-none transition-[opacity,transform] duration-200 ease-in-out ${
+          className={`electron-no-drag absolute top-10 left-0 right-0 z-[65] flex justify-center pointer-events-none transition-[opacity,transform] duration-200 ease-in-out ${
             addressBarFocused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
           }`}
         >

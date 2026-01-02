@@ -18,6 +18,7 @@ interface OnboardingFlowProps {
   onSearchEngineChange: (engine: SearchEngine) => void;
   adBlockEnabled: boolean;
   onAdBlockEnabledChange: (enabled: boolean) => void;
+  isActive: boolean;
   onComplete: () => void;
 }
 
@@ -59,12 +60,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onSearchEngineChange,
   adBlockEnabled,
   onAdBlockEnabledChange,
+  isActive,
   onComplete
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [displayStep, setDisplayStep] = useState(0);
   const [transitionState, setTransitionState] = useState<'idle' | 'exiting' | 'entering'>(
-    'entering'
+    isActive ? 'entering' : 'idle'
   );
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [typedThankYou, setTypedThankYou] = useState('');
@@ -126,6 +128,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   useEffect(() => {
+    if (isActive) {
+      setTransitionState('entering');
+    }
+  }, [isActive]);
+
+  useEffect(() => {
     if (transitionState !== 'entering') return;
     if (enterRafRef.current !== null) {
       cancelAnimationFrame(enterRafRef.current);
@@ -157,6 +165,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!isActive) {
+      if (typingTimerRef.current !== null) {
+        window.clearTimeout(typingTimerRef.current);
+      }
+      setTypedThankYou('');
+      setTypedIntro('');
+      return;
+    }
     if (activeStep.id !== 'welcome') {
       setTypedThankYou(thankYouText);
       setTypedIntro(introText);
@@ -189,13 +205,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       typingTimerRef.current = window.setTimeout(typeIntro, 200);
     };
 
-    typingTimerRef.current = window.setTimeout(typeNext, 200);
+    typingTimerRef.current = window.setTimeout(typeNext, 150);
     return () => {
       if (typingTimerRef.current !== null) {
         window.clearTimeout(typingTimerRef.current);
       }
     };
-  }, [activeStep.id, playHaptic, thankYouText, introText]);
+  }, [activeStep.id, isActive, playHaptic, thankYouText, introText]);
 
   const handleNext = () => {
     if (isLastStep) {

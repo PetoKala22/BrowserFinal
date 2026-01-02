@@ -142,6 +142,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       '--ui-newtab-text',
       '--ui-newtab-text-muted',
       '--ui-newtab-text-shadow',
+      '--ui-newtab-clock-pill',
+      '--ui-newtab-clock-shadow',
       '--ui-overlay-text-shadow',
       '--ui-accent',
       '--ui-accent-contrast'
@@ -205,11 +207,30 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
         isDark ? '0 1px 12px rgba(0, 0, 0, 0.55)' : '0 1px 10px rgba(255, 255, 255, 0.35)'
       );
       root.style.setProperty(
+        '--ui-newtab-clock-pill',
+        isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)'
+      );
+      root.style.setProperty(
+        '--ui-newtab-clock-shadow',
+        isDark ? '0 10px 28px rgba(0, 0, 0, 0.6)' : '0 8px 24px rgba(255, 255, 255, 0.35)'
+      );
+      root.style.setProperty(
         '--ui-overlay-text-shadow',
         isDark ? '0 1px 10px rgba(0, 0, 0, 0.55)' : '0 1px 8px rgba(255, 255, 255, 0.35)'
       );
 
       if (avg) {
+        const pillTarget = isDark ? 255 : 0;
+        const pillTint = {
+          r: clamp(mix(avg.r, pillTarget, 0.6)),
+          g: clamp(mix(avg.g, pillTarget, 0.6)),
+          b: clamp(mix(avg.b, pillTarget, 0.6))
+        };
+        root.style.setProperty(
+          '--ui-newtab-clock-pill',
+          makeRgba(pillTint, isDark ? 0.22 : 0.18)
+        );
+
         const liftTarget = isDark ? 255 : 0;
         const accent = {
           r: clamp(mix(avg.r, liftTarget, 0.18)),
@@ -258,6 +279,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-newtab-text', '#F5F2ED');
       root.style.setProperty('--ui-newtab-text-muted', 'rgba(230, 227, 222, 0.78)');
       root.style.setProperty('--ui-newtab-text-shadow', '0 1px 12px rgba(0, 0, 0, 0.55)');
+      root.style.setProperty('--ui-newtab-clock-pill', 'rgba(255, 255, 255, 0.16)');
+      root.style.setProperty('--ui-newtab-clock-shadow', '0 10px 28px rgba(0, 0, 0, 0.6)');
       root.style.setProperty('--ui-overlay-text-shadow', '0 1px 10px rgba(0, 0, 0, 0.55)');
       root.style.setProperty('--ui-accent', '#C2A67E');
       root.style.setProperty('--ui-accent-contrast', '#1E1D1B');

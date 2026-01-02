@@ -78,7 +78,7 @@ export const AppearanceSettingsSection: React.FC<
   };
 
   return (
-    <div className="space-y-8 overflow-x-hidden">
+    <div className="space-y-6 overflow-x-hidden">
       <SettingsGroup title="Background">
         {/* IMPORTANT:
             - No horizontal padding here

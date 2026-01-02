@@ -65,7 +65,7 @@ export const SettingsPage: React.FC<any> = ({
   return (
     <div className="h-full w-full overflow-hidden">
       <div className="flex h-full p-8">
-        <div className="flex h-full w-full gap-6 rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] backdrop-blur-xl p-4 overflow-hidden">
+        <div className="flex h-full w-full gap-6 rounded-2xl bg-[color:var(--ui-surface)] shadow-lg backdrop-blur-xl p-4 overflow-hidden">
 
           {/* Sidebar */}
           <aside className="flex h-full w-[220px] shrink-0 flex-col rounded-2xl p-3 overflow-hidden">

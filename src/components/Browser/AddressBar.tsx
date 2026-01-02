@@ -218,7 +218,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
-                <Shield size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+                <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               ) : (
                 <Search size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
               )}
