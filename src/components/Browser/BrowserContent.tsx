@@ -17,15 +17,6 @@ interface BrowserContentProps {
   onHistoryEntry?: (entry: { url: string; title: string }) => void;
   historyItems?: Array<{ url: string; title: string; timestamp: number }>;
   onClearHistory?: () => void;
-  newTabSettings?: {
-    showGreeting: boolean;
-    showShortcut: boolean;
-    showSearch: boolean;
-    showClock: boolean;
-    showFavorites: boolean;
-    favorites: Array<{ title: string; url: string }>;
-  };
-  hideNewTabCustomize?: boolean;
   hideNewTabPage?: boolean;
   onOpenNewTab?: (url: string) => void;
 }
@@ -52,8 +43,6 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
       onHistoryEntry,
       historyItems,
       onClearHistory,
-      newTabSettings,
-      hideNewTabCustomize,
       hideNewTabPage,
       onOpenNewTab
     },
@@ -250,13 +239,7 @@ export const BrowserContent = forwardRef<BrowserContentHandle, BrowserContentPro
             if (!shouldShow) return null;
             if (tab.url === 'browser://welcome') {
               if (hideNewTabPage) return null;
-              return (
-                <NewTabPage
-                  key={tab.id}
-                  settings={newTabSettings}
-                  hideCustomize={hideNewTabCustomize}
-                />
-              );
+              return <NewTabPage key={tab.id} />;
             }
             if (tab.url === 'browser://history') {
               return (

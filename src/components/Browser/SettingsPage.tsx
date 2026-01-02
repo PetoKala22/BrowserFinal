@@ -36,18 +36,6 @@ export const SettingsPage: React.FC<any> = ({
   onAdBlockEnabledChange,
   searchEngine,
   onSearchEngineChange,
-  newTabShowGreeting,
-  onNewTabShowGreetingChange,
-  newTabShowShortcut,
-  onNewTabShowShortcutChange,
-  newTabShowSearch,
-  onNewTabShowSearchChange,
-  newTabShowClock,
-  onNewTabShowClockChange,
-  newTabShowFavorites,
-  onNewTabShowFavoritesChange,
-  newTabFavorites,
-  onNewTabFavoritesChange,
   initialSection,
   hasUnsavedChanges,
   isSaving,
@@ -123,18 +111,6 @@ export const SettingsPage: React.FC<any> = ({
                   onBackgroundTypeChange={onBackgroundTypeChange}
                   wallpaperBlur={wallpaperBlur}
                   onWallpaperBlurChange={onWallpaperBlurChange}
-                  newTabShowGreeting={newTabShowGreeting}
-                  onNewTabShowGreetingChange={onNewTabShowGreetingChange}
-                  newTabShowShortcut={newTabShowShortcut}
-                  onNewTabShowShortcutChange={onNewTabShowShortcutChange}
-                  newTabShowSearch={newTabShowSearch}
-                  onNewTabShowSearchChange={onNewTabShowSearchChange}
-                  newTabShowClock={newTabShowClock}
-                  onNewTabShowClockChange={onNewTabShowClockChange}
-                  newTabShowFavorites={newTabShowFavorites}
-                  onNewTabShowFavoritesChange={onNewTabShowFavoritesChange}
-                  newTabFavorites={newTabFavorites}
-                  onNewTabFavoritesChange={onNewTabFavoritesChange}
                 />
               )}
 

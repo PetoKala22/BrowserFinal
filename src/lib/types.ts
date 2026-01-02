@@ -14,11 +14,6 @@ export interface HistoryItem {
   timestamp: number;
 }
 
-export interface NewTabFavorite {
-  title: string;
-  url: string;
-}
-
 export enum Theme {
   LIGHT = 'light',
   DARK = 'dark',
@@ -44,10 +39,4 @@ export interface AppSettings {
   wallpaperColor: string;
   wallpaperBlur: boolean;
   adBlockEnabled: boolean;
-  newTabShowGreeting: boolean;
-  newTabShowShortcut: boolean;
-  newTabShowSearch: boolean;
-  newTabShowClock: boolean;
-  newTabShowFavorites: boolean;
-  newTabFavorites: NewTabFavorite[];
 }

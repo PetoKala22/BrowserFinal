@@ -12,18 +12,6 @@ interface AppearanceSettingsSectionProps {
   onBackgroundTypeChange: (type: 'wallpaper' | 'solid') => void;
   wallpaperBlur: boolean;
   onWallpaperBlurChange: (blur: boolean) => void;
-  newTabShowGreeting: boolean;
-  onNewTabShowGreetingChange: (value: boolean) => void;
-  newTabShowShortcut: boolean;
-  onNewTabShowShortcutChange: (value: boolean) => void;
-  newTabShowSearch: boolean;
-  onNewTabShowSearchChange: (value: boolean) => void;
-  newTabShowClock: boolean;
-  onNewTabShowClockChange: (value: boolean) => void;
-  newTabShowFavorites: boolean;
-  onNewTabShowFavoritesChange: (value: boolean) => void;
-  newTabFavorites: Array<{ title: string; url: string }>;
-  onNewTabFavoritesChange: (value: Array<{ title: string; url: string }>) => void;
 }
 
 export const AppearanceSettingsSection: React.FC<
@@ -36,46 +24,13 @@ export const AppearanceSettingsSection: React.FC<
   backgroundType,
   onBackgroundTypeChange,
   wallpaperBlur,
-  onWallpaperBlurChange,
-  newTabShowGreeting,
-  onNewTabShowGreetingChange,
-  newTabShowShortcut,
-  onNewTabShowShortcutChange,
-  newTabShowSearch,
-  onNewTabShowSearchChange,
-  newTabShowClock,
-  onNewTabShowClockChange,
-  newTabShowFavorites,
-  onNewTabShowFavoritesChange,
-  newTabFavorites,
-  onNewTabFavoritesChange
+  onWallpaperBlurChange
 }) => {
   const hasWallpaper = Boolean(wallpaper);
   const activeWallpaper =
     backgroundType === 'wallpaper' ? wallpaper : '';
   const activeColor =
     backgroundType === 'solid' ? wallpaperColor : '';
-  const [favoriteTitle, setFavoriteTitle] = React.useState('');
-  const [favoriteUrl, setFavoriteUrl] = React.useState('');
-
-  const normalizeUrl = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return '';
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
-    return `https://${trimmed}`;
-  };
-
-  const handleAddFavorite = () => {
-    const url = normalizeUrl(favoriteUrl);
-    const title = favoriteTitle.trim() || url;
-    if (!url) return;
-    onNewTabFavoritesChange([
-      ...newTabFavorites,
-      { title, url }
-    ]);
-    setFavoriteTitle('');
-    setFavoriteUrl('');
-  };
 
   return (
     <div className="space-y-6 overflow-x-hidden">
@@ -226,156 +181,6 @@ export const AppearanceSettingsSection: React.FC<
                   })}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </SettingsGroup>
-
-      <SettingsGroup
-        title="New Tab"
-        description="Pick what shows up on your start page. Changes appear immediately."
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-3">
-            <div>
-              <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                Greeting text
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Show the "Ready when you are" message.
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={newTabShowGreeting}
-              onChange={onNewTabShowGreetingChange}
-              ariaLabel="Toggle greeting text"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-3">
-            <div>
-              <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                Shortcut hint
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Show the Ctrl + L hint.
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={newTabShowShortcut}
-              onChange={onNewTabShowShortcutChange}
-              ariaLabel="Toggle shortcut hint"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-3">
-            <div>
-              <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                Search bar
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Show a large search bar on the page.
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={newTabShowSearch}
-              onChange={onNewTabShowSearchChange}
-              ariaLabel="Toggle search bar"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-3">
-            <div>
-              <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                Clock
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Show the local time and date.
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={newTabShowClock}
-              onChange={onNewTabShowClockChange}
-              ariaLabel="Toggle clock"
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-3">
-            <div>
-              <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                Favorites
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Show your favorite shortcuts.
-              </div>
-            </div>
-            <ToggleSwitch
-              checked={newTabShowFavorites}
-              onChange={onNewTabShowFavoritesChange}
-              ariaLabel="Toggle favorites"
-            />
-          </div>
-
-          <div className="rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-4 py-4 space-y-3">
-            <div className="text-xs uppercase tracking-wide text-[color:var(--ui-text-subtle)]">
-              Favorites list
-            </div>
-            <div className="flex flex-col gap-2">
-              {newTabFavorites.length === 0 && (
-                <div className="text-xs text-[color:var(--ui-text-muted)]">
-                  Add a few favorites to show them on the new tab page.
-                </div>
-              )}
-              {newTabFavorites.map((favorite, index) => (
-                <div
-                  key={`${favorite.url}-${index}`}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-[color:var(--ui-surface)] px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-[color:var(--ui-text)] truncate">
-                      {favorite.title}
-                    </div>
-                    <div className="text-xs text-[color:var(--ui-text-muted)] truncate">
-                      {favorite.url}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onNewTabFavoritesChange(
-                        newTabFavorites.filter((_, itemIndex) => itemIndex !== index)
-                      )
-                    }
-                    className="text-xs px-2 py-1 rounded-md text-[color:var(--ui-text-muted)] hover:text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-[1fr,1fr,auto]">
-              <input
-                type="text"
-                value={favoriteTitle}
-                onChange={(event) => setFavoriteTitle(event.target.value)}
-                placeholder="Label (optional)"
-                className="w-full rounded-lg border border-[color:var(--ui-border)] bg-transparent px-3 py-2 text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)]"
-              />
-              <input
-                type="text"
-                value={favoriteUrl}
-                onChange={(event) => setFavoriteUrl(event.target.value)}
-                placeholder="Website URL"
-                className="w-full rounded-lg border border-[color:var(--ui-border)] bg-transparent px-3 py-2 text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)]"
-              />
-              <button
-                type="button"
-                onClick={handleAddFavorite}
-                className="rounded-lg bg-[color:var(--ui-accent)] px-3 py-2 text-sm font-medium text-[color:var(--ui-accent-contrast)] hover:brightness-95"
-              >
-                Add
-              </button>
             </div>
           </div>
         </div>

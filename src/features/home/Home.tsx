@@ -19,7 +19,7 @@ import { OnboardingFlow } from '@/features/home/components/OnboardingFlow';
 const WALLPAPER_NOTICE_SEEN_KEY = 'wallpaperNoticeSeen';
 const WALLPAPER_NOTICE_TARGET_KEY = 'wallpaperNoticeTarget';
 const WALLPAPER_NOTICE_COUNT_KEY = 'wallpaperNoticeVisitCount';
-const SHOW_ONBOARDING_EVERY_START = true;
+const SHOW_ONBOARDING_EVERY_START = false;
 const ONBOARDING_SEEN_KEY = 'onboardingSeen';
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -30,18 +30,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   wallpaper: '',
   wallpaperColor: '',
   wallpaperBlur: false,
-  adBlockEnabled: true,
-  newTabShowGreeting: true,
-  newTabShowShortcut: true,
-  newTabShowSearch: false,
-  newTabShowClock: false,
-  newTabShowFavorites: false,
-  newTabFavorites: [
-    { title: 'YouTube', url: 'https://www.youtube.com' },
-    { title: 'Gmail', url: 'https://mail.google.com' },
-    { title: 'Reddit', url: 'https://www.reddit.com' },
-    { title: 'GitHub', url: 'https://github.com' }
-  ]
+  adBlockEnabled: true
 };
 
 const isInternalUrl = (url: string) => url.startsWith('browser://');
@@ -104,18 +93,6 @@ const Home: React.FC = () => {
     setWallpaperBlur,
     adBlockEnabled,
     setAdBlockEnabled,
-    newTabShowGreeting,
-    setNewTabShowGreeting,
-    newTabShowShortcut,
-    setNewTabShowShortcut,
-    newTabShowSearch,
-    setNewTabShowSearch,
-    newTabShowClock,
-    setNewTabShowClock,
-    newTabShowFavorites,
-    setNewTabShowFavorites,
-    newTabFavorites,
-    setNewTabFavorites,
     savedSettings,
     setSavedSettings,
     hasUnsavedChanges,
@@ -605,6 +582,9 @@ const Home: React.FC = () => {
       }
       return;
     }
+    if (localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true') {
+      localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
+    }
     setOnboardingVisible(false);
     if (onboardingIntroTimerRef.current !== null) {
       window.clearTimeout(onboardingIntroTimerRef.current);
@@ -702,15 +682,6 @@ const Home: React.FC = () => {
                 onHistoryEntry={handleHistoryEntry}
                 historyItems={historyItems}
                 onClearHistory={handleClearHistory}
-                newTabSettings={{
-                  showGreeting: newTabShowGreeting,
-                  showShortcut: newTabShowShortcut,
-                  showSearch: newTabShowSearch,
-                  showClock: newTabShowClock,
-                  showFavorites: newTabShowFavorites,
-                  favorites: newTabFavorites
-                }}
-                hideNewTabCustomize={onboardingOpen && !onboardingClosing}
                 hideNewTabPage={onboardingOpen && !onboardingClosing}
                 onOpenNewTab={handleOpenNewTab}
               />
@@ -736,18 +707,6 @@ const Home: React.FC = () => {
                 onAdBlockEnabledChange={setAdBlockEnabled}
                 searchEngine={searchEngine}
                 onSearchEngineChange={setSearchEngine}
-                newTabShowGreeting={newTabShowGreeting}
-                onNewTabShowGreetingChange={setNewTabShowGreeting}
-                newTabShowShortcut={newTabShowShortcut}
-                onNewTabShowShortcutChange={setNewTabShowShortcut}
-                newTabShowSearch={newTabShowSearch}
-                onNewTabShowSearchChange={setNewTabShowSearch}
-                newTabShowClock={newTabShowClock}
-                onNewTabShowClockChange={setNewTabShowClock}
-                newTabShowFavorites={newTabShowFavorites}
-                onNewTabShowFavoritesChange={setNewTabShowFavorites}
-                newTabFavorites={newTabFavorites}
-                onNewTabFavoritesChange={setNewTabFavorites}
                 initialSection={settingsSection}
                 hasUnsavedChanges={hasUnsavedChanges}
                 isSaving={isSavingSettings}
