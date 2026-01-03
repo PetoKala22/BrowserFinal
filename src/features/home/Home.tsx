@@ -604,7 +604,6 @@ const Home: React.FC = () => {
             }`}
             style={{ backgroundImage: `url(${wallpaper})` }}
           />
-          <div className="absolute inset-0 bg-[color:var(--ui-wallpaper-overlay)]" />
         </div>
       )}
       <div className="flex flex-col flex-shrink-0 z-50 bg-transparent electron-drag">

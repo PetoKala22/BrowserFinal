@@ -7,10 +7,12 @@ import { SearchSettingsSection } from './settings/SearchSettingsSection';
 import { PrivacySettingsSection } from './settings/PrivacySettingsSection';
 import { GeneralSettingsSection } from './settings/GeneralSettingsSection';
 import { AdvancedSettingsSection } from './settings/AdvancedSettingsSection';
+import { WidgetsSettingsSection } from './settings/WidgetsSettingsSection';
 
 type SettingsSection =
   | 'general'
   | 'appearance'
+  | 'widgets'
   | 'search'
   | 'privacy'
   | 'advanced';
@@ -18,6 +20,7 @@ type SettingsSection =
 const settingsSections: { id: SettingsSection; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'appearance', label: 'Appearance' },
+  { id: 'widgets', label: 'Widgets' },
   { id: 'search', label: 'Search engine' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'advanced', label: 'Advanced' }
@@ -129,6 +132,7 @@ export const SettingsPage: React.FC<any> = ({
               )}
 
               {activeSection === 'general' && <GeneralSettingsSection />}
+              {activeSection === 'widgets' && <WidgetsSettingsSection />}
               {activeSection === 'advanced' && <AdvancedSettingsSection />}
             </div>
 

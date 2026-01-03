@@ -14,6 +14,12 @@ export interface HistoryItem {
   timestamp: number;
 }
 
+export interface WeatherLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 export enum Theme {
   LIGHT = 'light',
   DARK = 'dark',

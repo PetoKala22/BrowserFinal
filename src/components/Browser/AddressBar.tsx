@@ -212,15 +212,19 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
-                  : "bg-[color:var(--ui-surface-subtle)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
+                  : "bg-[color:var(--ui-surface-muted)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
               }
               rounded-lg`}
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {secure ? (
-                <LuSearch size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+                <span className="text-[color:var(--ui-text-muted)]">
+                  <LuSearch size={12} />
+                </span>
               ) : (
-                <LuSearch size={12} strokeWidth={3} className="text-[color:var(--ui-text-muted)]" />
+                <span className="text-[color:var(--ui-text-muted)]">
+                  <LuSearch size={12} />
+                </span>
               )}
             </div>
 

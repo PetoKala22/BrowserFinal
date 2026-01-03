@@ -1,3 +1,5 @@
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,13 +12,54 @@ html {
 }
 
 body {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: -0.01em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* React Grid Layout overrides */
+.react-grid-item.react-grid-placeholder {
+  background: transparent !important;
+  border: none !important;
+  opacity: 0 !important;
+}
+
+.react-grid-item > .react-resizable-handle {
+  width: 28px !important;
+  height: 28px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.react-grid-item:hover > .react-resizable-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.react-grid-item > .react-resizable-handle:not(.react-resizable-handle-se) {
+  display: none !important;
+}
+
+.react-grid-item > .react-resizable-handle-se::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  border-right: 3px solid rgba(255, 255, 255, 0.95);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.95);
+  border-bottom-right-radius: 16px;
 }
 
 :root {
@@ -88,6 +131,127 @@ body {
   --ui-newtab-clock-pill: rgba(255, 255, 255, 0.16);
   --ui-newtab-clock-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
   --ui-overlay-text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+}
+
+/* =========================
+   Widget panel styling
+   ========================= */
+.widget-panel {
+  border-radius: 32px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.78),
+    rgba(255, 255, 255, 0.54)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(28px) saturate(140%);
+  overflow: hidden;
+}
+
+.widget-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 45%
+  );
+  pointer-events: none;
+}
+
+.dark .widget-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 34, 36, 0.86),
+    rgba(18, 18, 20, 0.68)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.dark .widget-panel::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0) 45%
+  );
+}
+
+.widget-card {
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0.6)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.widget-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    200deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(255, 255, 255, 0) 48%
+  );
+  pointer-events: none;
+}
+
+.dark .widget-card {
+  background: linear-gradient(
+    160deg,
+    rgba(44, 44, 46, 0.86),
+    rgba(28, 28, 30, 0.7)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+.dark .widget-card::before {
+  background: linear-gradient(
+    200deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0) 48%
+  );
+}
+@keyframes clouds {
+  from {
+    transform: translateX(-5%);
+  }
+  to {
+    transform: translateX(5%);
+  }
+}
+
+@keyframes fog {
+  from {
+    transform: translateX(-10%);
+  }
+  to {
+    transform: translateX(10%);
+  }
+}
+
+.animate-clouds {
+  width: 110%;
+  height: 100%;
+  left: -5%;
+  animation: clouds 60s ease-in-out infinite alternate;
+}
+
+.animate-fog {
+  width: 120%;
+  height: 100%;
+  left: -10%;
+  animation: fog 90s ease-in-out infinite alternate;
 }
 
 /* =========================

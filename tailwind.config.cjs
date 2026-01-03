@@ -11,7 +11,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Space Grotesk"', 'sans-serif']
+        sans: ['"Inter"', 'sans-serif']
       },
       colors: {
         safari: {
