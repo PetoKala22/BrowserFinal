@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Layout } from 'react-grid-layout';
-import { Plus } from 'lucide-react';
 import { WidgetGrid } from './widgets/WidgetGrid';
+import { WidgetLibrary } from './widgets/WidgetLibrary';
 import { widgetDefinitions, widgetList } from './widgets/widgetRegistry';
 import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';
 
@@ -68,6 +68,26 @@ const normalizeLayout = (widgets: WidgetInstance[], layout: Layout[]) => {
   });
 };
 
+const findNextPosition = (layout: Layout[], size: { w: number; h: number }, cols: number) => {
+  const maxY = layout.reduce((acc, item) => Math.max(acc, item.y + item.h), 0);
+  const fits = (x: number, y: number) =>
+    layout.every((item) => {
+      const overlapX = x < item.x + item.w && x + size.w > item.x;
+      const overlapY = y < item.y + item.h && y + size.h > item.y;
+      return !(overlapX && overlapY);
+    });
+
+  for (let y = 0; y <= maxY + 50; y += 1) {
+    for (let x = 0; x <= cols - size.w; x += 1) {
+      if (fits(x, y)) {
+        return { x, y };
+      }
+    }
+  }
+
+  return { x: 0, y: maxY + 1 };
+};
+
 const loadWidgetState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -99,50 +119,60 @@ const loadWidgetState = () => {
 
 export const NewTabPage: React.FC = () => {
   const [{ widgets, layout }, setWidgetState] = useState(loadWidgetState);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const pickerRef = useRef<HTMLDivElement | null>(null);
-  const pickerButtonRef = useRef<HTMLButtonElement | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+  const layoutFrameRef = useRef<number | null>(null);
+  const pendingLayoutRef = useRef<Layout[] | null>(null);
 
   useEffect(() => {
-    const payload = {
-      widgets,
-      layout: layout.map(({ i, x, y, w, h, minW, minH }) => ({
-        i,
-        x,
-        y,
-        w,
-        h,
-        minW,
-        minH
-      }))
+    if (saveTimerRef.current !== null) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = window.setTimeout(() => {
+      const payload = {
+        widgets,
+        layout: layout.map(({ i, x, y, w, h, minW, minH }) => ({
+          i,
+          x,
+          y,
+          w,
+          h,
+          minW,
+          minH
+        }))
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }, 250);
+    return () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current);
+      }
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [layout, widgets]);
 
   useEffect(() => {
-    if (!pickerOpen) return undefined;
-    const handlePointer = (event: MouseEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (pickerRef.current?.contains(target)) return;
-      if (pickerButtonRef.current?.contains(target)) return;
-      setPickerOpen(false);
+    return () => {
+      if (layoutFrameRef.current !== null) {
+        window.cancelAnimationFrame(layoutFrameRef.current);
+      }
     };
-    window.addEventListener('mousedown', handlePointer);
-    return () => window.removeEventListener('mousedown', handlePointer);
-  }, [pickerOpen]);
+  }, []);
 
   const addWidget = useCallback((type: WidgetType) => {
     const definition = widgetDefinitions[type];
     const id = `widget-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     setWidgetState((prev) => {
+      const position = findNextPosition(
+        prev.layout,
+        { w: definition.defaultSize.w, h: definition.defaultSize.h },
+        24
+      );
       const nextWidgets = [...prev.widgets, { id, type }];
       const nextLayout = normalizeLayout(nextWidgets, [
         ...prev.layout,
         {
           i: id,
-          x: 0,
-          y: Infinity,
+          x: position.x,
+          y: position.y,
           w: definition.defaultSize.w,
           h: definition.defaultSize.h,
           minW: definition.minW,
@@ -172,6 +202,20 @@ export const NewTabPage: React.FC = () => {
   }, []);
 
   const handleLayoutChange = useCallback((nextLayout: Layout[]) => {
+    pendingLayoutRef.current = nextLayout;
+    if (layoutFrameRef.current !== null) return;
+    layoutFrameRef.current = window.requestAnimationFrame(() => {
+      layoutFrameRef.current = null;
+      const pending = pendingLayoutRef.current;
+      if (!pending) return;
+      setWidgetState((prev) => ({
+        widgets: prev.widgets,
+        layout: pending
+      }));
+    });
+  }, []);
+
+  const handleLayoutCommit = useCallback((nextLayout: Layout[]) => {
     setWidgetState((prev) => ({
       widgets: prev.widgets,
       layout: normalizeLayout(prev.widgets, nextLayout)
@@ -192,69 +236,24 @@ export const NewTabPage: React.FC = () => {
             widgets={widgets}
             layout={layout}
             onLayoutChange={handleLayoutChange}
+            onLayoutCommit={handleLayoutCommit}
             onRemoveWidget={removeWidget}
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-[color:var(--ui-newtab-text-muted)]">
-            Add a widget to get started.
+            <div className="text-center space-y-1">
+              <div>Add a widget to get started.</div>
+              <div>Use the Edit button to open the library.</div>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-6 left-6 z-20">
-        <button
-          type="button"
-          ref={pickerButtonRef}
-          onClick={() => setPickerOpen((prev) => !prev)}
-          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ui-text)] shadow-lg shadow-black/5 transition hover:bg-[color:var(--ui-hover)]"
-        >
-          <Plus className="h-4 w-4" />
-          Edit
-        </button>
-      </div>
-
-      {pickerOpen && (
-        <div
-          ref={pickerRef}
-          className="absolute bottom-6 left-6 z-30 w-[min(520px,calc(100%-3rem))] rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] shadow-xl backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between px-4 pt-4">
-            <div className="text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--ui-text-subtle)]">
-              Widget Library
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                clearWidgets();
-                setPickerOpen(false);
-              }}
-              className="rounded-full border border-[color:var(--ui-border)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--ui-text-muted)] transition hover:text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)]"
-            >
-              Clear All
-            </button>
-          </div>
-          <div className="p-3 space-y-2">
-            {availableWidgets.map((widget) => (
-              <button
-                key={widget.type}
-                type="button"
-                onClick={() => {
-                  addWidget(widget.type);
-                  setPickerOpen(false);
-                }}
-                className="w-full rounded-xl border border-transparent px-3 py-2 text-left transition hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-hover)]"
-              >
-                <div className="text-sm font-semibold text-[color:var(--ui-text)]">
-                  {widget.title}
-                </div>
-                <div className="text-xs text-[color:var(--ui-text-muted)]">
-                  {widget.description}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <WidgetLibrary
+        availableWidgets={availableWidgets}
+        onAddWidget={addWidget}
+        onClearWidgets={clearWidgets}
+      />
     </div>
   );
 };

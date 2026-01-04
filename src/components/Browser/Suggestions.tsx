@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { LuRotateCcw, LuTrendingUp } from 'react-icons/lu';
+import { LuLink, LuRotateCcw, LuSearch, LuTrendingUp } from 'react-icons/lu';
 import { SearchEngine, Tab } from '@/lib/types';
 
 type SuggestionItem = {
@@ -31,6 +31,7 @@ const SEARCH_ENGINE_LABELS: Record<SearchEngine, string> = {
 const MAX_SUGGESTIONS = 5;
 const REMOTE_CACHE_TTL = 30_000;
 const REMOTE_CACHE_LIMIT = 50;
+const REMOTE_QUERY_MIN = 2;
 
 const isLikelyUrl = (value: string) => {
   const trimmed = value.trim();
@@ -91,7 +92,12 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!isOpen || !trimmed || searchEngine !== SearchEngine.DUCKDUCKGO) {
+    if (
+      !isOpen ||
+      trimmed.length < REMOTE_QUERY_MIN ||
+      searchEngine !== SearchEngine.DUCKDUCKGO ||
+      isLikelyUrl(trimmed)
+    ) {
       setRemoteSuggestions([]);
       return undefined;
     }
@@ -152,6 +158,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         label: `Search ${engineLabel} for "${trimmed}"`,
         value: trimmed,
         hint: engineLabel,
+        icon: <LuSearch size={14} strokeWidth={2.2} />,
         type: 'search'
       });
 
@@ -161,7 +168,9 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
           id: `url-${normalized}`,
           label: normalized.replace(/^https?:\/\//, ''),
           value: normalized,
+          description: 'Open website',
           hint: 'Direct',
+          icon: <LuLink size={14} strokeWidth={2.2} />,
           type: 'url'
         });
       }
@@ -180,6 +189,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         id: `tab-${tab.id}`,
         label: tab.title || tab.url,
         value: tab.url,
+        description: tab.url.replace(/^https?:\/\//, ''),
         hint: 'Open tab',
         icon: tab.favicon ? (
           <img
@@ -220,6 +230,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         id: `history-${index}-${item.url}`,
         label: item.title || item.url,
         value: item.url,
+        description: item.url.replace(/^https?:\/\//, ''),
         hint: 'History',
         icon: <LuRotateCcw size={14} strokeWidth={2.4} />,
         type: 'url' as const
@@ -233,6 +244,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
           id: `remote-${index}-${suggestion}`,
           label: suggestion,
           value: suggestion,
+          icon: <LuSearch size={14} strokeWidth={2.2} />,
           hint: 'Suggestion',
           type: 'remote'
         });
@@ -299,7 +311,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
   return (
   <div className="pointer-events-auto w-full">
     <div className="w-full rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
-      <div className="flex flex-col py-1.5 px-1.5">
+      <div className="flex flex-col py-1 px-1">
         {suggestions.map((item, index) => {
           const isActive = index === selectedIndex;
           return (
@@ -315,10 +327,10 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
                   })
                 )
               }
-              className={`group relative flex w-full box-border items-center justify-between gap-3 pl-4 pr-5 py-2.5 rounded-lg text-left transition-all duration-150 ${
+              className={`group relative flex w-full box-border items-center justify-between gap-3 pl-4 pr-5 py-2 rounded-lg text-left transition-[color,background,box-shadow] duration-150 ${
                 isActive
-                  ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] shadow-sm'
-                  : 'text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] hover:shadow-md hover:ring-1 hover:ring-[color:var(--ui-border)]'
+                  ? 'bg-[color:var(--ui-hover)] text-[color:var(--ui-text)] shadow-sm ring-1 ring-[color:var(--ui-border)]'
+                  : 'text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] hover:shadow-sm'
               }`}
             >
               {/* Main content */}
@@ -350,10 +362,10 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
 
               {/* Hint/Keyboard shortcut */}
               {item.hint && (
-                <div className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-all ${
+                <div className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-[color,background] ${
                   isActive 
                     ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text-muted)]' 
-                    : 'bg-[color:var(--ui-surface-muted)]/30 text-[color:var(--ui-text-muted)] group-hover:bg-[color:var(--ui-surface-muted)]/50'
+                    : 'bg-[color:var(--ui-surface-muted)]/40 text-[color:var(--ui-text-muted)] group-hover:bg-[color:var(--ui-surface-muted)]/60'
                 }`}>
                   {item.hint}
                 </div>

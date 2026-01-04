@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { LuSearch } from "react-icons/lu";
+import { LuTriangleAlert, LuLock, LuSearch } from "react-icons/lu";
 import { SearchEngine } from "@/lib/types";
 
 interface AddressBarProps {
@@ -178,6 +178,11 @@ export const AddressBar: React.FC<AddressBarProps> = ({
       new CustomEvent("browser-addressbar-input", { detail: { value } })
     );
   };
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      event.currentTarget.blur();
+    }
+  };
 
   const secure = url.startsWith("https") || isWelcome;
   const placeholderText = "Search or enter URL";
@@ -211,19 +216,19 @@ export const AddressBar: React.FC<AddressBarProps> = ({
             className={`relative flex items-center w-full h-8 overflow-hidden transition-all duration-300
               ${
                 isFocused
-                  ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
+                  ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)] ring-1 ring-[color:var(--ui-accent)]/35"
                   : "bg-[color:var(--ui-surface-muted)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
               }
               rounded-lg`}
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
-              {secure ? (
-                <span className="text-[color:var(--ui-text-muted)]">
-                  <LuSearch size={12} />
-                </span>
+              {isWelcome ? (
+                <LuSearch size={12} />
+              ) : secure ? (
+                <LuLock size={12} />
               ) : (
-                <span className="text-[color:var(--ui-text-muted)]">
-                  <LuSearch size={12} />
+                <span title="Connection is not secure" aria-label="Connection is not secure">
+                  <LuTriangleAlert size={12} />
                 </span>
               )}
             </div>
@@ -235,8 +240,10 @@ export const AddressBar: React.FC<AddressBarProps> = ({
               className="w-full h-full bg-transparent border-none outline-none text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-muted)] electron-no-drag transition-[padding] duration-300 ease-in-out pl-7 pr-3 text-left"
               value={inputVal}
               onChange={handleChange}
+              onKeyDown={handleKeyDown}
               onFocus={handleFocus}
               onBlur={handleBlur}
+              aria-label="Address bar"
               placeholder={placeholderText}
               spellCheck={false}
               autoComplete="off"

@@ -21,8 +21,10 @@ export const TabBar = memo<TabBarProps>(({
 
   return (
     <div
+      role="tablist"
+      aria-orientation={isVertical ? 'vertical' : 'horizontal'}
       className={[
-        "electron-no-drag mb-1",
+        "electron-no-drag mb-1 bg-[color:var(--ui-surface)] shadow-sm rounded-lg",
         isVertical
           ? "flex flex-col gap-1 overflow-y-auto no-scrollbar"
           : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5"
@@ -34,8 +36,18 @@ export const TabBar = memo<TabBarProps>(({
           <div
             key={tab.id}
             onClick={() => onSwitch(tab.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSwitch(tab.id);
+              }
+            }}
+            role="tab"
+            tabIndex={isActive ? 0 : -1}
+            aria-selected={isActive}
+            aria-label={tab.title || tab.url}
             className={`
-              group relative flex items-center rounded-lg px-2.5 text-xs select-none cursor-default transition-all duration-200
+              group relative flex items-center rounded-lg px-2.5 text-xs select-none cursor-pointer transition-all duration-200
               ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
                 ? 'bg-[color:var(--ui-surface-strong)] shadow-sm text-[color:var(--ui-text)]' 
@@ -51,24 +63,31 @@ export const TabBar = memo<TabBarProps>(({
                  <LuGlobe size={14} className="opacity-50" />
                )}
             </div>
+            {tab.loading && (
+              <div className="mr-2 flex h-3 w-3 items-center justify-center">
+                <div className="h-3 w-3 animate-spin rounded-full border border-[color:var(--ui-border)] border-t-[color:var(--ui-accent)]" />
+              </div>
+            )}
 
             {/* Title */}
             <span className="truncate flex-1 font-medium">{tab.title}</span>
 
             {/* Close Button - Only visible on hover or if active */}
-            <div
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onClose(tab.id, e);
-                }}
-                className={`
-                    ml-1 rounded-lg p-0.5 hover:bg-[color:var(--ui-hover)]
-                    ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-                    transition-opacity
-                `}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose(tab.id, e);
+              }}
+              aria-label={`Close ${tab.title || tab.url}`}
+              className={`
+                ml-1 rounded-lg p-0.5 hover:bg-[color:var(--ui-hover)]
+                ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                transition-opacity
+              `}
             >
-                <LuX size={14} className="text-[color:var(--ui-text-subtle)]" />
-            </div>
+              <LuX size={14} className="text-[color:var(--ui-text-subtle)]" />
+            </button>
             
             {/* Separator (visual trick for non-active tabs) */}
             {!isVertical && !isActive && (

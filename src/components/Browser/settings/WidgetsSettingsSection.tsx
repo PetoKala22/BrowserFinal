@@ -1,8 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { LuCheck, LuChevronDown, LuCloudSun, LuMapPin, LuSearch } from 'react-icons/lu';
 import type { WeatherLocation } from '@/lib/types';
 import { SettingsGroup } from './SettingsGroup';
 
 const WEATHER_LOCATION_KEY = 'newtab-weather-location';
+const SEARCH_DEBOUNCE_MS = 350;
+const MIN_QUERY_LENGTH = 2;
 
 type GeocodingResult = {
   name: string;
@@ -12,23 +15,27 @@ type GeocodingResult = {
   admin1?: string;
 };
 
-const formatLocationLabel = (result: GeocodingResult) => {
-  const parts = [result.name, result.admin1, result.country].filter(Boolean);
-  return parts.join(', ');
-};
+const formatLocationLabel = ({ name, admin1, country }: GeocodingResult) =>
+  [name, admin1, country].filter(Boolean).join(', ');
 
-const loadSavedLocation = () => {
+const loadSavedLocation = (): WeatherLocation | null => {
   try {
     const raw = localStorage.getItem(WEATHER_LOCATION_KEY);
     if (!raw) return null;
+
     const parsed = JSON.parse(raw) as WeatherLocation;
-    if (!parsed?.name || typeof parsed.latitude !== 'number' || typeof parsed.longitude !== 'number') {
-      return null;
-    }
-    return parsed;
+    return typeof parsed?.latitude === 'number' &&
+      typeof parsed?.longitude === 'number' &&
+      typeof parsed?.name === 'string'
+      ? parsed
+      : null;
   } catch {
     return null;
   }
+};
+
+const saveLocationToStorage = (location: WeatherLocation) => {
+  localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(location));
 };
 
 export const WidgetsSettingsSection: React.FC = () => {
@@ -43,55 +50,70 @@ export const WidgetsSettingsSection: React.FC = () => {
     setSelected(loadSavedLocation());
   }, []);
 
-  const currentLabel = useMemo(() => {
-    if (!selected) return 'Not set';
-    return selected.name;
-  }, [selected]);
+  const currentLabel = useMemo(
+    () => selected?.name ?? 'Not set',
+    [selected]
+  );
 
   useEffect(() => {
-    if (!expanded) return;
-    if (query.trim().length < 2) {
+    if (!expanded || query.trim().length < MIN_QUERY_LENGTH) {
       setResults([]);
       setError(null);
       return;
     }
 
-    const handle = window.setTimeout(() => {
-      setLoading(true);
-      fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-          query.trim()
-        )}&count=6&language=en&format=json`
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          const items = Array.isArray(data?.results) ? (data.results as GeocodingResult[]) : [];
-          const mapped = items.map((item) => ({
-            name: formatLocationLabel(item),
-            latitude: item.latitude,
-            longitude: item.longitude
-          }));
-          setResults(mapped);
-          setError(mapped.length === 0 ? 'No results found.' : null);
-        })
-        .catch(() => {
-          setError('Search failed.');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }, 350);
+    const controller = new AbortController();
+    const handle = window.setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    return () => window.clearTimeout(handle);
+        const response = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+            query.trim()
+          )}&count=6&language=en&format=json`,
+          { signal: controller.signal }
+        );
+
+        const data = await response.json();
+        const items: GeocodingResult[] = Array.isArray(data?.results)
+          ? data.results
+          : [];
+
+        const mapped = items.map((item) => ({
+          name: formatLocationLabel(item),
+          latitude: item.latitude,
+          longitude: item.longitude
+        }));
+
+        setResults(mapped);
+        if (mapped.length === 0) {
+          setError('No results found.');
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError('Search failed.');
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(handle);
+    };
   }, [expanded, query]);
 
-  const saveLocation = (location: WeatherLocation) => {
-    localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(location));
+  const handleSaveLocation = useCallback((location: WeatherLocation) => {
+    saveLocationToStorage(location);
     setSelected(location);
     setQuery('');
     setResults([]);
     setError(null);
-  };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -101,68 +123,102 @@ export const WidgetsSettingsSection: React.FC = () => {
           onClick={() => setExpanded((prev) => !prev)}
           className="w-full rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-3 text-left transition hover:bg-[color:var(--ui-hover)]"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-[color:var(--ui-text)]">
-                Weather
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--ui-hover)] text-[color:var(--ui-text)]">
+                <LuCloudSun size={18} />
               </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Location: {currentLabel}
+              <div>
+                <div className="text-sm font-semibold text-[color:var(--ui-text)]">
+                  Weather
+                </div>
+                <div className="text-xs text-[color:var(--ui-text-muted)]">
+                  Location: {currentLabel}
+                </div>
               </div>
             </div>
-            <div className="text-xs text-[color:var(--ui-text-muted)]">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ui-text-muted)]">
               {expanded ? 'Hide' : 'Edit'}
+              <LuChevronDown
+                size={14}
+                className={`transition ${expanded ? 'rotate-180' : ''}`}
+              />
             </div>
           </div>
         </button>
 
         {expanded && (
-          <div className="rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] p-4 space-y-3">
-            {selected && (
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Using: {selected.name}
+          <div className="rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] p-4 space-y-4">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+              <div className="rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] p-3">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[color:var(--ui-text-subtle)]">
+                  <LuMapPin size={12} />
+                  Saved location
+                </div>
+                <div className="mt-3 text-sm font-medium text-[color:var(--ui-text)]">
+                  {selected?.name ?? 'Not set'}
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--ui-text-muted)]">
+                  Used to personalize the weather widget.
+                </div>
               </div>
-            )}
 
-            <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ui-text-subtle)]">
-                Search location
+              <div className="rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] p-3">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[color:var(--ui-text-subtle)]">
+                  <LuSearch size={12} />
+                  Search location
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Type a city or region"
+                  className="mt-3 w-full rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
+                />
               </div>
-              <input
-                type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Start typing a city or region"
-                className="mt-2 w-full rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
-              />
             </div>
 
-            {loading && (
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                Searching...
-              </div>
-            )}
+            <div className="space-y-2">
+              {loading && (
+                <div className="text-xs text-[color:var(--ui-text-muted)]">
+                  Searching...
+                </div>
+              )}
 
-            {error && (
-              <div className="text-xs text-[color:var(--ui-text-muted)]">
-                {error}
-              </div>
-            )}
+              {error && (
+                <div className="text-xs text-[color:var(--ui-text-muted)]">
+                  {error}
+                </div>
+              )}
 
-            {results.length > 0 && (
-              <div className="space-y-2">
-                {results.map((result) => (
-                  <button
-                    key={`${result.latitude}-${result.longitude}-${result.name}`}
-                    type="button"
-                    onClick={() => saveLocation(result)}
-                    className="w-full rounded-lg border border-transparent px-3 py-2 text-left text-sm text-[color:var(--ui-text)] transition hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-hover)]"
-                  >
-                    {result.name}
-                  </button>
-                ))}
-              </div>
-            )}
+              {results.length > 0 && (
+                <div className="space-y-2">
+                  {results.map((result) => {
+                    const isSelected = selected?.name === result.name;
+                    return (
+                      <button
+                        key={`${result.latitude}-${result.longitude}-${result.name}`}
+                        type="button"
+                        onClick={() => handleSaveLocation(result)}
+                        className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${
+                          isSelected
+                            ? 'border-[color:var(--ui-accent)] bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)]'
+                            : 'border-transparent text-[color:var(--ui-text)] hover:border-[color:var(--ui-border)] hover:bg-[color:var(--ui-hover)]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <LuMapPin size={14} />
+                            <span>{result.name}</span>
+                          </div>
+                          {isSelected && <LuCheck size={14} />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </SettingsGroup>

@@ -633,7 +633,7 @@ const Home: React.FC = () => {
         )}
         {!onboardingOpen && (
           <div className="absolute top-1 left-0 right-0 z-[60] h-9 flex items-center justify-center pointer-events-none">
-            <div className="pointer-events-auto w-[440px]">
+            <div className="pointer-events-auto w-[min(440px,90vw)]">
               <AddressBar
                 url={activeTab.url}
                 onNavigate={handleNavigate}
@@ -750,7 +750,7 @@ const Home: React.FC = () => {
             addressBarFocused ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'
           }`}
         >
-          <div className="w-[440px] pointer-events-auto">
+          <div className="w-[min(440px,90vw)] pointer-events-auto">
               <SuggestionsBar
               tabs={tabs}
               searchEngine={searchEngine}

@@ -25,7 +25,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, onRemove
         type="button"
         onClick={() => onRemove(widget.id)}
         aria-label="Remove widget"
-        className="widget-remove-button absolute -right-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--ui-text)] shadow-md opacity-0 transition hover:bg-[color:var(--ui-hover)] group-hover:opacity-100"
+        className="widget-remove-button absolute -right-2.5 -top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-[color:var(--ui-text)] shadow-md opacity-0 transition hover:bg-[color:var(--ui-hover)] group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
       >
         <LuMinus size={14} />
       </button>

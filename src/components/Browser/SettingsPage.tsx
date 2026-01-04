@@ -148,7 +148,7 @@ export const SettingsPage: React.FC<any> = ({
                     disabled={isSaving}
                     className="rounded-full bg-[color:var(--ui-accent)] px-4 py-1 text-xs font-semibold text-[color:var(--ui-accent-contrast)] hover:brightness-95"
                   >
-                    {isSaving ? 'Saving…' : 'Save'}
+                    {isSaving ? 'Saving' : 'Save'}
                   </button>
                 </div>
               </div>
