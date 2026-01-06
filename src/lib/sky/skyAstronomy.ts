@@ -1,9 +1,12 @@
+// skyAstronomy.ts
+
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const toRadians = (deg: number) => (deg * Math.PI) / 180;
 const toDegrees = (rad: number) => (rad * 180) / Math.PI;
 
+// ... (keep formatTimeFromMinutes and getJulianDay as they are) ...
 const formatTimeFromMinutes = (minutes: number) => {
   const normalized = (minutes % (24 * 60) + 24 * 60) % (24 * 60);
   const hh = Math.floor(normalized / 60);
@@ -38,6 +41,7 @@ const getJulianDay = (date: Date) => {
   );
 };
 
+// Updated solarPosition to calculate Azimuth
 const solarPosition = (date: Date, latitude: number, longitude: number) => {
   const jd = getJulianDay(date);
   const t = (jd - 2451545.0) / 36525;
@@ -97,6 +101,13 @@ const solarPosition = (date: Date, latitude: number, longitude: number) => {
   const zenith = Math.acos(clamp(cosZenith, -1, 1));
   let elevation = 90 - toDegrees(zenith);
 
+  // --- AZIMUTH CALCULATION ---
+  const azNum = Math.sin(declination) - Math.sin(latRad) * Math.cos(zenith);
+  const azDenom = Math.cos(latRad) * Math.sin(zenith);
+  let azimuth = Math.acos(clamp(azNum / azDenom, -1, 1));
+  if (Math.sin(haRad) > 0) azimuth = 2 * Math.PI - azimuth;
+  // ---------------------------
+
   if (elevation > -0.575) {
     const te = Math.tan(toRadians(elevation));
     const refraction =
@@ -108,7 +119,8 @@ const solarPosition = (date: Date, latitude: number, longitude: number) => {
   return {
     declination,
     equationOfTime,
-    elevation
+    elevation,
+    azimuth: toDegrees(azimuth)
   };
 };
 
@@ -134,9 +146,16 @@ export const getLocalTimeString = (date: Date) =>
     .toString()
     .padStart(2, '0')}`;
 
+// Export a full position getter
+export const getSunPosition = (date: Date, latitude: number, longitude: number) => {
+  const pos = solarPosition(date, latitude, longitude);
+  return { elevation: pos.elevation, azimuth: pos.azimuth };
+};
+
 export const estimateSunElevation = (date: Date, latitude: number, longitude: number) =>
   solarPosition(date, latitude, longitude).elevation;
 
+// ... (keep estimateSunriseSunset, estimateMoonPhase, estimateMoonElevation as they are) ...
 export const estimateSunriseSunset = (date: Date, latitude: number, longitude: number) => {
   const { declination, equationOfTime } = solarPosition(date, latitude, longitude);
   const latRad = toRadians(latitude);

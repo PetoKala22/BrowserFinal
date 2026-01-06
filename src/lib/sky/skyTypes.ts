@@ -1,3 +1,5 @@
+// skyTypes.ts
+
 export type SkyTimeInput = {
   localTime: string;
   sunrise: string;
@@ -6,6 +8,7 @@ export type SkyTimeInput = {
 
 export type SkyAstronomyInput = {
   sunElevation: number;
+  sunAzimuth: number; // <--- Add this
   moonElevation: number;
   moonPhase: number;
 };

@@ -4,7 +4,7 @@ import { useDevPanelState, useDevTime } from '@/lib/devPanelState';
 import {
   estimateMoonElevation,
   estimateMoonPhase,
-  estimateSunElevation,
+  getSunPosition, // Updated import
   estimateSunriseSunset,
   getLocalTimeString,
   getSeason
@@ -377,7 +377,10 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     );
   }
 
+  // --- NEW: Calculate full Sun Position (Azimuth + Elevation) ---
+  const sunPos = getSunPosition(now, state.latitude, state.longitude);
   const moonPhase = estimateMoonPhase(now);
+
   const skyState: SkyStateInput = {
     time: {
       localTime: getLocalTimeString(now),
@@ -385,7 +388,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       sunset: state.sunset
     },
     astronomy: {
-      sunElevation: estimateSunElevation(now, state.latitude, state.longitude),
+      sunElevation: sunPos.elevation,
+      sunAzimuth: sunPos.azimuth, // Passed to renderer for sun glare
       moonElevation: estimateMoonElevation(now, state.latitude, moonPhase),
       moonPhase
     },

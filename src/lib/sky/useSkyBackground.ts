@@ -1,3 +1,4 @@
+// useSkyBackground.ts
 import { useEffect, useRef } from 'react';
 import { SkyLayerColors, SkyStateInput } from './skyTypes';
 import { computeSkyLayers } from './skyModel';
@@ -14,9 +15,9 @@ const blendLayers = (from: SkyLayerColors, to: SkyLayerColors, t: number): SkyLa
 const getCanvasContext = (canvas: HTMLCanvasElement) => {
   const context = canvas.getContext(
     '2d',
-    { colorSpace: 'display-p3' } as CanvasRenderingContext2DSettings
+    { colorSpace: 'display-p3', willReadFrequently: true } as CanvasRenderingContext2DSettings
   );
-  return context ?? canvas.getContext('2d');
+  return context ?? canvas.getContext('2d', { willReadFrequently: true });
 };
 
 export const useSkyBackground = (state: SkyStateInput) => {
@@ -24,9 +25,12 @@ export const useSkyBackground = (state: SkyStateInput) => {
   const targetRef = useRef<SkyLayerColors>(computeSkyLayers(state));
   const currentRef = useRef<SkyLayerColors>(targetRef.current);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
+  // Keep a ref to the latest state so the animation loop can access it without restarting
+  const stateRef = useRef(state); 
 
   useEffect(() => {
     targetRef.current = computeSkyLayers(state);
+    stateRef.current = state;
   }, [state]);
 
   useEffect(() => {
@@ -62,7 +66,9 @@ export const useSkyBackground = (state: SkyStateInput) => {
       currentRef.current = blendLayers(currentRef.current, targetRef.current, smoothing);
 
       const { width, height } = sizeRef.current;
-      renderSkyGradient(ctx, width, height, currentRef.current);
+      
+      // Pass the full stateRef here
+      renderSkyGradient(ctx, width, height, currentRef.current, stateRef.current);
 
       raf = window.requestAnimationFrame(animate);
     };
