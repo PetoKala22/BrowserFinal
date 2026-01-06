@@ -16,6 +16,8 @@ interface UseSettingsResult {
   setWallpaperBlur: (blur: boolean) => void;
   adBlockEnabled: boolean;
   setAdBlockEnabled: (enabled: boolean) => void;
+  snowColor: string;
+  setSnowColor: (color: string) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -38,6 +40,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
   const [wallpaperColor, setWallpaperColor] = useState(defaultSettings.wallpaperColor);
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
   const [adBlockEnabled, setAdBlockEnabled] = useState(defaultSettings.adBlockEnabled);
+  const [snowColor, setSnowColor] = useState(defaultSettings.snowColor ?? '#FFFFFF');
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -50,7 +53,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaper,
       wallpaperColor,
       wallpaperBlur,
-      adBlockEnabled
+      adBlockEnabled,
+      snowColor
     }),
     [
       searchEngine,
@@ -59,7 +63,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaper,
       wallpaperColor,
       wallpaperBlur,
-      adBlockEnabled
+      adBlockEnabled,
+      snowColor
     ]
   );
 
@@ -72,7 +77,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.wallpaper !== currentSettings.wallpaper ||
       savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
       savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur ||
-      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled
+      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled ||
+      savedSettings.snowColor !== currentSettings.snowColor
     );
   }, [currentSettings, savedSettings]);
 
@@ -322,6 +328,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaperColor(settings.wallpaperColor);
     setWallpaperBlur(settings.wallpaperBlur);
     setAdBlockEnabled(settings.adBlockEnabled);
+    setSnowColor(settings.snowColor ?? '#FFFFFF');
   }, []);
 
   useEffect(() => {
@@ -364,6 +371,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setWallpaperBlur,
     adBlockEnabled,
     setAdBlockEnabled,
+    snowColor,
+    setSnowColor,
     currentSettings,
     savedSettings,
     setSavedSettings,

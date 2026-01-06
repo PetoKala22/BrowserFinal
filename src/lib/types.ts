@@ -45,4 +45,5 @@ export interface AppSettings {
   wallpaperColor: string;
   wallpaperBlur: boolean;
   adBlockEnabled: boolean;
+  snowColor?: string;
 }

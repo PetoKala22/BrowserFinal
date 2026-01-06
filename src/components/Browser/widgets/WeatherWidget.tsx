@@ -89,7 +89,9 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dropsRef = useRef<{ x: number; y: number; speed: number }[]>([]);
-  const flakesRef = useRef<{ x: number; y: number; speed: number; size: number }[]>([]);
+  const flakesRef = useRef<
+    { x: number; y: number; speed: number; size: number; opacity: number; wind: number }[]
+  >([]);
   const sizeRef = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -113,8 +115,10 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
       flakesRef.current = Array.from({ length: density * 0.7 }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        speed: 0.6 + Math.random() * 1.2,
-        size: 1 + Math.random() * 1.5
+        speed: 0.4 + Math.random() * 0.8,
+        size: 0.5 + Math.random() * 1.5,
+        opacity: 0.2 + Math.random() * 0.5,
+        wind: -0.25 + Math.random() * 0.5
       }));
     };
 
@@ -142,13 +146,19 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
       }
 
       if (precipitation === 'snow') {
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
         flakesRef.current.forEach(flake => {
+          ctx.fillStyle = `rgba(255,255,255,${flake.opacity})`;
           ctx.beginPath();
           ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
           ctx.fill();
+
+          // Move the flake
           flake.y = (flake.y + flake.speed) % height;
-          flake.x = (flake.x + 0.2) % width;
+          flake.x = (flake.x + flake.wind) % width;
+
+          // Wrap around if it goes off screen
+          if (flake.x < 0) flake.x = width;
+          if (flake.y > height) flake.y = 0;
         });
       }
 
@@ -166,6 +176,7 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
     <canvas
       ref={canvasRef}
       className="pointer-events-none absolute inset-0 h-full w-full"
+      style={{ filter: 'blur(1px)' }}
     />
   );
 };
