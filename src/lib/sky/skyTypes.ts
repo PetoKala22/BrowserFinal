@@ -1,5 +1,14 @@
 // skyTypes.ts
 
+export type Star = {
+  x: number;
+  y: number;
+  size: number;
+  baseAlpha: number;
+  phase: number;    // Starting offset for the twinkle
+  speed: number;    // Frequency of the twinkle
+};
+
 export type SkyTimeInput = {
   localTime: string;
   sunrise: string;
@@ -8,7 +17,7 @@ export type SkyTimeInput = {
 
 export type SkyAstronomyInput = {
   sunElevation: number;
-  sunAzimuth: number; // <--- Add this
+  sunAzimuth: number;
   moonElevation: number;
   moonPhase: number;
 };

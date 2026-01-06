@@ -25,7 +25,6 @@ export const useSkyBackground = (state: SkyStateInput) => {
   const targetRef = useRef<SkyLayerColors>(computeSkyLayers(state));
   const currentRef = useRef<SkyLayerColors>(targetRef.current);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
-  // Keep a ref to the latest state so the animation loop can access it without restarting
   const stateRef = useRef(state); 
 
   useEffect(() => {
@@ -35,9 +34,9 @@ export const useSkyBackground = (state: SkyStateInput) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return undefined;
+    if (!canvas) return;
     const ctx = getCanvasContext(canvas);
-    if (!ctx) return undefined;
+    if (!ctx) return;
 
     const updateSize = () => {
       const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
@@ -67,8 +66,8 @@ export const useSkyBackground = (state: SkyStateInput) => {
 
       const { width, height } = sizeRef.current;
       
-      // Pass the full stateRef here
-      renderSkyGradient(ctx, width, height, currentRef.current, stateRef.current);
+      // Pass the high-res timestamp 'now' into the renderer
+      renderSkyGradient(ctx, width, height, currentRef.current, stateRef.current, now);
 
       raf = window.requestAnimationFrame(animate);
     };
