@@ -1,6 +1,6 @@
 ## Nook
 
-Safari-inspired desktop browser UI built with React, Vite, Tailwind, and Electron. Includes a customizable start page, tabbed browsing shell, ad-block toggle, wallpaper controls, and a live sky/weather background.
+Minimalistic and modern desktop browser UI built with React, Vite, Tailwind, and Electron. Includes a customizable start page, tabbed browsing shell, ad-block toggle, wallpaper controls, and a live sky/weather background.
 
 ### Features
 - Tabbed shell with address bar, suggestions, history pane, and settings drawer.
