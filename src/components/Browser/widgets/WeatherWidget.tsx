@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WeatherLocation } from '@/lib/types';
+import { useDevPanelState } from '@/lib/devPanelState';
 import {
   WiDaySunny,
   WiDaySunnyOvercast,
@@ -173,8 +174,25 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     location ?? null
   );
   const [error, setError] = useState<string | null>(null);
+  const devPanel = useDevPanelState();
+  const devWeather = devPanel.weather;
 
   useEffect(() => {
+    if (devWeather.enabled) {
+      setResolvedLocation(null);
+      setError(null);
+      setState({
+        location: devWeather.location || 'Developer weather',
+        temperature: `${Math.round(devWeather.temperature)}\u00B0`,
+        condition: weatherCodeToLabel(devWeather.code),
+        highLow: `H:${Math.round(devWeather.high)}\u00B0  L:${Math.round(
+          devWeather.low
+        )}\u00B0`,
+        code: devWeather.code
+      });
+      return;
+    }
+
     if (location) {
       setResolvedLocation(location);
       setError(null);
@@ -196,9 +214,18 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     }
 
     setError('Set a location to see weather.');
-  }, [location]);
+  }, [
+    devWeather.code,
+    devWeather.enabled,
+    devWeather.high,
+    devWeather.location,
+    devWeather.low,
+    devWeather.temperature,
+    location
+  ]);
 
   useEffect(() => {
+    if (devWeather.enabled) return;
     if (!resolvedLocation) return;
 
     fetch(
@@ -217,7 +244,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       .catch(() => {
         setError('Weather unavailable.');
       });
-  }, [resolvedLocation]);
+  }, [devWeather.enabled, resolvedLocation]);
 
   if (error) {
     return (

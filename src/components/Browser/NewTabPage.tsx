@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Layout } from 'react-grid-layout';
 import { WidgetGrid } from './widgets/WidgetGrid';
 import { WidgetLibrary } from './widgets/WidgetLibrary';
+import { DeveloperPanel } from './DeveloperPanel';
 import { widgetDefinitions, widgetList } from './widgets/widgetRegistry';
 import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';
 
@@ -254,6 +255,8 @@ export const NewTabPage: React.FC = () => {
         onAddWidget={addWidget}
         onClearWidgets={clearWidgets}
       />
+
+      <DeveloperPanel />
     </div>
   );
 };

@@ -1,15 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useDevTime } from '@/lib/devPanelState';
 
 const getPart = (parts: Intl.DateTimeFormatPart[], type: string) =>
   parts.find((part) => part.type === type)?.value ?? '';
 
 export const DigitalClockWidget: React.FC = () => {
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const interval = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(interval);
-  }, []);
+  const now = useDevTime();
 
   const timeFormatter = useMemo(
     () =>

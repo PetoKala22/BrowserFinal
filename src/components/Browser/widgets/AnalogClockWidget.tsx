@@ -1,19 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useDevTime } from '@/lib/devPanelState';
 
 export const ClockWidget: React.FC = () => {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    let raf: number;
-    const update = () => {
-      setTick(t => t + 1);
-      raf = requestAnimationFrame(update);
-    };
-    raf = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const now = new Date();
+  const now = useDevTime();
 
   const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
   const minutes = now.getMinutes() + seconds / 60;
