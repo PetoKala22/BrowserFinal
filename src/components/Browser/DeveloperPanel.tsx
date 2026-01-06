@@ -85,7 +85,7 @@ export const DeveloperPanel: React.FC = () => {
       {isOpen && (
         <div
           ref={panelRef}
-          className="absolute bottom-6 right-6 z-30 w-[min(560px,calc(100%-3rem))] border border-[color:var(--ui-border)] bg-neutral-950"
+          className="absolute bottom-6 right-6 z-30 w-[min(560px,calc(100%-3rem))] border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] backdrop-blur-lg"
         >
           <div className="flex items-center justify-between">
             <div className="text-[0.65rem] uppercase tracking-[0.35em] text-white p-2">

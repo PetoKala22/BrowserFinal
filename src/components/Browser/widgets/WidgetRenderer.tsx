@@ -13,14 +13,14 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, onRemove
 
   if (!definition) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] text-sm text-[color:var(--ui-text-muted)]">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface)] text-sm text-[color:var(--ui-text-muted)]">
         Missing widget: {widget.type}
       </div>
     );
   }
 
   return (
-    <div className="group relative flex h-full w-full flex-col overflow-visible rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] shadow-sm backdrop-blur-xl">
+    <div className="group relative flex h-full w-full flex-col overflow-visible rounded-3xl bg-[color:var(--ui-surface)] shadow-md">
       <button
         type="button"
         onClick={() => onRemove(widget.id)}

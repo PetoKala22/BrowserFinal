@@ -374,7 +374,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   if (error) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
         {error}
       </div>
     );
@@ -382,7 +382,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   if (!state) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
         Loading weather...
       </div>
     );
@@ -418,7 +418,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-2xl text-white">
+    <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
       <SkyLayer state={skyState} />
       <div className="absolute inset-0 bg-black/10" />
       <PrecipitationLayer precipitation={state.precipitation} />
