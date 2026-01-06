@@ -56,8 +56,7 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     defaultSize: { w: 5, h: 5 },
     minW: 4,
     minH: 4,
-    maxW: 10,
-    maxH: 8,
+    isResizable: false,
     render: () => <WeatherWidget />
   }
 };

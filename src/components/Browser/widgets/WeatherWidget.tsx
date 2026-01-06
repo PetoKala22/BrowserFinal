@@ -1,6 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { WeatherLocation } from '@/lib/types';
-import { useDevPanelState } from '@/lib/devPanelState';
+import { useDevPanelState, useDevTime } from '@/lib/devPanelState';
+import {
+  estimateMoonElevation,
+  estimateMoonPhase,
+  estimateSunElevation,
+  estimateSunriseSunset,
+  getLocalTimeString,
+  getSeason
+} from '@/lib/sky/skyAstronomy';
+import { useSkyBackground } from '@/lib/sky/useSkyBackground';
+import { SkyStateInput } from '@/lib/sky/skyTypes';
 import {
   WiDaySunny,
   WiDaySunnyOvercast,
@@ -20,6 +30,14 @@ type WeatherState = {
   condition: string;
   highLow: string;
   code: number;
+  sunrise: string;
+  sunset: string;
+  cloudCover: number;
+  precipitation: 'none' | 'rain' | 'snow' | 'storm';
+  fogDensity: number;
+  visibility: number;
+  latitude: number;
+  longitude: number;
 };
 
 type WeatherWidgetProps = {
@@ -50,19 +68,6 @@ const weatherCodeToLabel = (code: number) => {
   return 'Mixed conditions';
 };
 
-const weatherGradient = (code: number) => {
-  if (code === 0) return 'from-[#58b2ff] via-[#7fd2ff] to-[#bfe7ff]';
-  if (code <= 2) return 'from-[#6bb7ff] via-[#8ad2ff] to-[#bfe8ff]';
-  if (code === 3) return 'from-[#8aa1b5] via-[#a8b8c7] to-[#d7e0ea]';
-  if (code === 45 || code === 48) return 'from-[#9aa5b1] via-[#b0bcc9] to-[#d6dde4]';
-  if (code >= 51 && code <= 67) return 'from-[#6e8aa8] via-[#90a9c2] to-[#c6d4e2]';
-  if (code >= 71 && code <= 77) return 'from-[#9fc5e8] via-[#c7ddf0] to-[#e8f2fb]';
-  if (code >= 80 && code <= 82) return 'from-[#6e8fb3] via-[#96b0ca] to-[#cbd7e2]';
-  if (code >= 85 && code <= 86) return 'from-[#a7c2d9] via-[#cddceb] to-[#edf4fa]';
-  if (code >= 95) return 'from-[#5b6b7f] via-[#7b8aa1] to-[#a9b7c9]';
-  return 'from-[#8fb2d3] via-[#b3cbe0] to-[#dce7f2]';
-};
-
 const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
   const iconSize = 44;
   const iconColor = 'rgba(255,255,255,0.9)';
@@ -77,39 +82,20 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
   return <WiDaySunny size={iconSize} color={iconColor} />;
 };
 
-/* ------------------ Atmosphere Layer ------------------ */
-
-const AtmosphereLayer: React.FC<{ code: number }> = ({ code }) => {
-  const cloudy = code >= 1 && code <= 3;
-  const fog = code === 45 || code === 48;
-  const storm = code >= 95;
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {cloudy && (
-        <div className="absolute inset-0 animate-clouds bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.18),transparent_60%)]" />
-      )}
-      {fog && (
-        <div className="absolute inset-0 animate-fog bg-white/25 blur-3xl" />
-      )}
-      {storm && (
-        <div className="absolute inset-0 bg-black/20" />
-      )}
-    </div>
-  );
-};
-
 /* ------------------ Precipitation Layer ------------------ */
 
-const PrecipitationLayer: React.FC<{ code: number }> = ({ code }) => {
+const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'] }> = ({
+  precipitation
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dropsRef = useRef<{ x: number; y: number; speed: number }[]>([]);
+  const flakesRef = useRef<{ x: number; y: number; speed: number; size: number }[]>([]);
   const sizeRef = useRef({ width: 0, height: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
-    const density = 120;
+    const density = precipitation === 'storm' ? 220 : 140;
 
     const updateSize = () => {
       const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
@@ -124,6 +110,12 @@ const PrecipitationLayer: React.FC<{ code: number }> = ({ code }) => {
         y: Math.random() * height,
         speed: 2 + Math.random() * 3
       }));
+      flakesRef.current = Array.from({ length: density * 0.7 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        speed: 0.6 + Math.random() * 1.2,
+        size: 1 + Math.random() * 1.5
+      }));
     };
 
     updateSize();
@@ -135,16 +127,28 @@ const PrecipitationLayer: React.FC<{ code: number }> = ({ code }) => {
       const { width, height } = sizeRef.current;
       ctx.clearRect(0, 0, width, height);
 
-      if (code >= 51) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.lineWidth = 1;
+      if (precipitation === 'rain' || precipitation === 'storm') {
+        ctx.strokeStyle =
+          precipitation === 'storm' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = precipitation === 'storm' ? 1.3 : 1;
 
         dropsRef.current.forEach(d => {
           ctx.beginPath();
           ctx.moveTo(d.x, d.y);
-          ctx.lineTo(d.x, d.y + 8);
+          ctx.lineTo(d.x, d.y + (precipitation === 'storm' ? 12 : 8));
           ctx.stroke();
           d.y = (d.y + d.speed) % height;
+        });
+      }
+
+      if (precipitation === 'snow') {
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        flakesRef.current.forEach(flake => {
+          ctx.beginPath();
+          ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
+          ctx.fill();
+          flake.y = (flake.y + flake.speed) % height;
+          flake.x = (flake.x + 0.2) % width;
         });
       }
 
@@ -156,8 +160,20 @@ const PrecipitationLayer: React.FC<{ code: number }> = ({ code }) => {
       resizeObserver.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [code]);
+  }, [precipitation]);
 
+  return (
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none absolute inset-0 h-full w-full"
+    />
+  );
+};
+
+/* ------------------ Sky Layer ------------------ */
+
+const SkyLayer: React.FC<{ state: SkyStateInput }> = ({ state }) => {
+  const canvasRef = useSkyBackground(state);
   return (
     <canvas
       ref={canvasRef}
@@ -176,11 +192,87 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
   const [error, setError] = useState<string | null>(null);
   const devPanel = useDevPanelState();
   const devWeather = devPanel.weather;
+  const now = useDevTime();
+
+  const getStoredLocation = () => {
+    try {
+      const raw = localStorage.getItem(WEATHER_LOCATION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as WeatherLocation;
+      return isValidLocation(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const deriveCloudCover = (code: number) => {
+    if (code === 0) return 0.05;
+    if (code <= 2) return 0.35;
+    if (code === 3) return 0.75;
+    if (code === 45 || code === 48) return 0.6;
+    if (code >= 51 && code <= 67) return 0.65;
+    if (code >= 71 && code <= 77) return 0.5;
+    if (code >= 80 && code <= 82) return 0.65;
+    if (code >= 85 && code <= 86) return 0.6;
+    if (code >= 95) return 0.85;
+    return 0.45;
+  };
+
+  const derivePrecipitation = (code: number, precipitationValue?: number) => {
+    if (code >= 95) return 'storm';
+    if (code >= 71 && code <= 86) return 'snow';
+    if (code >= 51 && code <= 67) return 'rain';
+    if (code >= 80 && code <= 82) return 'rain';
+    if (typeof precipitationValue === 'number' && precipitationValue > 0) return 'rain';
+    return 'none';
+  };
+
+  const deriveVisibilityKm = (value?: number) => {
+    if (!Number.isFinite(value)) return undefined;
+    return Math.max(0.5, value / 1000);
+  };
+
+  const deriveFogDensity = (code: number, visibilityKm?: number) => {
+    if (code === 45 || code === 48) return 0.8;
+    if (!visibilityKm) return 0.2;
+    return Math.min(0.6, Math.max(0, 1 - visibilityKm / 14));
+  };
+
+  const parseTime = (value?: string) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return getLocalTimeString(date);
+  };
 
   useEffect(() => {
+    const storedLocation = getStoredLocation();
+    const fallbackLocation = location ?? storedLocation ?? resolvedLocation;
+
     if (devWeather.enabled) {
-      setResolvedLocation(null);
+      if (fallbackLocation && isValidLocation(fallbackLocation)) {
+        setResolvedLocation(fallbackLocation);
+      }
       setError(null);
+      const coords = fallbackLocation ?? {
+        name: devWeather.location || 'Developer weather',
+        latitude: 0,
+        longitude: 0
+      };
+      const referenceDate = new Date();
+      const estimated = estimateSunriseSunset(
+        referenceDate,
+        coords.latitude,
+        coords.longitude
+      );
+      const cloudCover = Number.isFinite(devWeather.cloudCover)
+        ? Math.min(1, Math.max(0, devWeather.cloudCover))
+        : deriveCloudCover(devWeather.code);
+      const visibility = Number.isFinite(devWeather.visibility)
+        ? Math.max(0.5, devWeather.visibility)
+        : Math.max(2, 16 - cloudCover * 10);
+      const sunrise = devWeather.sunrise || estimated.sunrise;
+      const sunset = devWeather.sunset || estimated.sunset;
       setState({
         location: devWeather.location || 'Developer weather',
         temperature: `${Math.round(devWeather.temperature)}\u00B0`,
@@ -188,7 +280,15 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         highLow: `H:${Math.round(devWeather.high)}\u00B0  L:${Math.round(
           devWeather.low
         )}\u00B0`,
-        code: devWeather.code
+        code: devWeather.code,
+        sunrise,
+        sunset,
+        cloudCover,
+        precipitation: devWeather.precipitation ?? derivePrecipitation(devWeather.code),
+        fogDensity: deriveFogDensity(devWeather.code, visibility),
+        visibility,
+        latitude: coords.latitude,
+        longitude: coords.longitude
       });
       return;
     }
@@ -199,18 +299,10 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       return;
     }
 
-    try {
-      const raw = localStorage.getItem(WEATHER_LOCATION_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as WeatherLocation;
-        if (isValidLocation(parsed)) {
-          setResolvedLocation(parsed);
-          setError(null);
-          return;
-        }
-      }
-    } catch {
-      // Ignore invalid stored location.
+    if (storedLocation) {
+      setResolvedLocation(storedLocation);
+      setError(null);
+      return;
     }
 
     setError('Set a location to see weather.');
@@ -228,17 +320,40 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     if (devWeather.enabled) return;
     if (!resolvedLocation) return;
 
+    const referenceDate = new Date();
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto`
+      `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code,cloud_cover,visibility,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`
     )
       .then(r => r.json())
       .then(data => {
+        const code = data.current?.weather_code ?? 0;
+        const estimated = estimateSunriseSunset(
+          referenceDate,
+          resolvedLocation.latitude,
+          resolvedLocation.longitude
+        );
+        const sunrise = parseTime(data.daily?.sunrise?.[0]) ?? estimated.sunrise;
+        const sunset = parseTime(data.daily?.sunset?.[0]) ?? estimated.sunset;
+        const visibilityKm = deriveVisibilityKm(data.current?.visibility);
+        const cloudCover = Number.isFinite(data.current?.cloud_cover)
+          ? Math.min(1, Math.max(0, data.current.cloud_cover / 100))
+          : deriveCloudCover(code);
+        const fallbackVisibility = Math.max(2, 16 - cloudCover * 10);
+
         setState({
           location: resolvedLocation.name,
           temperature: `${Math.round(data.current.temperature_2m)}\u00B0`,
-          condition: weatherCodeToLabel(data.current.weather_code),
+          condition: weatherCodeToLabel(code),
           highLow: `H:${Math.round(data.daily.temperature_2m_max[0])}\u00B0  L:${Math.round(data.daily.temperature_2m_min[0])}\u00B0`,
-          code: data.current.weather_code
+          code,
+          sunrise,
+          sunset,
+          cloudCover,
+          precipitation: derivePrecipitation(code, data.current?.precipitation),
+          fogDensity: deriveFogDensity(code, visibilityKm),
+          visibility: visibilityKm ?? fallbackVisibility,
+          latitude: resolvedLocation.latitude,
+          longitude: resolvedLocation.longitude
         });
       })
       .catch(() => {
@@ -262,16 +377,36 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     );
   }
 
-  return (
-    <div
-      className={`relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br ${weatherGradient(
-        state.code
-      )} text-white`}
-    >
-      <AtmosphereLayer code={state.code} />
-      <PrecipitationLayer code={state.code} />
+  const moonPhase = estimateMoonPhase(now);
+  const skyState: SkyStateInput = {
+    time: {
+      localTime: getLocalTimeString(now),
+      sunrise: state.sunrise,
+      sunset: state.sunset
+    },
+    astronomy: {
+      sunElevation: estimateSunElevation(now, state.latitude, state.longitude),
+      moonElevation: estimateMoonElevation(now, state.latitude, moonPhase),
+      moonPhase
+    },
+    weather: {
+      cloudCover: state.cloudCover,
+      precipitation: state.precipitation,
+      fogDensity: state.fogDensity,
+      visibility: state.visibility
+    },
+    environment: {
+      latitude: state.latitude,
+      longitude: state.longitude,
+      season: devWeather.enabled ? devWeather.season : getSeason(now, state.latitude)
+    }
+  };
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.45),_transparent_60%)]" />
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-2xl text-white">
+      <SkyLayer state={skyState} />
+      <div className="absolute inset-0 bg-black/10" />
+      <PrecipitationLayer precipitation={state.precipitation} />
 
       <div className="relative z-10 flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between">

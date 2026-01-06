@@ -19,6 +19,20 @@ const WEATHER_CODE_OPTIONS = [
   { code: 95, label: 'Thunderstorm' }
 ];
 
+const PRECIPITATION_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'rain', label: 'Rain' },
+  { value: 'snow', label: 'Snow' },
+  { value: 'storm', label: 'Storm' }
+];
+
+const SEASON_OPTIONS = [
+  { value: 'winter', label: 'Winter' },
+  { value: 'spring', label: 'Spring' },
+  { value: 'summer', label: 'Summer' },
+  { value: 'autumn', label: 'Autumn' }
+];
+
 const clampNumber = (value: string, min: number, max: number) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return min;
@@ -221,6 +235,131 @@ export const DeveloperPanel: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                </label>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Cloud cover
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(state.weather.cloudCover * 100)}
+                      onChange={(event) =>
+                        updateDevPanelState({
+                          weather: {
+                            cloudCover:
+                              clampNumber(event.target.value, 0, 100) / 100
+                          }
+                        })
+                      }
+                      className="flex-1 accent-[color:var(--ui-accent)]"
+                    />
+                    <span className="w-12 bg-[color:var(--ui-surface)] px-2 py-1 text-center text-xs text-[color:var(--ui-text)]">
+                      {Math.round(state.weather.cloudCover * 100)}%
+                    </span>
+                  </div>
+                </label>
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Visibility (km)
+                  <div className="mt-2 flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={1}
+                      max={30}
+                      value={state.weather.visibility}
+                      onChange={(event) =>
+                        updateDevPanelState({
+                          weather: {
+                            visibility: clampNumber(event.target.value, 1, 30)
+                          }
+                        })
+                      }
+                      className="flex-1 accent-[color:var(--ui-accent)]"
+                    />
+                    <span className="w-12 bg-[color:var(--ui-surface)] px-2 py-1 text-center text-xs text-[color:var(--ui-text)]">
+                      {Math.round(state.weather.visibility)}
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Precipitation
+                  <select
+                    value={state.weather.precipitation}
+                    onChange={(event) =>
+                      updateDevPanelState({
+                        weather: {
+                          precipitation: event.target.value as
+                            | 'none'
+                            | 'rain'
+                            | 'snow'
+                            | 'storm'
+                        }
+                      })
+                    }
+                    className="mt-1 w-full bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
+                  >
+                    {PRECIPITATION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Season
+                  <select
+                    value={state.weather.season}
+                    onChange={(event) =>
+                      updateDevPanelState({
+                        weather: {
+                          season: event.target.value as
+                            | 'winter'
+                            | 'spring'
+                            | 'summer'
+                            | 'autumn'
+                        }
+                      })
+                    }
+                    className="mt-1 w-full bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
+                  >
+                    {SEASON_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Sunrise
+                  <input
+                    type="time"
+                    value={state.weather.sunrise}
+                    onChange={(event) =>
+                      updateDevPanelState({
+                        weather: { sunrise: event.target.value }
+                      })
+                    }
+                    className="mt-1 w-full bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
+                  />
+                </label>
+                <label className="text-xs text-[color:var(--ui-text-muted)]">
+                  Sunset
+                  <input
+                    type="time"
+                    value={state.weather.sunset}
+                    onChange={(event) =>
+                      updateDevPanelState({
+                        weather: { sunset: event.target.value }
+                      })
+                    }
+                    className="mt-1 w-full bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] outline-none focus:ring-2 focus:ring-[color:var(--ui-ring)]"
+                  />
                 </label>
               </div>
 

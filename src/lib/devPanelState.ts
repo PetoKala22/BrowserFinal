@@ -14,6 +14,12 @@ type DevPanelWeatherState = {
   high: number;
   low: number;
   code: number;
+  cloudCover: number;
+  visibility: number;
+  precipitation: 'none' | 'rain' | 'snow' | 'storm';
+  sunrise: string;
+  sunset: string;
+  season: 'winter' | 'spring' | 'summer' | 'autumn';
 };
 
 export type DevPanelState = {
@@ -37,7 +43,13 @@ const DEFAULT_STATE: DevPanelState = {
     temperature: 22,
     high: 26,
     low: 18,
-    code: 0
+    code: 0,
+    cloudCover: 0.2,
+    visibility: 12,
+    precipitation: 'none',
+    sunrise: '06:30',
+    sunset: '19:30',
+    season: 'summer'
   }
 };
 
@@ -47,6 +59,22 @@ const clamp = (value: number, min: number, max: number) =>
 const normalizeState = (state: Partial<DevPanelState> | null): DevPanelState => {
   const time = state?.time ?? {};
   const weather = state?.weather ?? {};
+  const normalizeTime = (value: unknown, fallback: string) => {
+    if (typeof value !== 'string') return fallback;
+    return /^\d{2}:\d{2}$/.test(value) ? value : fallback;
+  };
+  const normalizePrecipitation = (value: unknown) => {
+    if (value === 'rain' || value === 'snow' || value === 'storm' || value === 'none') {
+      return value;
+    }
+    return DEFAULT_STATE.weather.precipitation;
+  };
+  const normalizeSeason = (value: unknown) => {
+    if (value === 'winter' || value === 'spring' || value === 'summer' || value === 'autumn') {
+      return value;
+    }
+    return DEFAULT_STATE.weather.season;
+  };
   return {
     time: {
       enabled: Boolean(time.enabled),
@@ -72,7 +100,25 @@ const normalizeState = (state: Partial<DevPanelState> | null): DevPanelState => 
         Number.isFinite(weather.code) ? Number(weather.code) : DEFAULT_STATE.weather.code,
         0,
         99
-      )
+      ),
+      cloudCover: clamp(
+        Number.isFinite(weather.cloudCover)
+          ? Number(weather.cloudCover)
+          : DEFAULT_STATE.weather.cloudCover,
+        0,
+        1
+      ),
+      visibility: clamp(
+        Number.isFinite(weather.visibility)
+          ? Number(weather.visibility)
+          : DEFAULT_STATE.weather.visibility,
+        0.5,
+        50
+      ),
+      precipitation: normalizePrecipitation(weather.precipitation),
+      sunrise: normalizeTime(weather.sunrise, DEFAULT_STATE.weather.sunrise),
+      sunset: normalizeTime(weather.sunset, DEFAULT_STATE.weather.sunset),
+      season: normalizeSeason(weather.season)
     }
   };
 };
