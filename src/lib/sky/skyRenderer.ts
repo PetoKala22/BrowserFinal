@@ -11,8 +11,8 @@ export const renderSkyGradient = (
 
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
   gradient.addColorStop(0, toCssRgb(layers.upperSky));
-  gradient.addColorStop(0.5, toCssRgb(layers.midSky));
-  gradient.addColorStop(1, toCssRgb(layers.horizonBand));
+  gradient.addColorStop(0.55, toCssRgb(layers.midSky));
+  gradient.addColorStop(0.85, toCssRgb(layers.horizonBand));
   gradient.addColorStop(1, toCssRgb(layers.groundBounce));
 
   ctx.fillStyle = gradient;
