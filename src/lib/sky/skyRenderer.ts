@@ -86,7 +86,7 @@ export const renderSkyGradient = (
   }
 
   // 4. Ground Bounce
-  const groundGrad = ctx.createLinearGradient(0, height * 0.85, 0, height);
+  const groundGrad = ctx.createLinearGradient(0, height * 1, 0, height);
   groundGrad.addColorStop(0, toCssRgb(layers.groundBounce, 0));
   groundGrad.addColorStop(1, toCssRgb(layers.groundBounce, 1));
   ctx.fillStyle = groundGrad;

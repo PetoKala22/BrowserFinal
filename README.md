@@ -1,27 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+## Nook
 
-# Run and deploy your AI Studio app
+Safari-inspired desktop browser UI built with React, Vite, Tailwind, and Electron. Includes a customizable start page, tabbed browsing shell, ad-block toggle, wallpaper controls, and a live sky/weather background.
 
-This contains everything you need to run your app locally.
+### Features
+- Tabbed shell with address bar, suggestions, history pane, and settings drawer.
+- Start page widgets: weather/sky backdrop, ad-block stats, onboarding flow, and wallpaper notice.
+- Configurable search engine and custom search URL; remembers tabs/history via Electron IPC helpers.
+- Theme/wallpaper controls with optional blur and seasonal sky rendering driven by astronomy math.
 
-View your app in AI Studio: https://ai.studio/apps/temp/1
+### Getting Started
+1) Install Node 18+ and npm.  
+2) Install deps: `npm install`  
+3) Web preview: `npm run dev` then open the printed URL.  
+4) Electron dev: `npm run electron:dev` (spawns Vite and Electron together).
 
-## Run Locally
+### Scripts
+- `npm run dev` — Vite dev server.
+- `npm run build` — Production web build to `dist/`.
+- `npm run preview` — Preview the production build.
+- `npm run electron` — Launch Electron using the built files (set `VITE_DEV_SERVER_URL` if using dev server).
+- `npm run electron:dev` — Concurrent Vite + Electron for live reload.
 
-**Prerequisites:**  Node.js
+### Project Layout
+- `src/app` / `features/home` — Main application shell and browser experience.
+- `src/components/Browser` — Address bar, tabs, history, settings UI, and widgets.
+- `src/lib/sky` — Procedural sky rendering, astronomy helpers, and weather-driven colors.
+- `electron/` — Electron main process files and preload.
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-
-## Run as an Electron app
-
-1. Install dependencies: `npm install`
-2. Set `GEMINI_API_KEY` in [.env.local](.env.local)
-3. Start the desktop app in dev mode (runs Vite + Electron together): `npm run electron:dev`
-4. Build a production desktop package: `npm run electron:build` (uses `dist` assets and writes installers to `release/`)
+### Building Electron Package
+- Run `npm run build` then `npm run electron` for a local check, or `npm run electron:build` to produce installers into `release/`.
