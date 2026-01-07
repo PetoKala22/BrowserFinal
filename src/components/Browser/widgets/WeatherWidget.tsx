@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+// WeatherWidget.tsx
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { WeatherLocation } from '@/lib/types';
 import { useDevPanelState, useDevTime } from '@/lib/devPanelState';
 import {
   estimateMoonElevation,
   estimateMoonPhase,
-  getSunPosition, // Updated import
+  getSunPosition,
   estimateSunriseSunset,
   getLocalTimeString,
   getSeason
@@ -30,8 +31,8 @@ type WeatherState = {
   condition: string;
   highLow: string;
   code: number;
-  sunrise: string;
-  sunset: string;
+  sunrise: Date;
+  sunset: Date;
   cloudCover: number;
   precipitation: 'none' | 'rain' | 'snow' | 'storm';
   fogDensity: number;
@@ -92,29 +93,44 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
   const flakesRef = useRef<
     { x: number; y: number; speed: number; size: number; opacity: number; wind: number }[]
   >([]);
-  const sizeRef = useRef({ width: 0, height: 0 });
+  const modeRef = useRef<WeatherState['precipitation']>(precipitation);
+  const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
+
+  // Keep animation loop stable; only update mode.
+  useEffect(() => {
+    modeRef.current = precipitation;
+  }, [precipitation]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
-    const density = precipitation === 'storm' ? 220 : 140;
+    const maxDensity = 240; // allocate once (avoid popping on mode changes)
 
     const updateSize = () => {
       const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
-      const width = Math.max(0, Math.floor(bounds.width));
-      const height = Math.max(0, Math.floor(bounds.height));
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.max(0, Math.floor(bounds.width));
+      const cssH = Math.max(0, Math.floor(bounds.height));
+      const width = Math.max(0, Math.floor(cssW * dpr));
+      const height = Math.max(0, Math.floor(cssH * dpr));
       if (!width || !height) return;
+
       canvas.width = width;
       canvas.height = height;
-      sizeRef.current = { width, height };
-      dropsRef.current = Array.from({ length: density }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
+      canvas.style.width = `${cssW}px`;
+      canvas.style.height = `${cssH}px`;
+      sizeRef.current = { width, height, dpr };
+
+      // Re-seed on resize only (stable during mode changes).
+      dropsRef.current = Array.from({ length: maxDensity }, () => ({
+        x: Math.random() * cssW,
+        y: Math.random() * cssH,
         speed: 2 + Math.random() * 3
       }));
-      flakesRef.current = Array.from({ length: density * 0.7 }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
+
+      flakesRef.current = Array.from({ length: Math.floor(maxDensity * 0.75) }, () => ({
+        x: Math.random() * cssW,
+        y: Math.random() * cssH,
         speed: 0.4 + Math.random() * 0.8,
         size: 0.5 + Math.random() * 1.5,
         opacity: 0.2 + Math.random() * 0.5,
@@ -123,43 +139,57 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
     };
 
     updateSize();
-    const resizeObserver = new ResizeObserver(() => updateSize());
+    const resizeObserver = new ResizeObserver(updateSize);
     resizeObserver.observe(canvas.parentElement ?? canvas);
 
     let raf: number;
     const draw = () => {
-      const { width, height } = sizeRef.current;
-      ctx.clearRect(0, 0, width, height);
-
-      if (precipitation === 'rain' || precipitation === 'storm') {
-        ctx.strokeStyle =
-          precipitation === 'storm' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = precipitation === 'storm' ? 1.3 : 1;
-
-        dropsRef.current.forEach(d => {
-          ctx.beginPath();
-          ctx.moveTo(d.x, d.y);
-          ctx.lineTo(d.x, d.y + (precipitation === 'storm' ? 12 : 8));
-          ctx.stroke();
-          d.y = (d.y + d.speed) % height;
-        });
+      const { width, height, dpr } = sizeRef.current;
+      if (!width || !height) {
+        raf = requestAnimationFrame(draw);
+        return;
       }
 
-      if (precipitation === 'snow') {
-        flakesRef.current.forEach(flake => {
+      // Draw in CSS pixels for consistent motion across DPR.
+      const cssW = Math.floor(width / dpr);
+      const cssH = Math.floor(height / dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const mode = modeRef.current;
+      const density = mode === 'storm' ? 220 : 140;
+
+      if (mode === 'rain' || mode === 'storm') {
+        ctx.strokeStyle =
+          mode === 'storm' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = mode === 'storm' ? 1.3 : 1;
+
+        for (let i = 0; i < Math.min(density, dropsRef.current.length); i++) {
+          const d = dropsRef.current[i];
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x, d.y + (mode === 'storm' ? 12 : 8));
+          ctx.stroke();
+          d.y = (d.y + d.speed) % cssH;
+        }
+      }
+
+      if (mode === 'snow') {
+        const count = Math.min(Math.floor(density * 0.75), flakesRef.current.length);
+        for (let i = 0; i < count; i++) {
+          const flake = flakesRef.current[i];
           ctx.fillStyle = `rgba(255,255,255,${flake.opacity})`;
           ctx.beginPath();
           ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
           ctx.fill();
 
-          // Move the flake
-          flake.y = (flake.y + flake.speed) % height;
-          flake.x = (flake.x + flake.wind) % width;
+          flake.y = (flake.y + flake.speed) % cssH;
+          flake.x = (flake.x + flake.wind) % cssW;
 
-          // Wrap around if it goes off screen
-          if (flake.x < 0) flake.x = width;
-          if (flake.y > height) flake.y = 0;
-        });
+          if (flake.x < 0) flake.x = cssW;
+          if (flake.y > cssH) flake.y = 0;
+        }
       }
 
       raf = requestAnimationFrame(draw);
@@ -170,7 +200,7 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
       resizeObserver.disconnect();
       cancelAnimationFrame(raf);
     };
-  }, [precipitation]);
+  }, []);
 
   return (
     <canvas
@@ -246,15 +276,19 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
   const deriveFogDensity = (code: number, visibilityKm?: number) => {
     if (code === 45 || code === 48) return 0.8;
     if (!visibilityKm) return 0.2;
-    return Math.min(0.6, Math.max(0, 1 - visibilityKm / 14));
+    // Nonlinear ramp: fog becomes perceptually dense quickly at low vis.
+    const linear = Math.min(1, Math.max(0, 1 - visibilityKm / 14));
+    return Math.min(0.7, Math.max(0, linear * linear));
   };
 
   const parseTime = (value?: string) => {
     if (!value) return null;
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
-    return getLocalTimeString(date);
+    return date;
   };
+
+  const formatHHmm = (date: Date) => getLocalTimeString(date);
 
   useEffect(() => {
     const storedLocation = getStoredLocation();
@@ -265,25 +299,37 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         setResolvedLocation(fallbackLocation);
       }
       setError(null);
+
       const coords = fallbackLocation ?? {
         name: devWeather.location || 'Developer weather',
         latitude: 0,
         longitude: 0
       };
+
       const referenceDate = new Date();
-      const estimated = estimateSunriseSunset(
-        referenceDate,
-        coords.latitude,
-        coords.longitude
-      );
+      const estimated = estimateSunriseSunset(referenceDate, coords.latitude, coords.longitude);
+
       const cloudCover = Number.isFinite(devWeather.cloudCover)
         ? Math.min(1, Math.max(0, devWeather.cloudCover))
         : deriveCloudCover(devWeather.code);
+
       const visibility = Number.isFinite(devWeather.visibility)
         ? Math.max(0.5, devWeather.visibility)
         : Math.max(2, 16 - cloudCover * 10);
-      const sunrise = devWeather.sunrise || estimated.sunrise;
-      const sunset = devWeather.sunset || estimated.sunset;
+
+      // Canonical form in state as Date.
+      const sunriseStr = devWeather.sunrise || estimated.sunrise;
+      const sunsetStr = devWeather.sunset || estimated.sunset;
+
+      const sunrise = new Date(referenceDate);
+      const sunset = new Date(referenceDate);
+
+      const [srH, srM] = sunriseStr.split(':').map(v => Number(v));
+      const [ssH, ssM] = sunsetStr.split(':').map(v => Number(v));
+
+      sunrise.setHours(Number.isFinite(srH) ? srH : 0, Number.isFinite(srM) ? srM : 0, 0, 0);
+      sunset.setHours(Number.isFinite(ssH) ? ssH : 0, Number.isFinite(ssM) ? ssM : 0, 0, 0);
+
       setState({
         location: devWeather.location || 'Developer weather',
         temperature: `${Math.round(devWeather.temperature)}\u00B0`,
@@ -332,10 +378,16 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     if (!resolvedLocation) return;
 
     const referenceDate = new Date();
+    const controller = new AbortController();
+
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code,cloud_cover,visibility,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`
+      `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code,cloud_cover,visibility,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`,
+      { signal: controller.signal }
     )
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('weather_fetch_failed');
+        return r.json();
+      })
       .then(data => {
         const code = data.current?.weather_code ?? 0;
         const estimated = estimateSunriseSunset(
@@ -343,19 +395,44 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
           resolvedLocation.latitude,
           resolvedLocation.longitude
         );
-        const sunrise = parseTime(data.daily?.sunrise?.[0]) ?? estimated.sunrise;
-        const sunset = parseTime(data.daily?.sunset?.[0]) ?? estimated.sunset;
+
+        const parsedSunrise = parseTime(data.daily?.sunrise?.[0]);
+        const parsedSunset = parseTime(data.daily?.sunset?.[0]);
+
+        // If API time is missing/invalid, fall back to estimated HH:mm on the reference day.
+        const sunrise =
+          parsedSunrise ??
+          (() => {
+            const d = new Date(referenceDate);
+            const [h, m] = estimated.sunrise.split(':').map((v: string) => Number(v));
+            d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+            return d;
+          })();
+
+        const sunset =
+          parsedSunset ??
+          (() => {
+            const d = new Date(referenceDate);
+            const [h, m] = estimated.sunset.split(':').map((v: string) => Number(v));
+            d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+            return d;
+          })();
+
         const visibilityKm = deriveVisibilityKm(data.current?.visibility);
+
         const cloudCover = Number.isFinite(data.current?.cloud_cover)
           ? Math.min(1, Math.max(0, data.current.cloud_cover / 100))
           : deriveCloudCover(code);
+
         const fallbackVisibility = Math.max(2, 16 - cloudCover * 10);
 
         setState({
           location: resolvedLocation.name,
           temperature: `${Math.round(data.current.temperature_2m)}\u00B0`,
           condition: weatherCodeToLabel(code),
-          highLow: `H:${Math.round(data.daily.temperature_2m_max[0])}\u00B0  L:${Math.round(data.daily.temperature_2m_min[0])}\u00B0`,
+          highLow: `H:${Math.round(data.daily.temperature_2m_max[0])}\u00B0  L:${Math.round(
+            data.daily.temperature_2m_min[0]
+          )}\u00B0`,
           code,
           sunrise,
           sunset,
@@ -368,9 +445,53 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         });
       })
       .catch(() => {
-        setError('Weather unavailable.');
+        if (!controller.signal.aborted) setError('Weather unavailable.');
       });
+
+    return () => controller.abort();
   }, [devWeather.enabled, resolvedLocation]);
+
+  const sunPos = getSunPosition(now, state?.latitude ?? 0, state?.longitude ?? 0);
+  const moonPhase = estimateMoonPhase(now);
+
+  const skyState: SkyStateInput | null = useMemo(() => {
+    if (!state) return null;
+
+    return {
+      time: {
+        localTime: getLocalTimeString(now),
+        sunrise: getLocalTimeString(state.sunrise),
+        sunset: getLocalTimeString(state.sunset)
+      },
+      astronomy: {
+        sunElevation: sunPos.elevation,
+        sunAzimuth: sunPos.azimuth,
+        moonElevation: estimateMoonElevation(now, state.latitude, moonPhase),
+        moonPhase
+      },
+      weather: {
+        cloudCover: state.cloudCover,
+        precipitation: state.precipitation,
+        fogDensity: state.fogDensity,
+        visibility: state.visibility
+      },
+      environment: {
+        latitude: state.latitude,
+        longitude: state.longitude,
+        season: devWeather.enabled
+          ? devWeather.season
+          : getSeason(now, state.latitude)
+      }
+    };
+  }, [
+    now,
+    state,
+    devWeather.enabled,
+    devWeather.season,
+    sunPos.azimuth,
+    sunPos.elevation,
+    moonPhase
+  ]);
 
   if (error) {
     return (
@@ -388,35 +509,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     );
   }
 
-  // --- NEW: Calculate full Sun Position (Azimuth + Elevation) ---
-  const sunPos = getSunPosition(now, state.latitude, state.longitude);
-  const moonPhase = estimateMoonPhase(now);
-
-  const skyState: SkyStateInput = {
-    time: {
-      localTime: getLocalTimeString(now),
-      sunrise: state.sunrise,
-      sunset: state.sunset
-    },
-    astronomy: {
-      sunElevation: sunPos.elevation,
-      sunAzimuth: sunPos.azimuth, // Passed to renderer for sun glare
-      moonElevation: estimateMoonElevation(now, state.latitude, moonPhase),
-      moonPhase
-    },
-    weather: {
-      cloudCover: state.cloudCover,
-      precipitation: state.precipitation,
-      fogDensity: state.fogDensity,
-      visibility: state.visibility
-    },
-    environment: {
-      latitude: state.latitude,
-      longitude: state.longitude,
-      season: devWeather.enabled ? devWeather.season : getSeason(now, state.latitude)
-    }
-  };
-
   return (
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
       <SkyLayer state={skyState} />
@@ -426,12 +518,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       <div className="relative z-10 flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-white/70">
-              Weather
-            </div>
-            <div className="mt-2 text-3xl font-semibold">
-              {state.temperature}
-            </div>
+            <div className="text-xs uppercase tracking-[0.2em] text-white/70">Weather</div>
+            <div className="mt-2 text-3xl font-semibold">{state.temperature}</div>
             <div className="text-sm text-white/80">{state.condition}</div>
           </div>
           <WeatherIcon code={state.code} />
