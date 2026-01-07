@@ -24,7 +24,7 @@ export const TabBar = memo<TabBarProps>(({
       role="tablist"
       aria-orientation={isVertical ? 'vertical' : 'horizontal'}
       className={[
-        "electron-no-drag mb-1 bg-[color:var(--ui-surface)] shadow-sm rounded-lg",
+        "electron-no-drag mb-1",
         isVertical
           ? "flex flex-col gap-1 overflow-y-auto no-scrollbar"
           : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5"
@@ -47,10 +47,10 @@ export const TabBar = memo<TabBarProps>(({
             aria-selected={isActive}
             aria-label={tab.title || tab.url}
             className={`
-              group relative flex items-center rounded-lg px-2.5 text-xs select-none cursor-pointer transition-all duration-200
+              group relative flex items-center rounded-full px-2.5 text-xs select-none cursor-pointer transition-all duration-200
               ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
-                ? 'bg-[color:var(--ui-surface-strong)] shadow-sm text-[color:var(--ui-text)]' 
+                ? 'bg-[color:var(--ui-surface)] shadow-sm text-[color:var(--ui-text)]' 
                 : 'text-[color:var(--ui-text-muted)] hover:text-[color:var(--ui-text)]'
               }
             `}
@@ -81,7 +81,7 @@ export const TabBar = memo<TabBarProps>(({
               }}
               aria-label={`Close ${tab.title || tab.url}`}
               className={`
-                ml-1 rounded-lg p-0.5 hover:bg-[color:var(--ui-hover)]
+                ml-1 rounded-full p-0.5 hover:bg-[color:var(--ui-hover)]
                 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
                 transition-opacity
               `}

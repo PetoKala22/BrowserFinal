@@ -158,7 +158,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         label: `Search ${engineLabel} for "${trimmed}"`,
         value: trimmed,
         hint: engineLabel,
-        icon: <LuSearch size={14} strokeWidth={2.2} />,
+        icon: <LuSearch size={14} />,
         type: 'search'
       });
 
@@ -170,7 +170,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
           value: normalized,
           description: 'Open website',
           hint: 'Direct',
-          icon: <LuLink size={14} strokeWidth={2.2} />,
+          icon: <LuLink size={14} />,
           type: 'url'
         });
       }
@@ -208,7 +208,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
       items.push(
         ...topSites.map((item) => ({
           ...item,
-          icon: <LuTrendingUp size={14} strokeWidth={2.2} />
+          icon: <LuTrendingUp size={14} />
         }))
       );
     }
@@ -232,7 +232,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
         value: item.url,
         description: item.url.replace(/^https?:\/\//, ''),
         hint: 'History',
-        icon: <LuRotateCcw size={14} strokeWidth={2.4} />,
+        icon: <LuRotateCcw size={14} />,
         type: 'url' as const
       }));
 
@@ -244,7 +244,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
           id: `remote-${index}-${suggestion}`,
           label: suggestion,
           value: suggestion,
-          icon: <LuSearch size={14} strokeWidth={2.2} />,
+          icon: <LuSearch size={14} />,
           hint: 'Suggestion',
           type: 'remote'
         });
@@ -310,7 +310,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
 
   return (
   <div className="pointer-events-auto w-full">
-    <div className="w-full rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
+    <div className="w-full rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
       <div className="flex flex-col py-1 px-1">
         {suggestions.map((item, index) => {
           const isActive = index === selectedIndex;

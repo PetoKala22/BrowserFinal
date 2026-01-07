@@ -9,23 +9,10 @@ import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';
 const STORAGE_KEY = 'newtab-widgets-v1';
 
 const DEFAULT_WIDGETS: WidgetInstance[] = [
-  { id: 'widget-clock', type: 'clock' },
   { id: 'widget-notes', type: 'notes' }
 ];
 
 const DEFAULT_LAYOUT: Layout[] = [
-  {
-    i: 'widget-clock',
-    x: 0,
-    y: 0,
-    w: widgetDefinitions.clock.defaultSize.w,
-    h: widgetDefinitions.clock.defaultSize.h,
-    minW: widgetDefinitions.clock.minW,
-    minH: widgetDefinitions.clock.minH,
-    maxW: widgetDefinitions.clock.maxW,
-    maxH: widgetDefinitions.clock.maxH,
-    isResizable: widgetDefinitions.clock.isResizable
-  },
   {
     i: 'widget-notes',
     x: 4,

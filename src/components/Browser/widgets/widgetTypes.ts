@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type WidgetType = 'clock' | 'digitalClock' | 'notes' | 'focus' | 'weather';
+export type WidgetType = 'digitalClock' | 'notes' | 'focus' | 'weather';
 
 export interface WidgetInstance {
   id: string;

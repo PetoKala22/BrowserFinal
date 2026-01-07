@@ -213,13 +213,13 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative h-full w-full"
         >
           <div
-            className={`relative flex items-center w-full h-8 overflow-hidden transition-all duration-300
+            className={`relative flex items-center w-full h-8 overflow-hidden transition-all duration-300 backdrop-blur-lg
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
                   : "bg-[color:var(--ui-surface-muted)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
               }
-              rounded-lg`}
+              rounded-full`}
           >
             <div className="absolute left-2 flex items-center text-[color:var(--ui-text-muted)]">
               {isWelcome ? (
