@@ -23,6 +23,66 @@ import {
   WiThunderstorm
 } from 'react-icons/wi';
 
+/* ------------------ Weather Cache & Dedupe ------------------ */
+
+const WEATHER_LOCATION_KEY = 'newtab-weather-location';
+
+// 10 minutes is a sensible balance for a new tab widget.
+const WEATHER_CACHE_TTL_MS = 10 * 60 * 1000;
+const WEATHER_CACHE_PREFIX = 'newtab-weather-cache-v1:';
+
+// Avoid tight retry loops across remounts/StrictMode.
+const WEATHER_THROTTLE_MS = 15 * 1000;
+
+type CachedWeatherPayload = {
+  cachedAt: number;
+  state: Omit<WeatherState, 'sunrise' | 'sunset'> & {
+    sunrise: string; // ISO
+    sunset: string; // ISO
+  };
+};
+
+// Module-level (survives StrictMode remounts in dev):
+const inFlightByKey = new Map<string, Promise<WeatherState>>();
+const lastFetchAtByKey = new Map<string, number>();
+
+const makeWeatherKey = (lat: number, lon: number) =>
+  `${WEATHER_CACHE_PREFIX}${lat.toFixed(5)},${lon.toFixed(5)}`;
+
+const readCachedWeather = (key: string): WeatherState | null => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedWeatherPayload;
+    if (!parsed?.cachedAt || !parsed?.state) return null;
+    if (Date.now() - parsed.cachedAt > WEATHER_CACHE_TTL_MS) return null;
+
+    return {
+      ...parsed.state,
+      sunrise: new Date(parsed.state.sunrise),
+      sunset: new Date(parsed.state.sunset)
+    };
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedWeather = (key: string, state: WeatherState) => {
+  try {
+    const payload: CachedWeatherPayload = {
+      cachedAt: Date.now(),
+      state: {
+        ...state,
+        sunrise: state.sunrise.toISOString(),
+        sunset: state.sunset.toISOString()
+      }
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
 /* ------------------ Types ------------------ */
 
 type WeatherState = {
@@ -44,8 +104,6 @@ type WeatherState = {
 type WeatherWidgetProps = {
   location?: WeatherLocation | null;
 };
-
-const WEATHER_LOCATION_KEY = 'newtab-weather-location';
 
 const isValidLocation = (value: WeatherLocation | null) =>
   !!value &&
@@ -95,10 +153,22 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
   >([]);
   const modeRef = useRef<WeatherState['precipitation']>(precipitation);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
+  const rafRef = useRef<number | null>(null);
+  const drawRef = useRef<(() => void) | null>(null);
+
+  // Snow sprites (drawImage is typically cheaper than many arc()+fill() calls)
+  const snowSpritesRef = useRef<HTMLCanvasElement[] | null>(null);
+
+  const DPR_CAP = 1.5; // cap DPR for the animated overlay only (keeps UI crisp elsewhere)
 
   // Keep animation loop stable; only update mode.
   useEffect(() => {
     modeRef.current = precipitation;
+
+    // If we were stopped (mode === 'none'), restart when precipitation becomes active.
+    if (precipitation !== 'none' && rafRef.current == null && drawRef.current) {
+      rafRef.current = window.requestAnimationFrame(drawRef.current);
+    }
   }, [precipitation]);
 
   useEffect(() => {
@@ -106,9 +176,40 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
     const ctx = canvas.getContext('2d')!;
     const maxDensity = 240; // allocate once (avoid popping on mode changes)
 
+    // Create a few soft snow sprites once.
+    const ensureSnowSprites = () => {
+      if (snowSpritesRef.current) return snowSpritesRef.current;
+      const sprites: HTMLCanvasElement[] = [];
+      const radii = [1.0, 1.6, 2.2];
+
+      for (const r of radii) {
+        const s = document.createElement('canvas');
+        const size = Math.ceil(r * 6);
+        s.width = size;
+        s.height = size;
+        const sctx = s.getContext('2d')!;
+        const cx = size / 2;
+        const cy = size / 2;
+
+        const g = sctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.8);
+        g.addColorStop(0, 'rgba(255,255,255,0.85)');
+        g.addColorStop(0.45, 'rgba(255,255,255,0.35)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        sctx.fillStyle = g;
+        sctx.beginPath();
+        sctx.arc(cx, cy, r * 2.8, 0, Math.PI * 2);
+        sctx.fill();
+
+        sprites.push(s);
+      }
+
+      snowSpritesRef.current = sprites;
+      return sprites;
+    };
+
     const updateSize = () => {
       const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
       const cssW = Math.max(0, Math.floor(bounds.width));
       const cssH = Math.max(0, Math.floor(bounds.height));
       const width = Math.max(0, Math.floor(cssW * dpr));
@@ -142,11 +243,10 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
     const resizeObserver = new ResizeObserver(updateSize);
     resizeObserver.observe(canvas.parentElement ?? canvas);
 
-    let raf: number;
     const draw = () => {
       const { width, height, dpr } = sizeRef.current;
       if (!width || !height) {
-        raf = requestAnimationFrame(draw);
+        rafRef.current = window.requestAnimationFrame(draw);
         return;
       }
 
@@ -155,9 +255,16 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
       const cssH = Math.floor(height / dpr);
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
-
       const mode = modeRef.current;
+
+      // If precipitation is off, stop the loop entirely (zero cost) and clear once.
+      if (mode === 'none') {
+        ctx.clearRect(0, 0, cssW, cssH);
+        rafRef.current = null;
+        return;
+      }
+
+      ctx.clearRect(0, 0, cssW, cssH);
       const density = mode === 'storm' ? 220 : 140;
 
       if (mode === 'rain' || mode === 'storm') {
@@ -165,24 +272,38 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
           mode === 'storm' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)';
         ctx.lineWidth = mode === 'storm' ? 1.3 : 1;
 
-        for (let i = 0; i < Math.min(density, dropsRef.current.length); i++) {
+        // Batch all drops into one path -> a single stroke() call per frame.
+        const wind = mode === 'storm' ? 0.6 : 0.25;
+        const len = mode === 'storm' ? 12 : 8;
+
+        ctx.beginPath();
+        const count = Math.min(density, dropsRef.current.length);
+        for (let i = 0; i < count; i++) {
           const d = dropsRef.current[i];
-          ctx.beginPath();
+          const dx = wind * d.speed;
           ctx.moveTo(d.x, d.y);
-          ctx.lineTo(d.x, d.y + (mode === 'storm' ? 12 : 8));
-          ctx.stroke();
+          ctx.lineTo(d.x + dx, d.y + len);
+
           d.y = (d.y + d.speed) % cssH;
+          d.x = (d.x + dx) % cssW;
+          if (d.x < 0) d.x = cssW;
         }
+        ctx.stroke();
       }
 
       if (mode === 'snow') {
+        const sprites = ensureSnowSprites();
         const count = Math.min(Math.floor(density * 0.75), flakesRef.current.length);
         for (let i = 0; i < count; i++) {
           const flake = flakesRef.current[i];
-          ctx.fillStyle = `rgba(255,255,255,${flake.opacity})`;
-          ctx.beginPath();
-          ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
-          ctx.fill();
+
+          // Pick a cached sprite based on size.
+          const spriteIndex = flake.size < 1 ? 0 : flake.size < 1.6 ? 1 : 2;
+          const sprite = sprites[spriteIndex];
+          const half = sprite.width / 2;
+
+          ctx.globalAlpha = flake.opacity;
+          ctx.drawImage(sprite, flake.x - half, flake.y - half);
 
           flake.y = (flake.y + flake.speed) % cssH;
           flake.x = (flake.x + flake.wind) % cssW;
@@ -190,15 +311,32 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
           if (flake.x < 0) flake.x = cssW;
           if (flake.y > cssH) flake.y = 0;
         }
+
+        ctx.globalAlpha = 1;
       }
 
-      raf = requestAnimationFrame(draw);
+      rafRef.current = window.requestAnimationFrame(draw);
     };
 
-    draw();
+    drawRef.current = draw;
+
+    // Start only when we actually have precipitation.
+    if (modeRef.current !== 'none') {
+      rafRef.current = window.requestAnimationFrame(draw);
+    } else {
+      // Ensure a clean canvas when starting with none.
+      const { width, height, dpr } = sizeRef.current;
+      if (width && height) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, Math.floor(width / dpr), Math.floor(height / dpr));
+      }
+    }
+
     return () => {
       resizeObserver.disconnect();
-      cancelAnimationFrame(raf);
+      if (rafRef.current != null) window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      drawRef.current = null;
     };
   }, []);
 
@@ -288,8 +426,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     return date;
   };
 
-  const formatHHmm = (date: Date) => getLocalTimeString(date);
-
   useEffect(() => {
     const storedLocation = getStoredLocation();
     const fallbackLocation = location ?? storedLocation ?? resolvedLocation;
@@ -324,8 +460,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       const sunrise = new Date(referenceDate);
       const sunset = new Date(referenceDate);
 
-      const [srH, srM] = sunriseStr.split(':').map(v => Number(v));
-      const [ssH, ssM] = sunsetStr.split(':').map(v => Number(v));
+      const [srH, srM] = sunriseStr.split(':').map((v) => Number(v));
+      const [ssH, ssM] = sunsetStr.split(':').map((v) => Number(v));
 
       sunrise.setHours(Number.isFinite(srH) ? srH : 0, Number.isFinite(srM) ? srM : 0, 0, 0);
       sunset.setHours(Number.isFinite(ssH) ? ssH : 0, Number.isFinite(ssM) ? ssM : 0, 0, 0);
@@ -370,6 +506,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     devWeather.location,
     devWeather.low,
     devWeather.temperature,
+    devWeather.cloudCover,
+    devWeather.visibility,
+    devWeather.sunrise,
+    devWeather.sunset,
+    devWeather.precipitation,
     location
   ]);
 
@@ -377,18 +518,51 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     if (devWeather.enabled) return;
     if (!resolvedLocation) return;
 
-    const referenceDate = new Date();
-    const controller = new AbortController();
+    const cacheKey = makeWeatherKey(resolvedLocation.latitude, resolvedLocation.longitude);
 
-    fetch(
+    // 1) Serve cache immediately when fresh.
+    const cached = readCachedWeather(cacheKey);
+    if (cached) {
+      setError(null);
+      setState(cached);
+      return;
+    }
+
+    // 2) Throttle rapid repeats (across remounts).
+    const lastFetchAt = lastFetchAtByKey.get(cacheKey) ?? 0;
+    if (Date.now() - lastFetchAt < WEATHER_THROTTLE_MS) {
+      // Keep UI stable: do not spam; just show "Loading" until next opportunity.
+      return;
+    }
+
+    // 3) Dedupe concurrent requests across remounts/instances.
+    const existing = inFlightByKey.get(cacheKey);
+    if (existing) {
+      existing
+        .then((fresh) => {
+          setError(null);
+          setState(fresh);
+        })
+        .catch(() => {
+          setError('Weather unavailable.');
+        });
+      return;
+    }
+
+    const controller = new AbortController();
+    const referenceDate = new Date();
+
+    lastFetchAtByKey.set(cacheKey, Date.now());
+
+    const request = fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code,cloud_cover,visibility,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`,
       { signal: controller.signal }
     )
-      .then(r => {
+      .then((r) => {
         if (!r.ok) throw new Error('weather_fetch_failed');
         return r.json();
       })
-      .then(data => {
+      .then((data) => {
         const code = data.current?.weather_code ?? 0;
         const estimated = estimateSunriseSunset(
           referenceDate,
@@ -426,7 +600,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
         const fallbackVisibility = Math.max(2, 16 - cloudCover * 10);
 
-        setState({
+        const fresh: WeatherState = {
           location: resolvedLocation.name,
           temperature: `${Math.round(data.current.temperature_2m)}\u00B0`,
           condition: weatherCodeToLabel(code),
@@ -442,10 +616,25 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
           visibility: visibilityKm ?? fallbackVisibility,
           latitude: resolvedLocation.latitude,
           longitude: resolvedLocation.longitude
-        });
+        };
+
+        writeCachedWeather(cacheKey, fresh);
+        return fresh;
+      });
+
+    inFlightByKey.set(cacheKey, request);
+
+    request
+      .then((fresh) => {
+        if (controller.signal.aborted) return;
+        setError(null);
+        setState(fresh);
       })
       .catch(() => {
         if (!controller.signal.aborted) setError('Weather unavailable.');
+      })
+      .finally(() => {
+        inFlightByKey.delete(cacheKey);
       });
 
     return () => controller.abort();
@@ -478,9 +667,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       environment: {
         latitude: state.latitude,
         longitude: state.longitude,
-        season: devWeather.enabled
-          ? devWeather.season
-          : getSeason(now, state.latitude)
+        season: devWeather.enabled ? devWeather.season : getSeason(now, state.latitude)
       }
     };
   }, [
@@ -511,7 +698,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
-      <SkyLayer state={skyState} />
+      <SkyLayer state={skyState!} />
       <div className="absolute inset-0 bg-black/10" />
       <PrecipitationLayer precipitation={state.precipitation} />
 
