@@ -29,7 +29,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, onRemove
       >
         <LuMinus size={14} />
       </button>
-      <div className={`flex-1 ${widget.type === 'weather' || widget.type === 'focus' || widget.type === 'notes' ? 'p-0' : 'p-4'}`}>
+      <div className={`flex-1 ${widget.type === 'weather' || widget.type === 'analogClock'|| widget.type === 'focus' || widget.type === 'notes' ? 'p-0' : 'p-0'}`}>
         {definition.render(widget)}
       </div>
     </div>

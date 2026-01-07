@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnalogClockWidget } from './AnalogClockWidget';
 import { DigitalClockWidget } from './DigitalClockWidget';
 import { FocusWidget } from './FocusWidget';
 import { NotesWidget } from './NotesWidget';
@@ -16,6 +17,16 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     isResizable: false,
     render: () => <DigitalClockWidget />
   },
+  analogClock: {
+    type: 'analogClock',
+    title: 'Analog Clock',
+    description: 'Classic time with a second hand.',
+    defaultSize: { w: 3, h: 5 },
+    minW: 3,
+    minH: 5,
+    isResizable: false,
+    render: (instance: WidgetInstance) => <AnalogClockWidget widgetId={instance.id} />
+  },
   notes: {
     type: 'notes',
     title: 'Notes',
@@ -31,11 +42,10 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     type: 'focus',
     title: 'Focus',
     description: 'A gentle reminder for your day.',
-    defaultSize: { w: 4, h: 6 },
+    defaultSize: { w: 4, h: 7 },
     minW: 4,
-    minH: 6,
-    maxW: 6,
-    maxH: 8,
+    minH: 7,
+    isResizable: false,
     render: () => <FocusWidget />
   },
   weather: {

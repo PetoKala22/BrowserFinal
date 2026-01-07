@@ -374,7 +374,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   if (error) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
+      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)] border border-[color:var(--ui-border)]">
         {error}
       </div>
     );

@@ -229,10 +229,6 @@ export const NewTabPage: React.FC = () => {
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-sm text-[color:var(--ui-newtab-text-muted)]">
-            <div className="text-center space-y-1">
-              <div>Add a widget to get started.</div>
-              <div>Use the Edit button to open the library.</div>
-            </div>
           </div>
         )}
       </div>

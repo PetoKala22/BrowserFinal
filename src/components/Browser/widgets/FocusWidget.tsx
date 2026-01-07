@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 const DEFAULT_DURATION = 25 * 60;
 const MIN_MINUTES = 1;
@@ -22,6 +28,7 @@ export const FocusWidget: React.FC = () => {
   const hapticAudioRef = useRef<HTMLAudioElement | null>(null);
   const alarmAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastHapticAtRef = useRef(0);
+
   const hapticSoundUrl = useMemo(
     () => new URL('../../../../assets/Haptic.wav', import.meta.url).toString(),
     []
@@ -31,12 +38,16 @@ export const FocusWidget: React.FC = () => {
     []
   );
 
+  /* ---------------- Haptics ---------------- */
+
   const playHaptic = useCallback((volume = 0.08) => {
     const audio = hapticAudioRef.current;
     if (!audio) return;
+
     const now = Date.now();
     if (now - lastHapticAtRef.current < 40) return;
     lastHapticAtRef.current = now;
+
     audio.playbackRate = 0.92 + Math.random() * 0.18;
     audio.volume = volume;
     audio.currentTime = 0;
@@ -53,6 +64,8 @@ export const FocusWidget: React.FC = () => {
       hapticAudioRef.current = null;
     };
   }, [hapticSoundUrl]);
+
+  /* ---------------- Alarm ---------------- */
 
   const stopAlarm = useCallback(() => {
     const audio = alarmAudioRef.current;
@@ -83,7 +96,7 @@ export const FocusWidget: React.FC = () => {
     };
   }, [alarmSoundUrl]);
 
-  /* ---------------- Timer (accurate, no drift) ---------------- */
+  /* ---------------- Timer (no drift) ---------------- */
 
   useEffect(() => {
     if (!isRunning || endTimeRef.current === null) return;
@@ -144,7 +157,7 @@ export const FocusWidget: React.FC = () => {
     return 1 - remaining / duration;
   }, [duration, remaining]);
 
-  /* ---------------- Dial interaction (snapped) ---------------- */
+  /* ---------------- Dial interaction ---------------- */
 
   const updateFromPointer = (clientX: number, clientY: number) => {
     const rect = dialRef.current?.getBoundingClientRect();
@@ -157,10 +170,7 @@ export const FocusWidget: React.FC = () => {
       (Math.atan2(clientY - cy, clientX - cx) * 180) / Math.PI + 90;
 
     const normalized = (angle + 360) % 360;
-
-    // 6° per minute → snap like a clock
-    const snappedMinutes =
-      Math.round(normalized / 6) || 60;
+    const snappedMinutes = Math.round(normalized / 6) || 60;
 
     const minutes = Math.max(
       MIN_MINUTES,
@@ -205,6 +215,7 @@ export const FocusWidget: React.FC = () => {
   const durationMinutes = Math.max(1, Math.round(duration / 60));
   const setAngle = (durationMinutes / 60) * 360;
   const circumference = 2 * Math.PI * 52;
+
   useEffect(() => {
     lastMinuteRef.current = durationMinutes;
   }, [durationMinutes]);
@@ -231,20 +242,24 @@ export const FocusWidget: React.FC = () => {
   /* ---------------- Render ---------------- */
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] p-4 text-[color:var(--ui-text)]">
-      <div className="space-y-3">
+    <div className="flex h-full flex-col justify-between rounded-3xl bg-[color:var(--ui-surface-subtle)] backdrop-blur-xl p-4 text-[color:var(--ui-text)] border border-[color:var(--ui-border)]">
+      <div className="space-y-4">
         <div>
-          <div className="text-base font-semibold">Focus timer</div>
-          <p className="mt-1 text-xs text-[color:var(--ui-text-muted)]">
-            One task. One timer. Stay on it.
-          </p>
+          <div className="text-sm font-semibold tracking-tight">
+            Focus timer
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 widget-interactive">
+        <div className="flex items-center gap-5 widget-interactive justify-center">
           <div
             ref={dialRef}
             onPointerDown={handleDialPointerDown}
-            className="relative h-24 w-24 cursor-pointer select-none"
+            className="
+              relative h-48 w-48 cursor-pointer select-none rounded-full
+              bg-[color:var(--ui-surface)]
+              ring-1 ring-[color:var(--ui-border)]
+              transition
+            "
           >
             <svg viewBox="0 0 120 120" className="h-full w-full">
               <g>{ticks}</g>
@@ -272,55 +287,52 @@ export const FocusWidget: React.FC = () => {
               />
 
               <g transform={`rotate(${setAngle} 60 60)`}>
-                <circle cx="60" cy="8" r="6" fill="var(--ui-text)" />
+                <circle cx="60" cy="8" r="5" fill="var(--ui-text)" />
               </g>
             </svg>
 
-            <div className="absolute inset-0 flex items-center justify-center text-lg font-semibold">
-              {formatTime(remaining)}
+            <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+              <div className="text-2xl font-semibold tracking-tight">
+                {formatTime(remaining)}
+              </div>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2 text-xs text-[color:var(--ui-text-muted)]">
-            <div className="uppercase tracking-[0.2em] text-[color:var(--ui-text-subtle)]">
-              Session
-            </div>
-            <div className="text-sm font-semibold text-[color:var(--ui-text)]">
-              {durationMinutes} min
-            </div>
-            <div>Rotate the dial to set your focus time.</div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-xs">
-        <div className="text-[color:var(--ui-text-subtle)] uppercase tracking-[0.2em]">
-          Keep it simple
-        </div>
-
+      <div className="flex items-center justify-center gap-3 text-xs mt-4">
         <div className="flex items-center gap-2 widget-interactive">
           <button
             onClick={
               isAlarmPlaying
                 ? stopAlarm
                 : isRunning
-                  ? pauseTimer
-                  : startTimer
+                ? pauseTimer
+                : startTimer
             }
-            className="rounded-full bg-[color:var(--ui-accent)] px-4 py-2 text-[color:var(--ui-accent-contrast)] shadow-sm transition hover:brightness-95"
+            className="
+              rounded-full bg-[color:var(--ui-accent)]
+              px-4 py-2 text-[color:var(--ui-accent-contrast)]
+              shadow-sm transition hover:brightness-95 active:scale-[0.97]
+            "
           >
             {isAlarmPlaying
               ? 'Stop'
               : isRunning
-                ? 'Pause'
-                : remaining === 0
-                  ? 'Restart'
-                  : 'Start'}
+              ? 'Pause'
+              : remaining === 0
+              ? 'Restart'
+              : 'Start'}
           </button>
 
           <button
             onClick={resetTimer}
-            className="rounded-full border border-[color:var(--ui-border)] px-3 py-2 text-[color:var(--ui-text)] transition hover:bg-[color:var(--ui-hover)]"
+            className="
+              rounded-full border border-[color:var(--ui-border)]
+              px-3 py-2 transition
+              hover:bg-[color:var(--ui-hover)]
+              active:scale-[0.97]
+            "
           >
             Reset
           </button>
