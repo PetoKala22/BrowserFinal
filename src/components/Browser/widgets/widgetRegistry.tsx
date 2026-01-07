@@ -14,7 +14,7 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     defaultSize: { w: 3, h: 3 },
     minW: 3,
     minH: 3,
-    isResizable: false,
+    isResizable: true,
     render: () => <DigitalClockWidget />
   },
   analogClock: {
@@ -24,7 +24,7 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     defaultSize: { w: 3, h: 5 },
     minW: 3,
     minH: 5,
-    isResizable: false,
+    isResizable: true,
     render: (instance: WidgetInstance) => <AnalogClockWidget widgetId={instance.id} />
   },
   notes: {

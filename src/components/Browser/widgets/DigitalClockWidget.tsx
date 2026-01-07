@@ -34,12 +34,9 @@ export const DigitalClockWidget: React.FC = () => {
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color:var(--ui-text)] backdrop-blur-xl rounded-3xl border border-[color:var(--ui-border)]">
-      <div className="flex items-baseline gap-2 tabular-nums">
-        <div className="text-3xl font-semibold tracking-tight">
+      <div className="flex items-baseline">
+        <div className="text-4xl font-light tracking-tight">
           {hour}:{minute}
-        </div>
-        <div className="text-sm text-[color:var(--ui-text-muted)]">
-          {second}
         </div>
         {dayPeriod ? (
           <div className="text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-[color:var(--ui-text-muted)]">
@@ -47,7 +44,7 @@ export const DigitalClockWidget: React.FC = () => {
           </div>
         ) : null}
       </div>
-      <div className="text-xs text-[color:var(--ui-text-muted)]">
+      <div className="text-sm text-[color:var(--ui-text-muted)]">
         {dateFormatter.format(now)}
       </div>
     </div>
