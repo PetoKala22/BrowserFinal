@@ -5,8 +5,6 @@ export type Star = {
   y: number;
   size: number;
   baseAlpha: number;
-  phase: number;    // Starting offset for the twinkle
-  speed: number;    // Frequency of the twinkle
 };
 
 export type SkyTimeInput = {
