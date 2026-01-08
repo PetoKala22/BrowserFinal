@@ -24,7 +24,8 @@ export const drawSunDisc = (
   sunVisibility: number,
   cloudCover: number,
   fogDensity: number,
-  time: number
+  time: number,
+  windSpeed: number
 ) => {
   if (sunVisibility <= 0.25 || sunElevation <= -2) return;
 
@@ -84,7 +85,7 @@ export const drawSunDisc = (
 
   // Cloud occlusion (dynamic, clipped to disc)
   const skyAtSun = sampleSkyColorAtY(layers, sunPos.y / Math.max(1, height));
-  drawCloudOcclusion(ctx, sunPos, sprite, cloudCover, fogDensity, time, skyAtSun);
+  drawCloudOcclusion(ctx, sunPos, sprite, cloudCover, fogDensity, time, windSpeed, skyAtSun);
 
   // Lens ghosts (cinematic, conservative)
   drawLensGhosts(

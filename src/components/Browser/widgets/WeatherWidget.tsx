@@ -97,6 +97,12 @@ type WeatherState = {
   cloudCover: number;
   precipitation: 'none' | 'rain' | 'snow' | 'storm';
   fogDensity: number;
+  // mm of precipitation per hour (when available)
+  precipitationAmount?: number;
+  // wind speed in km/h
+  windSpeed?: number;
+  // precipitation probability (0-1)
+  precipitationProbability?: number;
   visibility: number;
   latitude: number;
   longitude: number;
@@ -144,15 +150,19 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
 
 /* ------------------ Precipitation Layer ------------------ */
 
-const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'] }> = ({
-  precipitation
-}) => {
+const PrecipitationLayer: React.FC<{
+  precipitation: WeatherState['precipitation']
+  intensity?: number
+  windSpeed?: number
+}> = ({ precipitation, intensity = 1, windSpeed = 0 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dropsRef = useRef<{ x: number; y: number; speed: number }[]>([]);
   const flakesRef = useRef<
     { x: number; y: number; speed: number; size: number; opacity: number; wind: number }[]
   >([]);
   const modeRef = useRef<WeatherState['precipitation']>(precipitation);
+  const intensityRef = useRef<number>(intensity);
+  const windRef = useRef<number>(windSpeed);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const rafRef = useRef<number | null>(null);
   const drawRef = useRef<(() => void) | null>(null);
@@ -162,15 +172,17 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
 
   const DPR_CAP = 1.5; // cap DPR for the animated overlay only (keeps UI crisp elsewhere)
 
-  // Keep animation loop stable; only update mode.
+  // Keep animation loop stable; only update mode/intensity/wind.
   useEffect(() => {
     modeRef.current = precipitation;
+    intensityRef.current = intensity;
+    windRef.current = windSpeed;
 
     // If we were stopped (mode === 'none'), restart when precipitation becomes active.
     if (precipitation !== 'none' && rafRef.current == null && drawRef.current) {
       rafRef.current = window.requestAnimationFrame(drawRef.current);
     }
-  }, [precipitation]);
+  }, [precipitation, intensity, windSpeed]);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -266,16 +278,20 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
       }
 
       ctx.clearRect(0, 0, cssW, cssH);
-      const density = mode === 'storm' ? 220 : 140;
+      // Base densities per mode; will be scaled by intensity
+      const baseDensity = mode === 'storm' ? 220 : mode === 'rain' ? 160 : mode === 'snow' ? 100 : 0;
+      const modeIntensity = Math.max(0.01, intensityRef.current);
+      const density = Math.floor(baseDensity * modeIntensity);
 
       if (mode === 'rain' || mode === 'storm') {
-        ctx.strokeStyle =
-          mode === 'storm' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = mode === 'storm' ? 1.3 : 1;
+        ctx.strokeStyle = mode === 'storm' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.33)';
+        ctx.lineWidth = mode === 'storm' ? 1.6 * modeIntensity : 1 * modeIntensity;
 
         // Batch all drops into one path -> a single stroke() call per frame.
-        const wind = mode === 'storm' ? 0.6 : 0.25;
-        const len = mode === 'storm' ? 12 : 8;
+        const baseWind = mode === 'storm' ? 0.6 : 0.25;
+        const windFromDev = (windRef.current || 0) / 30; // normalize km/h -> small factor
+        const wind = baseWind + windFromDev;
+        const len = Math.floor(8 + 8 * modeIntensity);
 
         ctx.beginPath();
         const count = Math.min(density, dropsRef.current.length);
@@ -285,7 +301,7 @@ const PrecipitationLayer: React.FC<{ precipitation: WeatherState['precipitation'
           ctx.moveTo(d.x, d.y);
           ctx.lineTo(d.x + dx, d.y + len);
 
-          d.y = (d.y + d.speed) % cssH;
+          d.y = (d.y + d.speed + modeIntensity) % cssH;
           d.x = (d.x + dx) % cssW;
           if (d.x < 0) d.x = cssW;
         }
@@ -475,6 +491,14 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       sunrise.setHours(Number.isFinite(srH) ? srH : 0, Number.isFinite(srM) ? srM : 0, 0, 0);
       sunset.setHours(Number.isFinite(ssH) ? ssH : 0, Number.isFinite(ssM) ? ssM : 0, 0, 0);
 
+      const mapDevPrecipAmount = (precip: typeof devWeather.precipitation | undefined) => {
+        if (!precip || precip === 'none') return 0;
+        if (precip === 'rain') return 2; // mm/h moderate
+        if (precip === 'snow') return 1;
+        if (precip === 'storm') return 8;
+        return 0;
+      };
+
       setState({
         location: devWeather.location || 'Developer weather',
         temperature: `${Math.round(devWeather.temperature)}\u00B0`,
@@ -488,6 +512,9 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         cloudCover,
         precipitation: devWeather.precipitation ?? derivePrecipitation(devWeather.code),
         fogDensity,
+        precipitationAmount: mapDevPrecipAmount(devWeather.precipitation),
+        precipitationProbability: devWeather.precipitation && devWeather.precipitation !== 'none' ? 1 : 0,
+        windSpeed: Number.isFinite((devWeather as any).windSpeed) ? (devWeather as any).windSpeed : 0,
         visibility,
         latitude: coords.latitude,
         longitude: coords.longitude
@@ -562,18 +589,18 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     const controller = new AbortController();
     const referenceDate = new Date();
 
-    lastFetchAtByKey.set(cacheKey, Date.now());
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current_weather=true&hourly=precipitation,precipitation_probability,windspeed_10m,visibility,cloudcover&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&windspeed_unit=kmh`;
 
-    const request = fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${resolvedLocation.latitude}&longitude=${resolvedLocation.longitude}&current=temperature_2m,weather_code,cloud_cover,visibility,precipitation&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`,
-      { signal: controller.signal }
-    )
+    const request = fetch(url, { signal: controller.signal })
       .then((r) => {
         if (!r.ok) throw new Error('weather_fetch_failed');
         return r.json();
       })
       .then((data) => {
-        const code = data.current?.weather_code ?? 0;
+        // Normalize fields from different possible API shapes
+        const code = data.current_weather?.weathercode ?? data.current?.weather_code ?? 0;
+        const temp = data.current_weather?.temperature ?? data.current?.temperature_2m ?? 0;
+
         const estimated = estimateSunriseSunset(
           referenceDate,
           resolvedLocation.latitude,
@@ -583,7 +610,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         const parsedSunrise = parseTime(data.daily?.sunrise?.[0]);
         const parsedSunset = parseTime(data.daily?.sunset?.[0]);
 
-        // If API time is missing/invalid, fall back to estimated HH:mm on the reference day.
         const sunrise =
           parsedSunrise ??
           (() => {
@@ -602,20 +628,55 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
             return d;
           })();
 
-        const visibilityKm = deriveVisibilityKm(data.current?.visibility);
+        // Find nearest hourly index (if hourly arrays exist)
+        let nearestIdx = 0;
+        if (data.hourly && Array.isArray(data.hourly.time)) {
+          let minDiff = Infinity;
+          for (let i = 0; i < data.hourly.time.length; i++) {
+            const t = new Date(data.hourly.time[i]);
+            const diff = Math.abs(t.getTime() - referenceDate.getTime());
+            if (diff < minDiff) {
+              minDiff = diff;
+              nearestIdx = i;
+            }
+          }
+        }
+
+        const visibilityKm =
+          typeof data.current?.visibility === 'number'
+            ? deriveVisibilityKm(data.current.visibility)
+            : data.hourly && data.hourly.visibility && data.hourly.visibility[nearestIdx]
+            ? deriveVisibilityKm(data.hourly.visibility[nearestIdx])
+            : undefined;
 
         const cloudCover = Number.isFinite(data.current?.cloud_cover)
           ? Math.min(1, Math.max(0, data.current.cloud_cover / 100))
+          : data.hourly && data.hourly.cloudcover && typeof data.hourly.cloudcover[nearestIdx] === 'number'
+          ? Math.min(1, Math.max(0, data.hourly.cloudcover[nearestIdx] / 100))
           : deriveCloudCover(code);
 
         const fallbackVisibility = Math.max(2, 16 - cloudCover * 10);
 
+        // Precipitation amount: prefer current, then nearest hourly
+        const precipitationAmount =
+          typeof data.current?.precipitation === 'number'
+            ? data.current.precipitation
+            : data.hourly && Array.isArray(data.hourly.precipitation)
+            ? Number.isFinite(data.hourly.precipitation[nearestIdx])
+              ? data.hourly.precipitation[nearestIdx]
+              : undefined
+            : undefined;
+
+        const windSpeed =
+          data.current_weather?.windspeed ?? data.current?.windspeed ??
+          (data.hourly && Array.isArray(data.hourly.windspeed_10m) ? data.hourly.windspeed_10m[nearestIdx] : undefined);
+
         const fresh: WeatherState = {
           location: resolvedLocation.name,
-          temperature: `${Math.round(data.current.temperature_2m)}\u00B0`,
+          temperature: `${Math.round(temp)}\u00B0`,
           condition: weatherCodeToLabel(code),
-          highLow: `H:${Math.round(data.daily.temperature_2m_max[0])}\u00B0  L:${Math.round(
-            data.daily.temperature_2m_min[0]
+          highLow: `H:${Math.round(data.daily?.temperature_2m_max?.[0] ?? 0)}\u00B0  L:${Math.round(
+            data.daily?.temperature_2m_min?.[0] ?? 0
           )}\u00B0`,
           code,
           sunrise,
@@ -623,6 +684,13 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
           cloudCover,
           precipitation: derivePrecipitation(code, data.current?.precipitation),
           fogDensity: deriveFogDensity(code, visibilityKm),
+          precipitationAmount: typeof precipitationAmount === 'number' ? precipitationAmount : undefined,
+          precipitationProbability:
+            data.current?.precipitation_probability ??
+            (data.hourly && Array.isArray(data.hourly.precipitation_probability)
+              ? data.hourly.precipitation_probability[nearestIdx]
+              : undefined),
+          windSpeed: typeof windSpeed === 'number' ? windSpeed : undefined,
           visibility: visibilityKm ?? fallbackVisibility,
           latitude: resolvedLocation.latitude,
           longitude: resolvedLocation.longitude
@@ -673,6 +741,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         precipitation: state.precipitation,
         fogDensity: state.fogDensity,
         visibility: state.visibility
+        ,
+        windSpeed: state.windSpeed ?? 0
       },
       environment: {
         latitude: state.latitude,
@@ -710,7 +780,29 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
       <SkyLayer state={skyState!} />
       <div className="absolute inset-0 bg-black/10" />
-      <PrecipitationLayer precipitation={state.precipitation} />
+      {/* Compute precipitation intensity from measured amount (mm/h) or fall back to type heuristics */}
+      {(() => {
+        const amt = state.precipitationAmount ?? 0;
+        let precipIntensity = 0;
+        if (state.precipitation === 'none') precipIntensity = 0;
+        else if (amt > 0) precipIntensity = Math.min(1, amt / 10);
+        else if (state.precipitation === 'storm') precipIntensity = 1;
+        else if (state.precipitation === 'rain') precipIntensity = 0.6;
+        else if (state.precipitation === 'snow') precipIntensity = 0.5;
+        else precipIntensity = 0.4;
+
+        // Blend intensity with precipitation probability when available
+        const prob = Math.max(0, Math.min(1, state.precipitationProbability ?? 1));
+        const blendedIntensity = Math.max(0, Math.min(1, precipIntensity * prob));
+
+        return (
+          <PrecipitationLayer
+            precipitation={state.precipitation}
+            intensity={blendedIntensity}
+            windSpeed={state.windSpeed ?? 0}
+          />
+        );
+      })()}
 
       <div className="relative z-10 flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between">

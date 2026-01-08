@@ -18,6 +18,7 @@ export type SkyWeatherInput = {
   precipitation: 'none' | 'rain' | 'snow' | 'storm';
   fogDensity: number;
   visibility: number;
+  windSpeed?: number;
 };
 
 export type SkyEnvironmentInput = {

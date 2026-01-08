@@ -25,6 +25,7 @@ export const renderSkyGradient = (
   const { sunElevation, sunAzimuth } = state.astronomy;
   const cloudCover = clamp01(state.weather.cloudCover);
   const fogDensity = clamp01(state.weather.fogDensity);
+  const windSpeed = state.weather.windSpeed ?? 0;
 
   // 1) Base sky gradient
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -57,8 +58,20 @@ export const renderSkyGradient = (
       ctx.fillRect(0, 0, width, height);
       ctx.restore();
 
-      // Sun disc
-      drawSunDisc(ctx, width, height, layers, sunPos, sunElevation, sunVisibility, cloudCover, fogDensity, time);
+      // Sun disc (pass windSpeed to influence cloud motion)
+      drawSunDisc(
+        ctx,
+        width,
+        height,
+        layers,
+        sunPos,
+        sunElevation,
+        sunVisibility,
+        cloudCover,
+        fogDensity,
+        time,
+        windSpeed
+      );
     }
   }
 

@@ -25,13 +25,15 @@ export const drawCloudOcclusion = (
   cloudCover: number,
   fogDensity: number,
   time: number,
+  windSpeed: number,
   skyAtSun: Rgb
 ) => {
   if (cloudCover <= 0.08) return;
 
   const occ = clamp01(cloudCover * 1.1 + fogDensity * 0.4);
   const occAlpha = 0.08 + occ * 0.28;
-  const wind = time * (0.35 + cloudCover * 0.25);
+  // base animated wind plus contribution from real wind speed
+  const wind = time * (0.35 + cloudCover * 0.25) + (windSpeed || 0) * 0.02;
 
   ctx.save();
 

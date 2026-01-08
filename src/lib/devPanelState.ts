@@ -17,6 +17,7 @@ type DevPanelWeatherState = {
   cloudCover: number;
   visibility: number;
   fogDensity: number;
+  windSpeed: number;
   precipitation: 'none' | 'rain' | 'snow' | 'storm';
   sunrise: string;
   sunset: string;
@@ -48,6 +49,7 @@ const DEFAULT_STATE: DevPanelState = {
     cloudCover: 0.2,
     visibility: 12,
     fogDensity: 0.2,
+    windSpeed: 10,
     precipitation: 'none',
     sunrise: '06:30',
     sunset: '19:30',
@@ -123,6 +125,11 @@ const normalizeState = (state: Partial<DevPanelState> | null): DevPanelState => 
           : DEFAULT_STATE.weather.fogDensity,
         0,
         1
+      ),
+      windSpeed: clamp(
+        Number.isFinite((weather as any).windSpeed) ? Number((weather as any).windSpeed) : DEFAULT_STATE.weather.windSpeed,
+        0,
+        200
       ),
       precipitation: normalizePrecipitation(weather.precipitation),
       sunrise: normalizeTime(weather.sunrise, DEFAULT_STATE.weather.sunrise),
