@@ -43,7 +43,7 @@ export const AnalogClockWidget: React.FC<ClockWidgetProps> = ({ widgetId }) => {
               key={i}
               className={`absolute bg-[color:var(--ui-text)] ${
                 isMainHour
-                  ? 'w-[3px] h-[8%] opacity-100'
+                  ? 'w-[2px] h-[5%] opacity-100'
                   : 'w-[2px] h-[5%] opacity-60'
               }`}
               style={{

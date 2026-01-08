@@ -33,7 +33,7 @@ export const DigitalClockWidget: React.FC = () => {
   const dayPeriod = getPart(parts, 'dayPeriod');
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color:var(--ui-text)] backdrop-blur-xl rounded-3xl border border-[color:var(--ui-border)]">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-[color:var(--ui-text)] backdrop-blur-lg rounded-3xl border border-[color:var(--ui-border)]">
       <div className="flex items-baseline">
         <div className="text-4xl font-light tracking-tight">
           {hour}:{minute}
