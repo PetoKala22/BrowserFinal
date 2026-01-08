@@ -7,7 +7,6 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
  * Create stars with a magnitude-like distribution:
  * - Many faint stars, few bright stars.
  * - Slight size correlation with brightness.
- * - Stable speed/phase for twinkle.
  */
 export const createStarField = (width: number, height: number): Star[] => {
   const area = width * height;
@@ -22,11 +21,12 @@ export const createStarField = (width: number, height: number): Star[] => {
     const y = Math.random() * height;
 
     // Magnitude distribution:
-    // Draw u, then bias it toward 1 to get many faint stars.
-    // Higher u => fainter
+    const isHero = Math.random() < 0.03;
     const u = Math.pow(Math.random(), 0.35); // 0..1 with more high values
-    // Convert to "brightness" (nonlinear): lots near 0, few near 1
-    const bright = Math.pow(1 - u, 2.4);
+    
+    const bright = isHero
+      ? 0.85 + Math.random() * 0.15
+      : Math.pow(1 - u, 2.4);
 
     // baseAlpha in [0.03..0.95], skewed to faint
     const baseAlpha = clamp01(0.03 + bright * 0.92);
@@ -38,7 +38,7 @@ export const createStarField = (width: number, height: number): Star[] => {
     const speed = 1 + Math.random() * 2.0;
     const phase = Math.random() * Math.PI * 2;
 
-    stars.push({ x, y, size, baseAlpha, speed, phase });
+    stars.push({ x, y, size, baseAlpha });
   }
 
   return stars;

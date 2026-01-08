@@ -11,8 +11,6 @@ type StarEx = Star & {
   rgb: [number, number, number];
   radius: number; // sprite radius (pixels)
   intensity: number; // normalized brightness (0..1-ish)
-  twinkleAmp: number; // 0..1
-  twinkleFreq: number; // radians/sec-ish
 };
 
 let starData: StarEx[] = [];
@@ -48,53 +46,21 @@ const sampleStarColor = (r01: number): [number, number, number] => {
  * We generate small canvases once and reuse via drawImage.
  */
 const getStarSprite = (radius: number, rgb: [number, number, number]) => {
-  const rBucket = Math.round(radius * 10) / 10; // bucket to keep atlas small
+  const rBucket = Math.round(radius * 10) / 10;
   const cBucket = `${Math.round(rgb[0] * 10)}${Math.round(rgb[1] * 10)}${Math.round(rgb[2] * 10)}`;
   const key: SpriteKey = `${rBucket}_${cBucket}`;
 
   const cached = starSprites.get(key);
   if (cached) return cached;
 
-  const pad = Math.max(2, Math.ceil(radius * 3.0));
-  const size = pad * 2 + 1;
-
+  const size = 4;
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const sctx = c.getContext('2d')!;
   sctx.clearRect(0, 0, size, size);
 
-  const cx = pad;
-  const cy = pad;
-
-  // Halo gradient
-  const haloR = radius * 1.0;
-  const halo = sctx.createRadialGradient(cx, cy, 0, cx, cy, haloR);
-  halo.addColorStop(0, `rgba(255,255,255,${0.0})`);
-  halo.addColorStop(0.20, `rgba(255,255,255,${0.10})`);
-  halo.addColorStop(1, `rgba(255,255,255,0)`);
-
-  // Core gradient tinted slightly by star color
-  const coreR = Math.max(0.7, radius);
-  const core = sctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
-  core.addColorStop(
-    0,
-    `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},1)`
-  );
-  core.addColorStop(
-    0.65,
-    `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},0.35)`
-  );
-  core.addColorStop(
-    1,
-    `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},0)`
-  );
-
-  // Paint halo then core (additive-ish feel later via composite mode)
-  sctx.fillStyle = halo;
-  sctx.fillRect(0, 0, size, size);
-
-  sctx.fillStyle = core;
-  sctx.fillRect(0, 0, size, size);
+  sctx.fillStyle = `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},1)`;
+  sctx.fillRect(1, 1, 2, 2);
 
   starSprites.set(key, c);
   return c;
@@ -121,32 +87,17 @@ export const ensureStarField = (width: number, height: number) => {
 
   // Wrap into enriched stars
   starData = raw.map((s) => {
-    // If your createStarField already gives good sizes/alfa, we respect it.
-    // But we remap to a better perceptual intensity curve.
     const base = clamp01(s.baseAlpha);
-
-    // Intensity curve: lots of faint stars, few bright. This compresses.
     const intensity = Math.pow(base, 1.6);
-
-    // Color variation based on stable hash of position (deterministic)
     const h = (Math.sin(s.x * 12.9898 + s.y * 78.233) * 43758.5453) % 1;
     const rgb = sampleStarColor(Math.abs(h));
-
-    // Radius: keep mostly subpixel-ish with a few larger
     const radius = Math.max(0.6, Math.min(2.2, s.size * 1.15));
-
-    // Twinkle: only meaningful for brighter stars; amplitude scales with intensity
-    const twBase = clamp01((intensity - 0.25) / 0.55);
-    const twinkleAmp = twBase * 0.55; // cap twinkle
-    const twinkleFreq = 0.8 + (s.speed ?? 1) * 1.5;
 
     return {
       ...s,
       rgb,
       radius,
       intensity,
-      twinkleAmp,
-      twinkleFreq
     } as StarEx;
   });
 
@@ -186,13 +137,7 @@ export const ensureStarField = (width: number, height: number) => {
   starLayerCtx.restore();
   starLayerCtx.globalAlpha = 1;
 
-  // Choose twinkle subset (brightest stars)
-  const indices = starData
-    .map((s, i) => ({ i, score: s.intensity }))
-    .sort((a, b) => b.score - a.score);
-
-  const target = Math.min(180, Math.max(40, Math.floor(starData.length * 0.035)));
-  twinkleIndices = indices.slice(0, target).map((x) => x.i);
+  twinkleIndices = [];
 };
 
 export const drawStars = (
@@ -226,37 +171,6 @@ export const drawStars = (
           ctx.globalCompositeOperation = 'lighter';
           ctx.drawImage(starLayerCanvas, 0, 0);
           ctx.restore();
-    
-          // Twinkle overlay
-          const twinkleAlpha = starGlobalAlpha * 0.55;
-          if (twinkleAlpha > 0.01) {
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-    
-            for (const idx of twinkleIndices) {
-              const s = starData[idx];
-    
-              const ext = starExtinction(s.y, height);
-    
-              const t1 = Math.sin(time * s.twinkleFreq + s.phase);
-              const t2 = Math.sin(time * (s.twinkleFreq * 0.37 + 0.9) + s.phase * 1.7);
-              const tw = 0.6 * t1 + 0.4 * t2;
-    
-              const amp = s.twinkleAmp;
-              const twFactor = 1 + amp * tw;
-    
-              const a = clamp01(s.intensity * ext * twinkleAlpha) * twFactor;
-              if (a < 0.01) continue;
-    
-              const sprite = getStarSprite(s.radius, s.rgb);
-              const half = sprite.width / 2;
-    
-              ctx.globalAlpha = Math.min(0.18, a);
-              ctx.drawImage(sprite, s.x - half, s.y - half);
-            }
-    
-            ctx.restore();
-          }
         }
       }
 };
