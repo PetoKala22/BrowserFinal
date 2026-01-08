@@ -1,28 +1,44 @@
-// skyStars.tsx
-import { Star } from './skyTypes';
+// skyStars.ts
+import type { Star } from './skyTypes';
 
-export const createStarField = (width: number, height: number, density = 0.0006): Star[] => {
-  const count = Math.floor(width * height * density);
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/**
+ * Create stars with a magnitude-like distribution:
+ * - Many faint stars, few bright stars.
+ * - Slight size correlation with brightness.
+ * - Stable speed/phase for twinkle.
+ */
+export const createStarField = (width: number, height: number): Star[] => {
+  const area = width * height;
+
+  // Density tuned for typical fullscreen canvases; adjust as needed.
+  const baseCount = Math.floor(area / 9000); // ~ (1920*1080)/9000 ≈ 230 stars
+  const count = Math.max(120, Math.min(1200, baseCount));
+
   const stars: Star[] = [];
-
-  // Quantize sizes so the renderer can bucket effectively (fewer unique radii)
-  // while still looking natural.
-  const sizeBuckets = [0.5, 0.75, 1.0, 1.25, 1.5];
-
   for (let i = 0; i < count; i++) {
-    // Bias toward smaller stars (more realistic density in the sky)
-    const sizePick = Math.pow(Math.random(), 1.8);
-    const sizeIndex = Math.min(sizeBuckets.length - 1, Math.floor(sizePick * sizeBuckets.length));
+    const x = Math.random() * width;
+    const y = Math.random() * height;
 
-    stars.push({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      size: sizeBuckets[sizeIndex],
-      // Bias towards fainter stars for realism
-      baseAlpha: Math.pow(Math.random(), 3) * 0.7 + 0.3,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.001 + Math.random() * 0.003
-    });
+    // Magnitude distribution:
+    // Draw u, then bias it toward 1 to get many faint stars.
+    // Higher u => fainter
+    const u = Math.pow(Math.random(), 0.35); // 0..1 with more high values
+    // Convert to "brightness" (nonlinear): lots near 0, few near 1
+    const bright = Math.pow(1 - u, 2.4);
+
+    // baseAlpha in [0.03..0.95], skewed to faint
+    const baseAlpha = clamp01(0.03 + bright * 0.92);
+
+    // size: mostly subpixel, a few larger (correlate with brightness)
+    const size = 0.6 + Math.pow(bright, 0.7) * 1.8; // ~0.6..2.4
+
+    // Twinkle speed: small random range
+    const speed = 1 + Math.random() * 2.0;
+    const phase = Math.random() * Math.PI * 2;
+
+    stars.push({ x, y, size, baseAlpha, speed, phase });
   }
 
   return stars;
