@@ -55,7 +55,7 @@ export const overlayNoise = (
   const tile = getNoiseTile(128);
   if (!tile) return;
 
-  const alpha = Math.min(0.12, strength / 45);
+  const alpha = Math.min(0.04, strength / 45);
   const scrollX = Math.floor((time * 7) % tile.width);
   const scrollY = Math.floor((time * 5) % tile.height);
 

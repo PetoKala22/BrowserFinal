@@ -77,5 +77,6 @@ export const renderSkyGradient = (
     ctx.fillRect(0, height * 0.85, width, height * 0.15);
   }
 
-
+  // 6) Noise overlay
+  overlayNoise(ctx, width, height, fogDensity * 15, time);
 };
