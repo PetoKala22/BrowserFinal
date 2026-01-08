@@ -3,10 +3,10 @@ import { SkyLayerColors, SkyStateInput } from './skyTypes';
 import { toCssRgb } from './skyColor';
 import { clamp01 } from './skyUtils';
 import { getSunScreenPosition } from './skyView';
-import { drawStars } from './skyStarRenderer';
 import { drawSunDisc } from './skySun';
 import { drawAtmosphere } from './skyAtmosphere';
 import { overlayNoise } from './skyNoise';
+import { drawStars } from './skyStarRenderer';
 
 // ----------------------------
 // Main render
@@ -36,9 +36,6 @@ export const renderSkyGradient = (
   const hasSunGlow = sunElevation > -18;
   const sunPos = hasSunGlow ? getSunScreenPosition(width, height, sunAzimuth, sunElevation) : undefined;
 
-  // 2) Stars (night only) with realistic rendering
-  drawStars(ctx, width, height, sunElevation, cloudCover, time);
-
   // 3) Sun glow + disc
   let sunVisibility = 0;
   if (hasSunGlow && sunPos) {
@@ -63,6 +60,9 @@ export const renderSkyGradient = (
       drawSunDisc(ctx, width, height, layers, sunPos, sunElevation, sunVisibility, cloudCover, fogDensity, time);
     }
   }
+
+  // 3.5) Stars (before atmosphere so stars glow through clouds realistically)
+  drawStars(ctx, width, height, sunElevation, cloudCover, time);
 
   // 4) Atmosphere over sky/sun/stars
   drawAtmosphere(ctx, width, height, layers, fogDensity, cloudCover, sunElevation, sunPos, sunVisibility);
