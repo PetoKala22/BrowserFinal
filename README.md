@@ -2,6 +2,19 @@
 
 Minimalistic and modern desktop browser UI built with React, Vite, Tailwind, and Electron. Includes a customizable start page, tabbed browsing shell, ad-block toggle, wallpaper controls, and a live sky/weather background.
 
+### 📚 Project Reorganization (Jan 2026)
+
+**The project has been professionally reorganized for better team collaboration!**
+
+- ✅ Utilities extracted to reusable modules (`src/utils/`)
+- ✅ Hooks centralized (`src/hooks/`)
+- ✅ Features framework established (`src/features/`)
+- ✅ Comprehensive documentation added
+
+**New developers**: Start with [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) for a complete guide.
+
+**Quick reference**: See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for common workflows.
+
 ### Features
 - Tabbed shell with address bar, suggestions, history pane, and settings drawer.
 - Start page widgets: weather/sky backdrop, ad-block stats, onboarding flow, and wallpaper notice.
