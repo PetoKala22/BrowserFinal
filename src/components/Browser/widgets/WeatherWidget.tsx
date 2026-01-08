@@ -154,9 +154,12 @@ const PrecipitationLayer: React.FC<{
   precipitation: WeatherState['precipitation']
   intensity?: number
   windSpeed?: number
-}> = ({ precipitation, intensity = 1, windSpeed = 0 }) => {
+  isDaytime: boolean
+}> = ({ precipitation, intensity = 1, windSpeed = 0, isDaytime }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dropsRef = useRef<{ x: number; y: number; speed: number }[]>([]);
+  const dropsRef = useRef<
+    { x: number; y: number; speed: number; lineWidth: number; len: number; opacity: number }[]
+  >([]);
   const flakesRef = useRef<
     { x: number; y: number; speed: number; size: number; opacity: number; wind: number }[]
   >([]);
@@ -166,6 +169,8 @@ const PrecipitationLayer: React.FC<{
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const rafRef = useRef<number | null>(null);
   const drawRef = useRef<(() => void) | null>(null);
+
+  const MIN_INTENSITY_MULTIPLIER = 0.3; // Ensure a minimum visibility for rain particles
 
   // Snow sprites (drawImage is typically cheaper than many arc()+fill() calls)
   const snowSpritesRef = useRef<HTMLCanvasElement[] | null>(null);
@@ -193,7 +198,7 @@ const PrecipitationLayer: React.FC<{
     const ensureSnowSprites = () => {
       if (snowSpritesRef.current) return snowSpritesRef.current;
       const sprites: HTMLCanvasElement[] = [];
-      const radii = [1.0, 1.6, 2.2];
+      const radii = [0.5, 1.0, 1.5];
 
       for (const r of radii) {
         const s = document.createElement('canvas');
@@ -236,11 +241,20 @@ const PrecipitationLayer: React.FC<{
       sizeRef.current = { width, height, dpr };
 
       // Re-seed on resize only (stable during mode changes).
-      dropsRef.current = Array.from({ length: maxDensity }, () => ({
-        x: Math.random() * cssW,
-        y: Math.random() * cssH,
-        speed: 2 + Math.random() * 3
-      }));
+      dropsRef.current = Array.from({ length: maxDensity }, () => {
+        const baseLen = modeRef.current === 'storm' ? 12 : 8;
+        const baseLineWidth = modeRef.current === 'storm' ? 2.5 : 1.5;
+        const baseOpacity = modeRef.current === 'storm' ? 0.75 : 1
+
+        return {
+          x: Math.random() * cssW,
+          y: Math.random() * cssH,
+          speed: (modeRef.current === 'storm' ? 3 : 2) + Math.random() * 3,
+          lineWidth: baseLineWidth * (0.8 + Math.random() * 0.4) * Math.max(MIN_INTENSITY_MULTIPLIER, intensityRef.current),
+          len: baseLen * (0.8 + Math.random() * 0.4) * Math.max(MIN_INTENSITY_MULTIPLIER, intensityRef.current),
+          opacity: baseOpacity * (0.7 + Math.random() * 0.6) // 0.7 to 1.3 of base
+        };
+      });
 
       flakesRef.current = Array.from({ length: Math.floor(maxDensity * 0.75) }, () => ({
         x: Math.random() * cssW,
@@ -284,33 +298,37 @@ const PrecipitationLayer: React.FC<{
       const density = Math.floor(baseDensity * modeIntensity);
 
       if (mode === 'rain' || mode === 'storm') {
-        ctx.strokeStyle = mode === 'storm' ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.33)';
-        ctx.lineWidth = mode === 'storm' ? 1.6 * modeIntensity : 1 * modeIntensity;
-
-        // Batch all drops into one path -> a single stroke() call per frame.
         const baseWind = mode === 'storm' ? 0.6 : 0.25;
         const windFromDev = (windRef.current || 0) / 30; // normalize km/h -> small factor
         const wind = baseWind + windFromDev;
-        const len = Math.floor(8 + 8 * modeIntensity);
 
-        ctx.beginPath();
         const count = Math.min(density, dropsRef.current.length);
         for (let i = 0; i < count; i++) {
           const d = dropsRef.current[i];
           const dx = wind * d.speed;
+
+          // Set strokeStyle and lineWidth per drop
+          ctx.strokeStyle = isDaytime ? `rgba(180,200,255,${d.opacity})` : `rgba(255,255,255,${d.opacity})`;
+          ctx.lineWidth = d.lineWidth;
+
+          ctx.beginPath();
           ctx.moveTo(d.x, d.y);
-          ctx.lineTo(d.x + dx, d.y + len);
+          ctx.lineTo(d.x + dx, d.y + d.len); // Use d.len
 
           d.y = (d.y + d.speed + modeIntensity) % cssH;
-          d.x = (d.x + dx) % cssW;
-          if (d.x < 0) d.x = cssW;
+          d.x = (d.x + dx);
+
+          // Wrap around horizontally
+          if (d.x < 0) d.x = cssW + d.x; // Handle negative x values
+          else if (d.x > cssW) d.x = d.x - cssW;
+
+          ctx.stroke(); // Stroke inside the loop for individual style
         }
-        ctx.stroke();
       }
 
       if (mode === 'snow') {
         const sprites = ensureSnowSprites();
-        const count = Math.min(Math.floor(density * 0.75), flakesRef.current.length);
+        const count = Math.min(Math.floor(density * 10), flakesRef.current.length);
         for (let i = 0; i < count; i++) {
           const flake = flakesRef.current[i];
 
@@ -795,11 +813,13 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         const prob = Math.max(0, Math.min(1, state.precipitationProbability ?? 1));
         const blendedIntensity = Math.max(0, Math.min(1, precipIntensity * prob));
 
+        const isDaytime = (skyState?.astronomy.sunElevation ?? 0) > 0;
         return (
           <PrecipitationLayer
             precipitation={state.precipitation}
             intensity={blendedIntensity}
             windSpeed={state.windSpeed ?? 0}
+            isDaytime={isDaytime}
           />
         );
       })()}
@@ -807,7 +827,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       <div className="relative z-10 flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-white/70">Weather</div>
             <div className="mt-2 text-3xl font-semibold">{state.temperature}</div>
             <div className="text-sm text-white/80">{state.condition}</div>
           </div>
