@@ -7,7 +7,7 @@ import { drawSunDisc } from './skySun';
 import { drawAtmosphere } from './skyAtmosphere';
 import { overlayNoise } from './skyNoise';
 import { drawStars } from './skyStarRenderer';
-import { drawThunderstorm } from './skyLightning';
+import { drawThunderstormWithEffect } from './skyLightning';
 
 // ----------------------------
 // Main render
@@ -65,14 +65,16 @@ export const renderSkyGradient = (
   // 3.5) Stars (before atmosphere so stars glow through clouds realistically)
   drawStars(ctx, width, height, sunElevation, cloudCover, time);
 
-  // 4) Lightning (for thunderstorms)
-  const stormIntensity = state.weather.precipitation === 'storm' ? 1 : cloudCover * 0.4;
-  if (stormIntensity > 0.05) {
-    drawThunderstorm(ctx, width, height, stormIntensity, layers.midSky, time);
+  // 4) Lightning (only during explicit storms)
+  const isStorm = state.weather.precipitation === 'storm';
+  const stormIntensity = isStorm ? 1 : 0;
+  let lightningEffect = null;
+  if (isStorm) {
+    lightningEffect = drawThunderstormWithEffect(ctx, width, height, stormIntensity, layers.midSky, time);
   }
 
   // 5) Atmosphere over sky/sun/stars/lightning
-  drawAtmosphere(ctx, width, height, layers, fogDensity, cloudCover, sunElevation, sunPos, sunVisibility);
+  drawAtmosphere(ctx, width, height, layers, fogDensity, cloudCover, sunElevation, sunPos, sunVisibility, lightningEffect);
 
   // 6) Ground bounce
   const groundVisibility = Math.max(0, 1 - fogDensity);

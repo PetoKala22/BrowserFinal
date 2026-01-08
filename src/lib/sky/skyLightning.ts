@@ -1,299 +1,62 @@
 // skyLightning.ts
-// Realistic lightning effects for thunderstorms, inspired by Apple's weather app
-// Features: branching bolts, bloom flashes, color shifting, atmospheric glow
-
-import { toCssRgb, Rgb, mixOklab } from './skyColor';
-import { clamp01, hash01, lerp, smoothstep } from './skyUtils';
-
-// ============== CONSTANTS ==============
+import { Rgb, toCssRgb, mixOklab } from './skyColor'
+import { clamp01, lerp, smoothstep } from './skyUtils'
 
 const LIGHTNING = {
-  // Strike generation
-  strikeFrequency: 0.0008, // ~1 strike per 20-30 seconds at intensity 1.0
-  futureLookAhead: 2000, // ms to generate strikes ahead of time
+  baseFrequency: 0.0005,
+  segmentCount: 32,
+  curveSmoothness: 0.6, // Higher = more fluid/snaky
   
-  // Bolt physics
-  branchFactor: 0.45, // Probability of branching at each segment (more realistic)
-  branchLengthFactor: 0.65, // Child branches are 65% of parent length
-  maxBranchDepth: 5, // Maximum recursion depth (more detail)
-  segmentLength: 35, // Base segment length in pixels
-  jitterFactor: 0.55, // Horizontal jitter per segment (more jagged)
-  tapering: 0.88, // Width reduction per segment (steeper taper)
+  // Timing
+  flashDuration: 80,   // The "peak" brightness
+  fadeDuration: 300,   // How long the ghost lingers
   
-  // Color (brighter, more intense white)
-  coreColor: [1.0, 1.0, 1.0] as Rgb, // Pure white
-  outerColor: [0.85, 0.9, 1.0] as Rgb, // Brighter bluish-white
+  // Aesthetics
+  coreWidth: 2,
+  innerGlowWidth: 4,
+  outerGlowWidth: 8,
   
-  // Flash timing (quicker peak for more drama)
-  flashRiseDuration: 30, // ms to reach peak brightness
-  flashFallDuration: 150, // ms to fade
-  glowHaloDuration: 500, // ms for bloom halo
-  
-  // Screen effects
-  bloomIntensity: 2.0, // Multiply glow radius by this
-  bloomAlpha: 0.5, // Peak bloom alpha
-  haloDiffusion: 0.25, // Halo diffusion amount
-};
+  colors: {
+    core: '#fdfefe',                 // Slightly warm white core
+    inner: 'rgba(210, 225, 255, 0.9)', // Pale blue-violet plasma
+    outer: 'rgba(120, 150, 210, 0.35)' // Desaturated blue halo
+  }
+}
 
-// ============== TYPES ==============
+const BASE_STRIKE_INTERVAL = 6000
 
-type LightningSegment = {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  width: number;
-  depth: number;
-};
-
-type LightningBolt = {
-  id: string;
-  startTime: number; // When the strike began (performance.now())
-  segments: LightningSegment[];
-  flashPeak: number; // Time of peak flash brightness
-  seedX: number; // Horizontal seed for randomness
-  seedY: number; // Vertical seed for randomness
-};
-
-// ============== GENERATION ==============
-
-const hash01 = (seed: number): number => {
-  const x = Math.sin(seed) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-const generateBoltSegments = (
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  width: number,
-  depth: number,
+type Point = { x: number; y: number }
+type Bolt = {
+  points: Point[]
+  startTime: number
   seed: number
-): LightningSegment[] => {
-  const segments: LightningSegment[] = [];
+}
+
+let activeBolts: Bolt[] = []
+let nextStrikeTime = 0
+
+const generateBolt = (width: number, height: number, now: number): Bolt => {
+  const points: Point[] = []
+  const startX = width * (0.15 + Math.random() * 0.7)
+  let curX = startX
+  let curY = -20
   
-  segments.push({ x0, y0, x1, y1, width, depth });
-  
-  // Recursively generate branches
-  if (depth < LIGHTNING.maxBranchDepth) {
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const len = Math.hypot(dx, dy);
+  const stepY = (height + 40) / LIGHTNING.segmentCount
+  let velocityX = 0
+
+  for (let i = 0; i <= LIGHTNING.segmentCount; i++) {
+    points.push({ x: curX, y: curY })
     
-    // Branch at 1-3 points along the segment
-    const branchCount = hash01(seed + depth * 0.7) > 0.6 ? 2 : 1;
-    for (let b = 0; b < branchCount; b++) {
-      const t = 0.2 + hash01(seed + depth + b * 0.3) * 0.6;
-      const bx = lerp(x0, x1, t);
-      const by = lerp(y0, y1, t);
-      
-      const branchAngle = (hash01(seed + depth + b * 11.1) - 0.5) * Math.PI;
-      const branchLen = len * LIGHTNING.branchLengthFactor;
-      const bx2 = bx + Math.cos(branchAngle) * branchLen;
-      const by2 = by + Math.sin(branchAngle) * branchLen;
-      
-      const newWidth = width * LIGHTNING.tapering;
-      segments.push(
-        ...generateBoltSegments(bx, by, bx2, by2, newWidth, depth + 1, seed + b * 7.3)
-      );
-    }
-  }
-  
-  return segments;
-};
-
-const generateLightningBolt = (
-  centerX: number,
-  centerY: number,
-  stormIntensity: number,
-  seed: number
-): LightningBolt => {
-  const seedX = hash01(seed * 0.13) * centerX * 2 - centerX;
-  const seedY = hash01(seed * 0.27) * centerY * 0.3;
-  
-  const x0 = centerX + seedX;
-  const y0 = -100; // Start above screen
-  
-  const jitterX = (hash01(seed + 1.7) - 0.5) * centerX * 0.4;
-  const x1 = centerX + jitterX;
-  const y1 = centerY * (0.3 + hash01(seed + 3.2) * 0.4);
-  
-  const baseWidth = 4.5 + stormIntensity * 3; // Thicker base width
-  
-  const segments = generateBoltSegments(x0, y0, x1, y1, baseWidth, 0, seed);
-  
-  return {
-    id: `bolt-${seed}-${Date.now()}`,
-    startTime: performance.now(),
-    segments,
-    flashPeak: LIGHTNING.flashRiseDuration,
-    seedX,
-    seedY
-  };
-};
-
-// ============== STATE MANAGEMENT ==============
-
-const activeBolts: Map<string, LightningBolt> = new Map();
-let nextStrikeTime = 0;
-
-export const resetLightningState = () => {
-  activeBolts.clear();
-  nextStrikeTime = 0;
-};
-
-const updateStrikes = (now: number, stormIntensity: number) => {
-  // Remove expired bolts (accounting for sustain phase)
-  const boltLifetime = LIGHTNING.flashRiseDuration + 200 + LIGHTNING.flashFallDuration + 100;
-  for (const [id, bolt] of activeBolts) {
-    const age = now - bolt.startTime;
-    if (age > boltLifetime) {
-      activeBolts.delete(id);
-    }
-  }
-  
-  // Generate new strikes
-  if (stormIntensity > 0.05 && now >= nextStrikeTime) {
-    const frequency = LIGHTNING.strikeFrequency * Math.sqrt(stormIntensity);
-    nextStrikeTime = now + (1 / frequency) * (0.5 + hash01(now * 0.001) * 1.5);
+    // Sinuous math: use sine waves + random drift
+    const drift = (Math.random() - 0.5) * 40
+    velocityX = velocityX * LIGHTNING.curveSmoothness + drift * (1 - LIGHTNING.curveSmoothness)
     
-    // Can spawn 1-3 bolts per strike event (branching effect)
-    const boltCount = stormIntensity > 0.7 ? 2 : 1;
-    for (let i = 0; i < boltCount; i++) {
-      const seed = now + i * 1.1;
-      const bolt = generateLightningBolt(
-        window.innerWidth * 0.5,
-        window.innerHeight * 0.4,
-        stormIntensity,
-        seed
-      );
-      activeBolts.set(bolt.id, bolt);
-    }
+    curX += velocityX
+    curY += stepY
   }
-};
 
-// ============== RENDERING ==============
-
-const drawBolt = (
-  ctx: CanvasRenderingContext2D,
-  bolt: LightningBolt,
-  now: number,
-  width: number,
-  height: number
-) => {
-  const age = now - bolt.startTime;
-  
-  // Longer visibility window: quick rise, sustain, then slow decay
-  let flashAlpha = 0;
-  if (age < LIGHTNING.flashRiseDuration) {
-    // Quick rise to peak
-    flashAlpha = smoothstep(0, LIGHTNING.flashRiseDuration, age);
-  } else if (age < LIGHTNING.flashRiseDuration + 200) {
-    // Sustain at peak for 200ms (much longer visibility!)
-    flashAlpha = 1.0;
-  } else if (age < LIGHTNING.flashRiseDuration + 200 + LIGHTNING.flashFallDuration) {
-    // Then gradual fade
-    const decayAge = age - LIGHTNING.flashRiseDuration - 200;
-    flashAlpha = 1 - smoothstep(0, LIGHTNING.flashFallDuration, decayAge);
-  }
-  
-  if (flashAlpha < 0.001) return; // Even lower threshold
-  
-  const coreAlpha = flashAlpha; // Full brightness
-  const glowAlpha = flashAlpha * 0.6; // Increased glow
-  
-  ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  
-  // Outer glow pass (wider, softer)
-  ctx.globalCompositeOperation = 'screen';
-  ctx.globalAlpha = glowAlpha * 1.0; // Much brighter outer glow
-  ctx.strokeStyle = toCssRgb(LIGHTNING.outerColor);
-  ctx.filter = 'blur(2px)';
-  
-  for (const seg of bolt.segments) {
-    const glowWidth = seg.width * 5; // Even wider glow (was 4)
-    ctx.lineWidth = glowWidth;
-    ctx.beginPath();
-    ctx.moveTo(seg.x0, seg.y0);
-    ctx.lineTo(seg.x1, seg.y1);
-    ctx.stroke();
-  }
-  
-  ctx.filter = 'none';
-  
-  // Middle glow pass (medium brightness)
-  ctx.globalAlpha = glowAlpha * 1.0;
-  for (const seg of bolt.segments) {
-    const midGlowWidth = seg.width * 2.8; // Thicker middle (was 2.2)
-    ctx.lineWidth = midGlowWidth;
-    ctx.beginPath();
-    ctx.moveTo(seg.x0, seg.y0);
-    ctx.lineTo(seg.x1, seg.y1);
-    ctx.stroke();
-  }
-  
-  // Core bolt pass (bright white center)
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = coreAlpha;
-  ctx.strokeStyle = toCssRgb(LIGHTNING.coreColor);
-  
-  for (const seg of bolt.segments) {
-    ctx.lineWidth = Math.max(3.5, seg.width * 1.5); // Much thicker core for visibility
-    ctx.beginPath();
-    ctx.moveTo(seg.x0, seg.y0);
-    ctx.lineTo(seg.x1, seg.y1);
-    ctx.stroke();
-  }
-  
-  ctx.restore();
-};
-
-const drawFlashIllumination = (
-  ctx: CanvasRenderingContext2D,
-  bolt: LightningBolt,
-  now: number,
-  width: number,
-  height: number,
-  skyColor: Rgb,
-  intensity: number
-) => {
-  const age = now - bolt.startTime;
-  
-  // Flash halo that illuminates the entire scene
-  let haloAlpha = 0;
-  if (age < LIGHTNING.flashRiseDuration + LIGHTNING.flashFallDuration + LIGHTNING.glowHaloDuration) {
-    let haloAge = age - LIGHTNING.flashRiseDuration - LIGHTNING.flashFallDuration;
-    if (haloAge > 0) {
-      haloAlpha = Math.max(
-        0,
-        1 - smoothstep(0, LIGHTNING.glowHaloDuration, haloAge)
-      ) * 0.15;
-    } else {
-      haloAge = age - LIGHTNING.flashRiseDuration;
-      if (haloAge > 0) {
-        haloAlpha = smoothstep(0, LIGHTNING.flashFallDuration, haloAge) * 0.2;
-      }
-    }
-  }
-  
-  if (haloAlpha < 0.001) return;
-  
-  // Whole-screen brightening with bluish cast (subtle so bolt is visible)
-  const blueShift: Rgb = [0.9, 0.92, 1.0];
-  const illuminationColor = mixOklab(skyColor, blueShift, 0.25);
-  
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.globalAlpha = haloAlpha * intensity * 0.6;
-  ctx.fillStyle = toCssRgb(illuminationColor);
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-};
-
-// ============== PUBLIC API ==============
+  return { points, startTime: now, seed: Math.random() }
+}
 
 export const drawThunderstorm = (
   ctx: CanvasRenderingContext2D,
@@ -303,30 +66,139 @@ export const drawThunderstorm = (
   skyColor: Rgb,
   time: number
 ) => {
-  if (stormIntensity < 0.01) {
-    resetLightningState();
-    return;
-  }
-  
-  const now = time;
-  
-  // Update bolt generation/removal
-  updateStrikes(now, stormIntensity);
-  
-  // Log active bolts count
-  if (activeBolts.size > 0) {
-    console.log(`⚡ Lightning: ${activeBolts.size} active bolts, intensity: ${stormIntensity.toFixed(2)}`);
-  }
-  
-  // Draw lightning bolts FIRST (so they're visible during flash)
-  for (const bolt of activeBolts.values()) {
-    drawBolt(ctx, bolt, now, width, height);
-  }
-  
-  // Draw flash illumination AFTER (subtle background flash)
-  for (const bolt of activeBolts.values()) {
-    drawFlashIllumination(ctx, bolt, now, width, height, skyColor, stormIntensity);
-  }
-};
+  if (stormIntensity < 0.01) return
 
-export type { LightningBolt };
+  if (time >= nextStrikeTime) {
+    activeBolts.push(generateBolt(width, height, time))
+    nextStrikeTime =
+      time +
+      BASE_STRIKE_INTERVAL * Math.pow(1 / stormIntensity, 1.3) * (0.6 + Math.random() * 0.8)
+  }
+
+  activeBolts = activeBolts.filter(b => time < b.startTime + LIGHTNING.flashDuration + LIGHTNING.fadeDuration)
+
+  for (const b of activeBolts) {
+    const elapsed = time - b.startTime
+    const totalLife = LIGHTNING.flashDuration + LIGHTNING.fadeDuration
+    
+    // Calculate intensity: rapid peak then smooth fade
+    let intensity = 0
+    if (elapsed < LIGHTNING.flashDuration) {
+      intensity = 1.0 // Peak brightness
+    } else {
+      intensity = 1.0 - smoothstep(LIGHTNING.flashDuration, totalLife, elapsed)
+    }
+
+    ctx.save()
+    
+    // Use 'lighter' so overlapping glows brighten each other
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+
+    // 1. ATMOSPHERIC FLASH (The "Bloom" in the clouds)
+    if (elapsed < 100) {
+      const flashAlpha = (1.0 - (elapsed / 100)) * 0.2 * stormIntensity
+      ctx.fillStyle = `rgba(100, 160, 255, ${flashAlpha})`
+      ctx.fillRect(0, 0, width, height)
+    }
+
+    // 2. OUTER HALO (Deep Blue)
+    ctx.globalAlpha = intensity * 0.6
+    ctx.strokeStyle = LIGHTNING.colors.outer
+    ctx.lineWidth = LIGHTNING.outerGlowWidth
+    ctx.filter = 'blur(8px)' // Creates the soft ionization
+    renderPath(ctx, b.points)
+
+    // 3. INNER GLOW (Cyan)
+    ctx.filter = 'blur(2px)'
+    ctx.strokeStyle = LIGHTNING.colors.inner
+    ctx.lineWidth = LIGHTNING.innerGlowWidth
+    ctx.globalAlpha = intensity
+    renderPath(ctx, b.points)
+
+    // 4. THE HOT CORE (Pure White)
+    ctx.filter = 'none'
+    ctx.strokeStyle = LIGHTNING.colors.core
+    ctx.lineWidth = LIGHTNING.coreWidth
+    ctx.globalAlpha = intensity
+    renderPath(ctx, b.points)
+
+    ctx.restore()
+  }
+}
+
+export type LightningSample = { x: number; y: number; intensity: number }
+
+export type LightningEffect = {
+  intensity: number
+  centers: LightningSample[]
+  radius: number
+  color?: string
+}
+
+// A convenience wrapper that both draws thunderstorm and returns a lightweight
+// effect object other render passes (clouds/atmosphere) can use to modulate
+// scattering and brightness. Returns null when no active flash is present.
+export const drawThunderstormWithEffect = (
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  stormIntensity: number,
+  skyColor: Rgb,
+  time: number
+): LightningEffect | null => {
+  // Draw as before
+  drawThunderstorm(ctx, width, height, stormIntensity, skyColor, time)
+
+  // Compute an array of sample centers along bolts so the bloom follows the
+  // bolt path instead of a single circular center.
+  let peak = 0
+  const centers: LightningSample[] = []
+
+  for (const b of activeBolts) {
+    const elapsed = time - b.startTime
+    const totalLife = LIGHTNING.flashDuration + LIGHTNING.fadeDuration
+    let intensity = 0
+    if (elapsed < LIGHTNING.flashDuration) intensity = 1
+    else intensity = 1.0 - smoothstep(LIGHTNING.flashDuration, totalLife, elapsed)
+
+    if (intensity <= 0.001) continue
+    peak = Math.max(peak, intensity)
+
+    // Sample along the bolt points - pick a few points so bloom follows curve
+    const step = Math.max(1, Math.floor(b.points.length / 6))
+    for (let i = 0; i < b.points.length; i += step) {
+      const p = b.points[i]
+      // weight sample intensity slightly by position (closer to center of bolt -> stronger)
+      const posBias = 1 - Math.abs((i / b.points.length) - 0.5) * 0.9
+      centers.push({ x: p.x, y: p.y, intensity: intensity * posBias })
+    }
+  }
+
+  if (centers.length === 0) return null
+
+  // Aggregate radius based on peak and screen size
+  const radius = Math.min(width, height) * (0.18 + clamp01(peak) * 0.6)
+
+  return {
+    intensity: clamp01(peak) * stormIntensity,
+    centers,
+    radius,
+    color: 'rgba(180,210,255,0.22)'
+  }
+}
+
+const renderPath = (ctx: CanvasRenderingContext2D, points: Point[]) => {
+  if (points.length < 2) return
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+
+  // Use curveTo for the snaking effect
+  for (let i = 1; i < points.length - 1; i++) {
+    const xc = (points[i].x + points[i + 1].x) / 2
+    const yc = (points[i].y + points[i + 1].y) / 2
+    ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc)
+  }
+  ctx.stroke()
+}

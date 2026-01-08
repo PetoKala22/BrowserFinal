@@ -33,6 +33,141 @@ const SEASON_OPTIONS = [
   { value: 'autumn', label: 'Autumn' }
 ];
 
+const WEATHER_PRESETS = [
+  {
+    name: 'Clear',
+    weather: {
+      code: 0,
+      precipitation: 'none' as const,
+      cloudCover: 0.1,
+      visibility: 30,
+      temperature: 22,
+      high: 26,
+      low: 18
+    }
+  },
+  {
+    name: 'Partly Cloudy',
+    weather: {
+      code: 2,
+      precipitation: 'none' as const,
+      cloudCover: 0.4,
+      visibility: 28,
+      temperature: 20,
+      high: 24,
+      low: 16
+    }
+  },
+  {
+    name: 'Mostly Clear',
+    weather: {
+      code: 1,
+      precipitation: 'none' as const,
+      cloudCover: 0.2,
+      visibility: 29,
+      temperature: 21,
+      high: 25,
+      low: 17
+    }
+  },
+  {
+    name: 'Overcast',
+    weather: {
+      code: 3,
+      precipitation: 'none' as const,
+      cloudCover: 0.95,
+      visibility: 22,
+      temperature: 16,
+      high: 20,
+      low: 12
+    }
+  },
+  {
+    name: 'Foggy',
+    weather: {
+      code: 45,
+      precipitation: 'none' as const,
+      cloudCover: 1,
+      visibility: 3,
+      temperature: 12,
+      high: 15,
+      low: 9
+    }
+  },
+  {
+    name: 'Drizzle',
+    weather: {
+      code: 51,
+      precipitation: 'rain' as const,
+      cloudCover: 0.7,
+      visibility: 18,
+      temperature: 11,
+      high: 14,
+      low: 8
+    }
+  },
+  {
+    name: 'Rainy',
+    weather: {
+      code: 61,
+      precipitation: 'rain' as const,
+      cloudCover: 0.9,
+      visibility: 10,
+      temperature: 15,
+      high: 18,
+      low: 12
+    }
+  },
+  {
+    name: 'Heavy Rain',
+    weather: {
+      code: 61,
+      precipitation: 'rain' as const,
+      cloudCover: 1,
+      visibility: 3,
+      temperature: 13,
+      high: 16,
+      low: 10
+    }
+  },
+  {
+    name: 'Showers',
+    weather: {
+      code: 80,
+      precipitation: 'rain' as const,
+      cloudCover: 0.85,
+      visibility: 8,
+      temperature: 17,
+      high: 20,
+      low: 14
+    }
+  },
+  {
+    name: 'Snow',
+    weather: {
+      code: 71,
+      precipitation: 'snow' as const,
+      cloudCover: 0.95,
+      visibility: 8,
+      temperature: -5,
+      high: -2,
+      low: -8
+    }
+  },
+  {
+    name: 'Stormy',
+    weather: {
+      code: 95,
+      precipitation: 'storm' as const,
+      cloudCover: 1,
+      visibility: 8,
+      temperature: 14,
+      high: 17,
+      low: 11
+    }
+  }
+];
+
 const clampNumber = (value: string, min: number, max: number) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return min;
@@ -200,6 +335,26 @@ export const DeveloperPanel: React.FC = () => {
                   }
                   ariaLabel="Toggle weather override"
                 />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {WEATHER_PRESETS.map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() =>
+                      updateDevPanelState({
+                        weather: {
+                          enabled: true,
+                          ...preset.weather
+                        }
+                      })
+                    }
+                    className="text-xs font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] text-[color:var(--ui-text)] hover:bg-[color:var(--ui-accent)] hover:text-[color:var(--ui-accent-text)] transition"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

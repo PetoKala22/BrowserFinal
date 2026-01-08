@@ -22,6 +22,7 @@ import {
   WiShowers,
   WiThunderstorm
 } from 'react-icons/wi';
+import { updateDevPanelState } from '@/lib/devPanelState';
 
 /* ------------------ Weather Cache & Dedupe ------------------ */
 

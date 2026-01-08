@@ -1,5 +1,5 @@
 export const solidColorOptions = [
-  "default", // default theme base
+  "#242424",
   "#131313",
   "#313131",
   "#d6d6d6",
