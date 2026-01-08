@@ -90,7 +90,7 @@ export const applyTheme = (
   cssVars['--ui-newtab-clock-shadow'] = isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
   cssVars['--ui-overlay-text-shadow'] = 'rgba(0, 0, 0, 0.3)';
 
-  cssVars['--ui-accent'] = isDark ? '#60a5fa' : '#3b82f6';
+  cssVars['--ui-accent'] = isDark ? '#ffffff' : '#3b82f6';
   cssVars['--ui-accent-contrast'] = isDark ? '#000' : '#fff';
 
   // Apply all CSS variables to root

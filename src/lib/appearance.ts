@@ -1,6 +1,6 @@
 export const solidColorOptions = [
-  "#242424",
   "#131313",
+  "#242424",
   "#313131",
   "#d6d6d6",
 
