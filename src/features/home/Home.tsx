@@ -11,10 +11,16 @@ import { AppSettings, HistoryItem, SearchEngine, Tab, Theme } from '@/lib/types'
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
-import { useSettings } from '@/features/home/hooks/useSettings';
+import { useSettings } from '@/hooks/useSettings';
 import { WallpaperNotice } from '@/features/home/components/WallpaperNotice';
 import { AdBlockWidget } from '@/features/home/components/AdBlockWidget';
 import { OnboardingFlow } from '@/features/home/components/OnboardingFlow';
+import {
+  isInternalUrl,
+  getTabTitleFromUrl,
+  sortHistoryItems,
+  storageUtils
+} from '@/utils';
 
 const WALLPAPER_NOTICE_SEEN_KEY = 'wallpaperNoticeSeen';
 const WALLPAPER_NOTICE_TARGET_KEY = 'wallpaperNoticeTarget';
@@ -31,20 +37,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   wallpaperColor: '',
   wallpaperBlur: false,
   adBlockEnabled: true
-};
-
-const isInternalUrl = (url: string) => url.startsWith('browser://');
-const sortHistoryItems = (items: HistoryItem[]) =>
-  [...items].sort((a, b) => b.timestamp - a.timestamp);
-const getTabTitleFromUrl = (url: string) => {
-  if (isInternalUrl(url)) return 'Start Page';
-  try {
-    const normalized = url.startsWith('http') ? url : `https://${url}`;
-    const hostname = new URL(normalized).hostname;
-    return hostname.replace(/^www\./, '') || url;
-  } catch {
-    return url;
-  }
 };
 
 const Home: React.FC = () => {
