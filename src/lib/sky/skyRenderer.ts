@@ -60,7 +60,7 @@ export const renderSkyGradient = (
       ctx.restore();
 
       // Sun disc
-      drawSunDisc(ctx, width, height, sunPos, sunElevation, sunVisibility, cloudCover, fogDensity, time);
+      drawSunDisc(ctx, width, height, layers, sunPos, sunElevation, sunVisibility, cloudCover, fogDensity, time);
     }
   }
 

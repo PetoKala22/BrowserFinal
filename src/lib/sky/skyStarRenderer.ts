@@ -67,7 +67,7 @@ const getStarSprite = (radius: number, rgb: [number, number, number]) => {
   const cy = pad;
 
   // Halo gradient
-  const haloR = radius * 1.4;
+  const haloR = radius * 1.0;
   const halo = sctx.createRadialGradient(cx, cy, 0, cx, cy, haloR);
   halo.addColorStop(0, `rgba(255,255,255,${0.0})`);
   halo.addColorStop(0.20, `rgba(255,255,255,${0.10})`);
@@ -205,10 +205,18 @@ export const drawStars = (
 ) => {
     const cloudVisibilityFactor = Math.max(0, 1 - cloudCover * 1.2);
 
-    if (sunElevation < 5 && cloudVisibilityFactor > 0.01) {
+    // FIXED: Only start fading stars in when sun is well below horizon.
+    // Previously '5' (visible during day), now '-2' (twilight only).
+    const STAR_VISIBILITY_THRESHOLD = -2;
+
+    if (sunElevation < STAR_VISIBILITY_THRESHOLD && cloudVisibilityFactor > 0.01) {
         ensureStarField(width, height);
     
-        const nightDarkness = clamp01((-sunElevation + 5) / 10);
+        // Calculate darkness factor based on new negative threshold.
+        // Starts at 0 when sun is at -2deg, reaches 1.0 when sun is at -12deg.
+        const fadeRange = 10;
+        const nightDarkness = clamp01((-sunElevation + STAR_VISIBILITY_THRESHOLD) / fadeRange);
+        
         const starGlobalAlpha = nightDarkness * cloudVisibilityFactor;
     
         if (starGlobalAlpha > 0.01 && starLayerCanvas) {
@@ -251,4 +259,4 @@ export const drawStars = (
           }
         }
       }
-}
+};
