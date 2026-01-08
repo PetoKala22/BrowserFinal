@@ -77,7 +77,5 @@ export const renderSkyGradient = (
     ctx.fillRect(0, height * 0.85, width, height * 0.15);
   }
 
-  // 6) Grain / dithering
-  const noiseStrength = 3 + fogDensity * 4 + cloudCover * 2;
-  overlayNoise(ctx, width, height, noiseStrength, time);
+
 };

@@ -26,7 +26,7 @@ export const drawSunDisc = (
   const extinction = clamp01((sunElevation + 1) / 6);
 
   // Apparent disc radius: slightly smaller near horizon
-  const baseRadius = height * 0.035;
+  const baseRadius = height * 0.05;
   const discRadius = baseRadius * lerp(0.6, 1.0, extinction);
 
   // Color shift: warm near horizon, neutral at high elevation

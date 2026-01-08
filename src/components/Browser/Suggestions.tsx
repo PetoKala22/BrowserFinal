@@ -310,8 +310,8 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
 
   return (
   <div className="pointer-events-auto w-full">
-    <div className="w-full rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
-      <div className="flex flex-col py-1 px-1">
+    <div className="w-full rounded-3xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-strong)] shadow-lg overflow-hidden backdrop-blur-xl">
+      <div className="flex flex-col py-0 px-0">
         {suggestions.map((item, index) => {
           const isActive = index === selectedIndex;
           return (
@@ -327,7 +327,7 @@ export const SuggestionsBar: React.FC<SuggestionsBarProps> = ({
                   })
                 )
               }
-              className={`group relative flex w-full box-border items-center justify-between gap-3 pl-4 pr-5 py-2 rounded-lg text-left transition-[color,background,box-shadow] duration-150 ${
+              className={`group relative flex w-full box-border items-center justify-between gap-0 p-3 text-left transition-[color,background,box-shadow] duration-150 ${
                 isActive
                   ? 'bg-[color:var(--ui-hover)] text-[color:var(--ui-text)] shadow-sm ring-1 ring-[color:var(--ui-border)]'
                   : 'text-[color:var(--ui-text)] hover:bg-[color:var(--ui-hover)] hover:shadow-sm'
