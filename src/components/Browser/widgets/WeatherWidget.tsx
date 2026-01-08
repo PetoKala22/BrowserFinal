@@ -454,6 +454,14 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         ? Math.max(0.5, devWeather.visibility)
         : Math.max(2, 16 - cloudCover * 10);
 
+      // For dev panel, visibility slider should always affect fog density
+      // unless explicitly overridden by a very high fog density value (0.8+)
+      let fogDensity = deriveFogDensity(devWeather.code, visibility);
+      if (Number.isFinite(devWeather.fogDensity) && devWeather.fogDensity >= 0.5) {
+        // Only use explicit fogDensity if it's substantial (heavy fog scenario)
+        fogDensity = Math.min(1, Math.max(0, devWeather.fogDensity));
+      }
+
       // Canonical form in state as Date.
       const sunriseStr = devWeather.sunrise || estimated.sunrise;
       const sunsetStr = devWeather.sunset || estimated.sunset;
@@ -479,7 +487,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         sunset,
         cloudCover,
         precipitation: devWeather.precipitation ?? derivePrecipitation(devWeather.code),
-        fogDensity: deriveFogDensity(devWeather.code, visibility),
+        fogDensity,
         visibility,
         latitude: coords.latitude,
         longitude: coords.longitude
@@ -509,6 +517,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     devWeather.temperature,
     devWeather.cloudCover,
     devWeather.visibility,
+    devWeather.fogDensity,
     devWeather.sunrise,
     devWeather.sunset,
     devWeather.precipitation,

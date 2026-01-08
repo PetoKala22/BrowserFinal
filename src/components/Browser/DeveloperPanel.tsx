@@ -43,19 +43,8 @@ const WEATHER_PRESETS = [
       visibility: 30,
       temperature: 22,
       high: 26,
-      low: 18
-    }
-  },
-  {
-    name: 'Partly Cloudy',
-    weather: {
-      code: 2,
-      precipitation: 'none' as const,
-      cloudCover: 0.4,
-      visibility: 28,
-      temperature: 20,
-      high: 24,
-      low: 16
+      low: 18,
+      fogDensity: 0
     }
   },
   {
@@ -67,7 +56,21 @@ const WEATHER_PRESETS = [
       visibility: 29,
       temperature: 21,
       high: 25,
-      low: 17
+      low: 17,
+      fogDensity: 0.05
+    }
+  },
+  {
+    name: 'Partly Cloudy',
+    weather: {
+      code: 2,
+      precipitation: 'none' as const,
+      cloudCover: 0.4,
+      visibility: 28,
+      temperature: 20,
+      high: 24,
+      low: 16,
+      fogDensity: 0.1
     }
   },
   {
@@ -79,7 +82,8 @@ const WEATHER_PRESETS = [
       visibility: 22,
       temperature: 16,
       high: 20,
-      low: 12
+      low: 12,
+      fogDensity: 0.15
     }
   },
   {
@@ -91,7 +95,8 @@ const WEATHER_PRESETS = [
       visibility: 3,
       temperature: 12,
       high: 15,
-      low: 9
+      low: 9,
+      fogDensity: 0.85
     }
   },
   {
@@ -103,7 +108,8 @@ const WEATHER_PRESETS = [
       visibility: 18,
       temperature: 11,
       high: 14,
-      low: 8
+      low: 8,
+      fogDensity: 0.2
     }
   },
   {
@@ -115,7 +121,8 @@ const WEATHER_PRESETS = [
       visibility: 10,
       temperature: 15,
       high: 18,
-      low: 12
+      low: 12,
+      fogDensity: 0.35
     }
   },
   {
@@ -127,7 +134,8 @@ const WEATHER_PRESETS = [
       visibility: 3,
       temperature: 13,
       high: 16,
-      low: 10
+      low: 10,
+      fogDensity: 0.55
     }
   },
   {
@@ -139,7 +147,8 @@ const WEATHER_PRESETS = [
       visibility: 8,
       temperature: 17,
       high: 20,
-      low: 14
+      low: 14,
+      fogDensity: 0.15
     }
   },
   {
@@ -151,7 +160,8 @@ const WEATHER_PRESETS = [
       visibility: 8,
       temperature: -5,
       high: -2,
-      low: -8
+      low: -8,
+      fogDensity: 0.4
     }
   },
   {
@@ -163,7 +173,8 @@ const WEATHER_PRESETS = [
       visibility: 8,
       temperature: 14,
       high: 17,
-      low: 11
+      low: 11,
+      fogDensity: 0.25
     }
   }
 ];
