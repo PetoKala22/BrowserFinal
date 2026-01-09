@@ -19,6 +19,8 @@ export const drawAtmosphere = (
   sunVisibility?: number,
   lightningEffect?: { intensity: number; centers: { x: number; y: number; intensity: number }[]; radius: number; color?: string }
 ) => {
+  // REMOVED: Stratus cloud gradient - now using WebGL volumetric clouds
+  /*
   const baseCloudColor = layers.horizonBand;
 
   const denseCloudColor = mixColor(layers.midSky, [0.78, 0.82, 0.9], 0.55);
@@ -30,6 +32,7 @@ export const drawAtmosphere = (
   let effectiveCloudColor = mixColor(nightCloud, dayCloud, lightIntensity);
   const coverageBias = Math.pow(clamp01(cloudCover), 1.2);
   effectiveCloudColor = mixColor(effectiveCloudColor, denseCloudColor, coverageBias);
+  */
 
   // Fog
   if (fogDensity > 0.01) {
@@ -43,7 +46,8 @@ export const drawAtmosphere = (
     ctx.fillRect(0, height - fogHeight, width, fogHeight);
   }
 
-  // Stratus
+  // Stratus - REMOVED: Now using WebGL volumetric clouds instead
+  /*
   if (cloudCover > 0.01) {
     const cloudGrad = ctx.createLinearGradient(0, 0, 0, height * 0.85);
     let alphaTop = Math.min(1, cloudCover * 1.5);
@@ -111,4 +115,5 @@ export const drawAtmosphere = (
       }
     }
   }
+  */
 };

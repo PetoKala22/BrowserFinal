@@ -6,6 +6,7 @@ import { mixOklab } from './skyColor';
 import { renderSkyGradient } from './skyRenderer';
 import { PrecipitationSystem, Particle } from './precipitationSystem';
 import { PRECIPITATION_CONFIG } from './precipitationConfig';
+import { SkyCloudsRenderer } from './skyClouds';
 
 const blendLayers = (from: SkyLayerColors, to: SkyLayerColors, t: number): SkyLayerColors => ({
   upperSky: mixOklab(from.upperSky, to.upperSky, t),
@@ -24,11 +25,13 @@ const getCanvasContext = (canvas: HTMLCanvasElement) => {
 
 export const useSkyBackground = (state: SkyStateInput) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cloudsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const targetRef = useRef<SkyLayerColors>(computeSkyLayers(state));
   const currentRef = useRef<SkyLayerColors>(targetRef.current);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const stateRef = useRef(state);
-  const precipitationSystemRef = useRef<PrecipitationSystem | null>(null); 
+  const precipitationSystemRef = useRef<PrecipitationSystem | null>(null);
+  const cloudsRendererRef = useRef<SkyCloudsRenderer | null>(null); 
 
   useEffect(() => {
     targetRef.current = computeSkyLayers(state);
@@ -56,6 +59,15 @@ export const useSkyBackground = (state: SkyStateInput) => {
       // Resize precipitation system
       if (precipitationSystemRef.current) {
         precipitationSystemRef.current.resize(width, height);
+      }
+
+      // Resize clouds canvas
+      const cloudsCanvas = cloudsCanvasRef.current;
+      if (cloudsCanvas) {
+        cloudsCanvas.width = width;
+        cloudsCanvas.height = height;
+        cloudsCanvas.style.width = `${Math.floor(bounds.width)}px`;
+        cloudsCanvas.style.height = `${Math.floor(bounds.height)}px`;
       }
     };
 
@@ -91,6 +103,29 @@ export const useSkyBackground = (state: SkyStateInput) => {
       precipSystem.update(dt / 1000, precipitation, precipIntensity);
       renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity);
 
+      // Render clouds
+      const cloudCover = stateRef.current.weather.cloudCover;
+      if (cloudCover > 0) {
+        if (!cloudsRendererRef.current) {
+          const cloudsCanvas = cloudsCanvasRef.current;
+          if (cloudsCanvas) {
+            try {
+              cloudsRendererRef.current = new SkyCloudsRenderer(cloudsCanvas);
+            } catch (e) {
+              console.warn('WebGL not supported for clouds:', e);
+            }
+          }
+        }
+        if (cloudsRendererRef.current) {
+          cloudsRendererRef.current.render(now / 1000, width, height);
+        }
+      } else {
+        if (cloudsRendererRef.current) {
+          cloudsRendererRef.current.dispose();
+          cloudsRendererRef.current = null;
+        }
+      }
+
       raf = window.requestAnimationFrame(animate);
     };
 
@@ -102,10 +137,13 @@ export const useSkyBackground = (state: SkyStateInput) => {
       if (precipitationSystemRef.current) {
         precipitationSystemRef.current.clear();
       }
+      if (cloudsRendererRef.current) {
+        cloudsRendererRef.current.dispose();
+      }
     };
   }, []);
 
-  return canvasRef;
+  return { canvasRef, cloudsCanvasRef };
 };
 
 /**

@@ -151,12 +151,18 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
 /* ------------------ Sky Layer ------------------ */
 
 const SkyLayer: React.FC<{ state: SkyStateInput }> = ({ state }) => {
-  const canvasRef = useSkyBackground(state);
+  const { canvasRef, cloudsCanvasRef } = useSkyBackground(state);
   return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute inset-0 h-full w-full"
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
+      <canvas
+        ref={cloudsCanvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
+    </>
   );
 };
 
