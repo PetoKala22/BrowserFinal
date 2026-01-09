@@ -1,4 +1,4 @@
 {
-  "name": "Safari-esque Browser UI",
-  "description": "A high-fidelity Safari clone UI built with React and Tailwind, designed for Electron integration. Features glassmorphism, dark/light mode, and tab management."
+  "name": "Nook",
+  "description": "A minimalistic browser built with React and Tailwind, designed for Electron integration. Features glassmorphism, dark/light mode, and tab management."
 }

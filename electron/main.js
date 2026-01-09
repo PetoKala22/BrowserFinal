@@ -330,7 +330,7 @@ const registerIpc = () => {
 
 app.whenReady().then(async () => {
   registerIpc();
-  await initAdblocker();
+  createWindow(); // Moved up
   app.on('web-contents-created', (_event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
       if (mainWindow && url) {
@@ -349,7 +349,7 @@ app.whenReady().then(async () => {
       mainWindow?.webContents.send('browser:focus-address-bar');
     });
   });
-  createWindow();
+  await initAdblocker(); // Moved down
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

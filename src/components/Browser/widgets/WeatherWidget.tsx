@@ -148,242 +148,6 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
   return <WiDaySunny size={iconSize} color={iconColor} />;
 };
 
-/* ------------------ Precipitation Layer ------------------ */
-
-const PrecipitationLayer: React.FC<{
-  precipitation: WeatherState['precipitation']
-  intensity?: number
-  windSpeed?: number
-  isDaytime: boolean
-}> = ({ precipitation, intensity = 1, windSpeed = 0, isDaytime }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dropsRef = useRef<
-    { x: number; y: number; speed: number; lineWidth: number; len: number; opacity: number }[]
-  >([]);
-  const flakesRef = useRef<
-    { x: number; y: number; speed: number; size: number; opacity: number; wind: number }[]
-  >([]);
-  const modeRef = useRef<WeatherState['precipitation']>(precipitation);
-  const intensityRef = useRef<number>(intensity);
-  const windRef = useRef<number>(windSpeed);
-  const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
-  const rafRef = useRef<number | null>(null);
-  const drawRef = useRef<(() => void) | null>(null);
-
-  const MIN_INTENSITY_MULTIPLIER = 0.3; // Ensure a minimum visibility for rain particles
-
-  // Snow sprites (drawImage is typically cheaper than many arc()+fill() calls)
-  const snowSpritesRef = useRef<HTMLCanvasElement[] | null>(null);
-
-  const DPR_CAP = 1.5; // cap DPR for the animated overlay only (keeps UI crisp elsewhere)
-
-  // Keep animation loop stable; only update mode/intensity/wind.
-  useEffect(() => {
-    modeRef.current = precipitation;
-    intensityRef.current = intensity;
-    windRef.current = windSpeed;
-
-    // If we were stopped (mode === 'none'), restart when precipitation becomes active.
-    if (precipitation !== 'none' && rafRef.current == null && drawRef.current) {
-      rafRef.current = window.requestAnimationFrame(drawRef.current);
-    }
-  }, [precipitation, intensity, windSpeed]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
-    const maxDensity = 240; // allocate once (avoid popping on mode changes)
-
-    // Create a few soft snow sprites once.
-    const ensureSnowSprites = () => {
-      if (snowSpritesRef.current) return snowSpritesRef.current;
-      const sprites: HTMLCanvasElement[] = [];
-      const radii = [0.5, 1.0, 1.5];
-
-      for (const r of radii) {
-        const s = document.createElement('canvas');
-        const size = Math.ceil(r * 6);
-        s.width = size;
-        s.height = size;
-        const sctx = s.getContext('2d')!;
-        const cx = size / 2;
-        const cy = size / 2;
-
-        const g = sctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.8);
-        g.addColorStop(0, 'rgba(255,255,255,0.85)');
-        g.addColorStop(0.45, 'rgba(255,255,255,0.35)');
-        g.addColorStop(1, 'rgba(255,255,255,0)');
-        sctx.fillStyle = g;
-        sctx.beginPath();
-        sctx.arc(cx, cy, r * 2.8, 0, Math.PI * 2);
-        sctx.fill();
-
-        sprites.push(s);
-      }
-
-      snowSpritesRef.current = sprites;
-      return sprites;
-    };
-
-    const updateSize = () => {
-      const bounds = (canvas.parentElement ?? canvas).getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
-      const cssW = Math.max(0, Math.floor(bounds.width));
-      const cssH = Math.max(0, Math.floor(bounds.height));
-      const width = Math.max(0, Math.floor(cssW * dpr));
-      const height = Math.max(0, Math.floor(cssH * dpr));
-      if (!width || !height) return;
-
-      canvas.width = width;
-      canvas.height = height;
-      canvas.style.width = `${cssW}px`;
-      canvas.style.height = `${cssH}px`;
-      sizeRef.current = { width, height, dpr };
-
-      // Re-seed on resize only (stable during mode changes).
-      dropsRef.current = Array.from({ length: maxDensity }, () => {
-        const baseLen = modeRef.current === 'storm' ? 12 : 8;
-        const baseLineWidth = modeRef.current === 'storm' ? 2.5 : 1.5;
-        const baseOpacity = modeRef.current === 'storm' ? 0.75 : 1
-
-        return {
-          x: Math.random() * cssW,
-          y: Math.random() * cssH,
-          speed: (modeRef.current === 'storm' ? 3 : 2) + Math.random() * 3,
-          lineWidth: baseLineWidth * (0.8 + Math.random() * 0.4) * Math.max(MIN_INTENSITY_MULTIPLIER, intensityRef.current),
-          len: baseLen * (0.8 + Math.random() * 0.4) * Math.max(MIN_INTENSITY_MULTIPLIER, intensityRef.current),
-          opacity: baseOpacity * (0.7 + Math.random() * 0.6) // 0.7 to 1.3 of base
-        };
-      });
-
-      flakesRef.current = Array.from({ length: Math.floor(maxDensity * 0.75) }, () => ({
-        x: Math.random() * cssW,
-        y: Math.random() * cssH,
-        speed: 0.4 + Math.random() * 0.8,
-        size: 0.5 + Math.random() * 1.5,
-        opacity: 0.2 + Math.random() * 0.5,
-        wind: -0.25 + Math.random() * 0.5
-      }));
-    };
-
-    updateSize();
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(canvas.parentElement ?? canvas);
-
-    const draw = () => {
-      const { width, height, dpr } = sizeRef.current;
-      if (!width || !height) {
-        rafRef.current = window.requestAnimationFrame(draw);
-        return;
-      }
-
-      // Draw in CSS pixels for consistent motion across DPR.
-      const cssW = Math.floor(width / dpr);
-      const cssH = Math.floor(height / dpr);
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const mode = modeRef.current;
-
-      // If precipitation is off, stop the loop entirely (zero cost) and clear once.
-      if (mode === 'none') {
-        ctx.clearRect(0, 0, cssW, cssH);
-        rafRef.current = null;
-        return;
-      }
-
-      ctx.clearRect(0, 0, cssW, cssH);
-      // Base densities per mode; will be scaled by intensity
-      const baseDensity = mode === 'storm' ? 220 : mode === 'rain' ? 160 : mode === 'snow' ? 100 : 0;
-      const modeIntensity = Math.max(0.01, intensityRef.current);
-      const density = Math.floor(baseDensity * modeIntensity);
-
-      if (mode === 'rain' || mode === 'storm') {
-        const baseWind = mode === 'storm' ? 0.6 : 0.25;
-        const windFromDev = (windRef.current || 0) / 30; // normalize km/h -> small factor
-        const wind = baseWind + windFromDev;
-
-        const count = Math.min(density, dropsRef.current.length);
-        for (let i = 0; i < count; i++) {
-          const d = dropsRef.current[i];
-          const dx = wind * d.speed;
-
-          // Set strokeStyle and lineWidth per drop
-          ctx.strokeStyle = isDaytime ? `rgba(180,200,255,${d.opacity})` : `rgba(255,255,255,${d.opacity})`;
-          ctx.lineWidth = d.lineWidth;
-
-          ctx.beginPath();
-          ctx.moveTo(d.x, d.y);
-          ctx.lineTo(d.x + dx, d.y + d.len); // Use d.len
-
-          d.y = (d.y + d.speed + modeIntensity) % cssH;
-          d.x = (d.x + dx);
-
-          // Wrap around horizontally
-          if (d.x < 0) d.x = cssW + d.x; // Handle negative x values
-          else if (d.x > cssW) d.x = d.x - cssW;
-
-          ctx.stroke(); // Stroke inside the loop for individual style
-        }
-      }
-
-      if (mode === 'snow') {
-        const sprites = ensureSnowSprites();
-        const count = Math.min(Math.floor(density * 10), flakesRef.current.length);
-        for (let i = 0; i < count; i++) {
-          const flake = flakesRef.current[i];
-
-          // Pick a cached sprite based on size.
-          const spriteIndex = flake.size < 1 ? 0 : flake.size < 1.6 ? 1 : 2;
-          const sprite = sprites[spriteIndex];
-          const half = sprite.width / 2;
-
-          ctx.globalAlpha = flake.opacity;
-          ctx.drawImage(sprite, flake.x - half, flake.y - half);
-
-          flake.y = (flake.y + flake.speed) % cssH;
-          flake.x = (flake.x + flake.wind) % cssW;
-
-          if (flake.x < 0) flake.x = cssW;
-          if (flake.y > cssH) flake.y = 0;
-        }
-
-        ctx.globalAlpha = 1;
-      }
-
-      rafRef.current = window.requestAnimationFrame(draw);
-    };
-
-    drawRef.current = draw;
-
-    // Start only when we actually have precipitation.
-    if (modeRef.current !== 'none') {
-      rafRef.current = window.requestAnimationFrame(draw);
-    } else {
-      // Ensure a clean canvas when starting with none.
-      const { width, height, dpr } = sizeRef.current;
-      if (width && height) {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, Math.floor(width / dpr), Math.floor(height / dpr));
-      }
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-      if (rafRef.current != null) window.cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      drawRef.current = null;
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none absolute inset-0 h-full w-full"
-      style={{ filter: 'blur(1px)' }}
-    />
-  );
-};
-
 /* ------------------ Sky Layer ------------------ */
 
 const SkyLayer: React.FC<{ state: SkyStateInput }> = ({ state }) => {
@@ -675,7 +439,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
         const fallbackVisibility = Math.max(2, 16 - cloudCover * 10);
 
-        // Precipitation amount: prefer current, then nearest hourly
+        // Precipitation amount: prefer current/hourly, with better granularity
         const precipitationAmount =
           typeof data.current?.precipitation === 'number'
             ? data.current.precipitation
@@ -700,7 +464,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
           sunrise,
           sunset,
           cloudCover,
-          precipitation: derivePrecipitation(code, data.current?.precipitation),
+          precipitation: derivePrecipitation(code, precipitationAmount),
           fogDensity: deriveFogDensity(code, visibilityKm),
           precipitationAmount: typeof precipitationAmount === 'number' ? precipitationAmount : undefined,
           precipitationProbability:
@@ -798,31 +562,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
       <SkyLayer state={skyState!} />
       <div className="absolute inset-0 bg-black/10" />
-      {/* Compute precipitation intensity from measured amount (mm/h) or fall back to type heuristics */}
-      {(() => {
-        const amt = state.precipitationAmount ?? 0;
-        let precipIntensity = 0;
-        if (state.precipitation === 'none') precipIntensity = 0;
-        else if (amt > 0) precipIntensity = Math.min(1, amt / 10);
-        else if (state.precipitation === 'storm') precipIntensity = 1;
-        else if (state.precipitation === 'rain') precipIntensity = 0.6;
-        else if (state.precipitation === 'snow') precipIntensity = 0.5;
-        else precipIntensity = 0.4;
-
-        // Blend intensity with precipitation probability when available
-        const prob = Math.max(0, Math.min(1, state.precipitationProbability ?? 1));
-        const blendedIntensity = Math.max(0, Math.min(1, precipIntensity * prob));
-
-        const isDaytime = (skyState?.astronomy.sunElevation ?? 0) > 0;
-        return (
-          <PrecipitationLayer
-            precipitation={state.precipitation}
-            intensity={blendedIntensity}
-            windSpeed={state.windSpeed ?? 0}
-            isDaytime={isDaytime}
-          />
-        );
-      })()}
 
       <div className="relative z-10 flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between">
