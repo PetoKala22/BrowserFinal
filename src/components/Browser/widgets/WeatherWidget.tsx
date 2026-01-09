@@ -522,9 +522,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
         cloudCover: state.cloudCover,
         precipitation: state.precipitation,
         fogDensity: state.fogDensity,
-        visibility: state.visibility
-        ,
-        windSpeed: state.windSpeed ?? 0
+        visibility: state.visibility,
+        windSpeed: state.windSpeed ?? 0,
+        precipitationAmount: state.precipitationAmount,
+        precipitationProbability: state.precipitationProbability,
+        weatherCode: state.code
       },
       environment: {
         latitude: state.latitude,

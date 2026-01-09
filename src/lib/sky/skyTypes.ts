@@ -19,6 +19,9 @@ export type SkyWeatherInput = {
   fogDensity: number;
   visibility: number;
   windSpeed?: number;
+  precipitationAmount?: number; // mm/h
+  precipitationProbability?: number; // 0-1
+  weatherCode?: number; // WMO weather code for precise intensity mapping
 };
 
 export type SkyEnvironmentInput = {
