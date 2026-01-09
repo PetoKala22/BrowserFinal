@@ -137,7 +137,7 @@ export class SkyCloudsRenderer {
       // Cloud density function
       float cloudDensity(vec3 p) {
         // Scale to make clouds more vertical (stretched in y)
-        vec3 scaledP = p * vec3(1.0, 1.5, 1.0);
+        vec3 scaledP = p * vec3(2.0, 3.0, 2.0);
         
         float base = snoise((scaledP + vec3(uSeed)) * 0.6);
         float detail1 = snoise((scaledP + vec3(uSeed * 1.7)) * 2.0) * 0.3;
@@ -177,7 +177,7 @@ export class SkyCloudsRenderer {
   light
 );
 
-          cloudColor = mix(cloudColor, vec3(dot(cloudColor, vec3(0.333))), 0.15);
+          cloudColor = mix(cloudColor, vec3(dot(cloudColor, vec3(0.333))), 1.0);
 
           float distFade = exp(-t * 0.05);
           cloudColor *= distFade;
