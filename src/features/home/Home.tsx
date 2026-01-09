@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BrowserContent, BrowserContentHandle } from '@/components/Browser/BrowserContent';
 import { HistoryPage } from '@/components/Browser/HistoryPage';
 import { AddressBar } from '@/components/Browser/AddressBar';
-import { SettingsPage } from '@/components/Browser/SettingsPage';
+const SettingsPage = React.lazy(() => import('@/components/Browser/SettingsPage').then(m => ({ default: m.SettingsPage })));
 import { TabBar } from '@/components/Browser/TabBar';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import { SuggestionsBar } from '@/components/Browser/Suggestions';
@@ -685,25 +685,27 @@ const Home: React.FC = () => {
           )}
           {settingsOpen && (
             <div className="absolute inset-0 z-10">
-              <SettingsPage
-                wallpaper={wallpaper}
-                onWallpaperChange={setWallpaper}
-                wallpaperColor={wallpaperColor}
-                onWallpaperColorChange={setWallpaperColor}
-                backgroundType={backgroundType}
-                onBackgroundTypeChange={setBackgroundType}
-                wallpaperBlur={wallpaperBlur}
-                onWallpaperBlurChange={setWallpaperBlur}
-                adBlockEnabled={adBlockEnabled}
-                onAdBlockEnabledChange={setAdBlockEnabled}
-                searchEngine={searchEngine}
-                onSearchEngineChange={setSearchEngine}
-                initialSection={settingsSection}
-                hasUnsavedChanges={hasUnsavedChanges}
-                isSaving={isSavingSettings}
-                onSave={handleSaveSettings}
-                onClose={handleCloseSettings}
-              />
+              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="text-sm text-[color:var(--ui-text-muted)]">Loading settings...</div></div>}>
+                <SettingsPage
+                  wallpaper={wallpaper}
+                  onWallpaperChange={setWallpaper}
+                  wallpaperColor={wallpaperColor}
+                  onWallpaperColorChange={setWallpaperColor}
+                  backgroundType={backgroundType}
+                  onBackgroundTypeChange={setBackgroundType}
+                  wallpaperBlur={wallpaperBlur}
+                  onWallpaperBlurChange={setWallpaperBlur}
+                  adBlockEnabled={adBlockEnabled}
+                  onAdBlockEnabledChange={setAdBlockEnabled}
+                  searchEngine={searchEngine}
+                  onSearchEngineChange={setSearchEngine}
+                  initialSection={settingsSection}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  isSaving={isSavingSettings}
+                  onSave={handleSaveSettings}
+                  onClose={handleCloseSettings}
+                />
+              </Suspense>
             </div>
           )}
           {onboardingOpen && (

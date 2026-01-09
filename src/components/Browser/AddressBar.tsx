@@ -10,7 +10,7 @@ interface AddressBarProps {
   customSearchUrl: string;
 }
 
-export const AddressBar: React.FC<AddressBarProps> = ({
+const AddressBarInner: React.FC<AddressBarProps> = ({
   url,
   onNavigate,
   loading,
@@ -164,6 +164,17 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   }, [normalizeTarget, onNavigate]);
 
 
+  const inputDispatchTimeout = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (inputDispatchTimeout.current) {
+        clearTimeout(inputDispatchTimeout.current);
+        inputDispatchTimeout.current = null;
+      }
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const target = normalizeTarget(inputVal);
@@ -171,13 +182,21 @@ export const AddressBar: React.FC<AddressBarProps> = ({
     onNavigate(target);
     inputRef.current?.blur();
   };
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setInputVal(value);
-    window.dispatchEvent(
-      new CustomEvent("browser-addressbar-input", { detail: { value } })
-    );
+    if (inputDispatchTimeout.current) {
+      clearTimeout(inputDispatchTimeout.current);
+    }
+    inputDispatchTimeout.current = window.setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("browser-addressbar-input", { detail: { value } })
+      );
+      inputDispatchTimeout.current = null;
+    }, 150);
   };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
       event.currentTarget.blur();
@@ -195,7 +214,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
   return (
     <div className="flex-1 flex w-full relative z-20 electron-drag justify-center">
       <div
-        className={`relative flex justify-center transition-[width,transform,filter] duration-200 ease-in-out
+        className={`relative flex justify-center transition-[width,transform] duration-200 ease-in-out
           ${
             isFocused
               ? "w-full max-w-5xl scale-100 drop-shadow-md"
@@ -213,7 +232,7 @@ export const AddressBar: React.FC<AddressBarProps> = ({
           className="relative h-full w-full"
         >
           <div
-            className={`relative flex items-center w-full h-8 overflow-hidden transition-all duration-300 backdrop-blur-lg
+            className={`relative flex items-center w-full h-8 overflow-hidden transition-colors duration-200
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
@@ -262,3 +281,5 @@ export const AddressBar: React.FC<AddressBarProps> = ({
     </div>
   );
 };
+
+export const AddressBar = React.memo(AddressBarInner) as React.FC<AddressBarProps>;

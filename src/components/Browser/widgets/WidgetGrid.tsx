@@ -18,8 +18,9 @@ interface WidgetGridProps {
  * - We intentionally do NOT push layout updates to React state during drag/resize.
  * - RGL already animates via transforms; React state updates during drag cause global re-renders and jank.
  * - We only commit when the interaction ends (drag/resize stop).
+ * - Wrapped with React.memo to prevent re-renders when parent props haven't changed.
  */
-export const WidgetGrid: React.FC<WidgetGridProps> = ({
+const WidgetGridInner: React.FC<WidgetGridProps> = ({
   widgets,
   layout,
   onLayoutCommit,
@@ -56,3 +57,5 @@ export const WidgetGrid: React.FC<WidgetGridProps> = ({
     </GridLayout>
   );
 };
+
+export const WidgetGrid = React.memo(WidgetGridInner) as React.FC<WidgetGridProps>;

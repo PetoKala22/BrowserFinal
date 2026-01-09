@@ -2,8 +2,9 @@ import React from 'react';
 import { AnalogClockWidget } from './AnalogClockWidget';
 import { DigitalClockWidget } from './DigitalClockWidget';
 import { FocusWidget } from './FocusWidget';
-import { NotesWidget } from './NotesWidget';
-import { WeatherWidget } from './WeatherWidget';
+// Lazy-load heavier or less-frequently-used widgets to improve initial load.
+const LazyNotes = React.lazy(() => import('./NotesWidget').then(m => ({ default: m.NotesWidget })));
+const LazyWeather = React.lazy(() => import('./WeatherWidget').then(m => ({ default: m.WeatherWidget })));
 import { WidgetDefinition, WidgetInstance, WidgetType } from './widgetTypes';
 
 export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
@@ -36,7 +37,7 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     minH: 4,
     maxW: 12,
     maxH: 12,
-    render: (instance: WidgetInstance) => <NotesWidget widgetId={instance.id} />
+    render: (instance: WidgetInstance) => <LazyNotes widgetId={instance.id} />
   },
   focus: {
     type: 'focus',
@@ -56,7 +57,7 @@ export const widgetDefinitions: Record<WidgetType, WidgetDefinition> = {
     minW: 4,
     minH: 4,
     isResizable: false,
-    render: () => <WeatherWidget />
+    render: () => <LazyWeather />
   }
 };
 

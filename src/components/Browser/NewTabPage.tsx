@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Layout } from 'react-grid-layout';
 import { WidgetGrid } from './widgets/WidgetGrid';
 import { WidgetLibrary } from './widgets/WidgetLibrary';
-import { DeveloperPanel } from './DeveloperPanel';
+const DeveloperPanel = React.lazy(() => import('./DeveloperPanel').then(m => ({ default: m.DeveloperPanel })));
 import { widgetDefinitions, widgetList } from './widgets/widgetRegistry';
 import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';
 
@@ -239,7 +239,9 @@ export const NewTabPage: React.FC = () => {
         onClearWidgets={clearWidgets}
       />
 
-      <DeveloperPanel />
+      <Suspense fallback={null}>
+        <DeveloperPanel />
+      </Suspense>
     </div>
   );
 };

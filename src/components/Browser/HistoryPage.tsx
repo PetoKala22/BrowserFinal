@@ -24,7 +24,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ items = [], onClear })
   return (
     <div className="w-full h-full text-[color:var(--ui-text)] flex flex-col bg-transparent">
       <div className="flex-1 p-8">
-        <div className="h-full rounded-2xl bg-[color:var(--ui-surface)] backdrop-blur-xl p-6">
+        <div className="h-full rounded-2xl bg-[color:var(--ui-surface)] p-6 shadow-lg">
           {!hasItems && (
             <>
               <div className="text-sm font-medium">No history yet</div>
