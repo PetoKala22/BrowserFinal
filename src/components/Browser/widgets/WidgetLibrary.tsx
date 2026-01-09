@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { MdAdd } from 'react-icons/md';
 import type { WidgetDefinition, WidgetType } from './widgetTypes';
 
 interface WidgetLibraryProps {
@@ -53,7 +53,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
           onClick={() => setIsOpen((prev) => !prev)}
           className="inline-flex items-center gap-2 rounded-full border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ui-text)] shadow-lg shadow-black/5 transition hover:bg-[color:var(--ui-hover)]"
         >
-          <Plus className="h-4 w-4" />
+          <MdAdd className="h-4 w-4" />
           Widget
         </button>
       </div>

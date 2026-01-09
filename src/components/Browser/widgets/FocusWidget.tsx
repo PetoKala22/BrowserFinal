@@ -33,7 +33,9 @@ export const FocusWidget: React.FC = () => {
     () => new URL('../../../../assets/Haptic.wav', import.meta.url).toString(),
     []
   );
-  const alarmSoundUrl = useMemo(
+  
+  // Lazy-load alarm sound only when needed to save ~1MB RAM on startup
+  const getAlarmSoundUrl = useCallback(
     () => new URL('../../../assets/Alarm.wav', import.meta.url).toString(),
     []
   );
@@ -61,11 +63,12 @@ export const FocusWidget: React.FC = () => {
     hapticAudioRef.current = audio;
     return () => {
       audio.pause();
+      audio.src = '';
       hapticAudioRef.current = null;
     };
   }, [hapticSoundUrl]);
 
-  /* ---------------- Alarm ---------------- */
+  /* ---------------- Alarm (lazy-loaded) ---------------- */
 
   const stopAlarm = useCallback(() => {
     const audio = alarmAudioRef.current;
@@ -84,17 +87,27 @@ export const FocusWidget: React.FC = () => {
     setIsAlarmPlaying(true);
   }, [isAlarmPlaying]);
 
+  // Lazily initialize alarm audio only once it's needed
   useEffect(() => {
-    const audio = new Audio(alarmSoundUrl);
+    if (!isRunning && !isAlarmPlaying && alarmAudioRef.current) {
+      // Already loaded, keep it
+      return;
+    }
+    if (alarmAudioRef.current) return; // Already initialized
+
+    const audio = new Audio(getAlarmSoundUrl());
     audio.volume = 1;
     audio.preload = 'auto';
     audio.loop = true;
     alarmAudioRef.current = audio;
     return () => {
-      audio.pause();
-      alarmAudioRef.current = null;
+      if (alarmAudioRef.current === audio) {
+        audio.pause();
+        audio.src = '';
+        alarmAudioRef.current = null;
+      }
     };
-  }, [alarmSoundUrl]);
+  }, [getAlarmSoundUrl]);
 
   /* ---------------- Timer (no drift) ---------------- */
 
@@ -242,7 +255,7 @@ export const FocusWidget: React.FC = () => {
   /* ---------------- Render ---------------- */
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-3xl bg-[color:var(--ui-surface-subtle)] backdrop-blur-xl p-4 text-[color:var(--ui-text)] border border-[color:var(--ui-border)]">
+    <div className="flex h-full flex-col justify-between rounded-3xl bg-[color:var(--ui-surface-subtle)] backdrop-blur-lg p-4 text-[color:var(--ui-text)] border border-[color:var(--ui-border)]">
       <div className="space-y-4">
         <div>
           <div className="text-sm font-semibold tracking-tight">

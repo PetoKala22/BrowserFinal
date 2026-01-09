@@ -19,6 +19,19 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, 'src'),
         }
+      },
+      build: {
+        minify: 'esbuild',
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'weather-widget': ['src/components/Browser/widgets/WeatherWidget.tsx'],
+              'notes-widget': ['src/components/Browser/widgets/NotesWidget.tsx'],
+              'settings': ['src/components/Browser/SettingsPage.tsx'],
+              'dev-panel': ['src/components/Browser/DeveloperPanel.tsx']
+            }
+          }
+        }
       }
     };
 });
