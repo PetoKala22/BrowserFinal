@@ -12,7 +12,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, a
       type="button"
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-10 shrink-0 rounded-full transition-colors ${
-        checked ? 'bg-[color:var(--ui-accent)]' : 'bg-[color:var(--ui-border)]'
+        checked ? 'bg-green-500' : 'bg-[color:var(--ui-border)]'
       }`}
       aria-pressed={checked}
       aria-label={ariaLabel}

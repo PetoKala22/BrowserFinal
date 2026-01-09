@@ -11,7 +11,9 @@
     "electron": "electron .",
     "electron:dev": "concurrently -k -r \"npm run dev\" \"npm run electron:serve\"",
     "electron:serve": "cross-env VITE_DEV_SERVER_URL=http://localhost:3000 wait-on http://localhost:3000 && electron .",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "build:release": "cross-env KEEP_LOCALES=en-US KEEP_CHROME_PAKS=0 npm run electron:build && node electron/printReleaseSize.cjs",
+    "dist-size": "node electron/printReleaseSize.cjs"
   },
   "dependencies": {
     "@ghostery/adblocker": "^2.13.2",
@@ -37,7 +39,8 @@
     "wait-on": "^8.0.2"
   },
   "build": {
-    "appId": "com.example.safariesquebrowserui",
+    "appId": "com.nook.nookbrowser",
+    "productName": "Nook",
     "icon": "src/assets/AppIcon.ico",
     "files": [
       "dist/**/*",
@@ -46,6 +49,8 @@
       "package.json"
     ],
     "asar": true,
+    "compression": "maximum",
+    "afterPack": "electron/afterPack.cjs",
     "directories": {
       "output": "release",
       "buildResources": "src/assets"

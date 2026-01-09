@@ -7,19 +7,43 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Reduce the maximum number of renderer processes to limit memory usage
+// (adjust as needed; too low can impact multi-tab performance)
+app.commandLine.appendSwitch('renderer-process-limit', '6');
+
 const isDev = !app.isPackaged;
+
+// Optionally disable hardware acceleration to save GPU memory. Set
+// DISABLE_GPU=1 in the environment to enable.
+if (process.env.DISABLE_GPU === '0') {
+  try {
+    app.disableHardwareAcceleration();
+  } catch (e) {
+    console.warn('Failed to disable hardware acceleration:', e);
+  }
+}
 const devServerUrl =
   process.env.VITE_DEV_SERVER_URL || (isDev ? 'http://localhost:3000' : null);
 const appIconPath = app.isPackaged
-  ? path.join(process.resourcesPath, 'AppIcon.ico')
+  ? path.join(app.getAppPath(), 'src/assets/AppIcon.ico')
   : path.join(__dirname, '../src/assets/AppIcon.ico');
 
 let mainWindow;
 let adblockEngine;
 let adBlockEnabled = true;
 let adblockAttached = false;
+let adblockInitializing = false;
 let adblockStats = { blocked: 0 };
 const HISTORY_LIMIT = 300;
+
+// Simple logging function (disabled for now to prevent startup issues)
+const log = (message, error = null) => {
+  if (error) {
+    console.error(`[ERROR] ${message}:`, error);
+  } else {
+    console.log(`[INFO] ${message}`);
+  }
+};
 
 const getHistoryPath = () => path.join(app.getPath('userData'), 'history.json');
 const getWindowStatePath = () => path.join(app.getPath('userData'), 'window-state.json');
@@ -71,7 +95,9 @@ const toSafeBounds = (bounds) => {
 };
 
 const getFilterListPaths = async () => {
-  const filtersDir = path.join(__dirname, 'filters');
+  const filtersDir = app.isPackaged
+    ? path.join(app.getAppPath(), 'electron', 'filters')
+    : path.join(__dirname, 'filters');
   try {
     const entries = await fs.readdir(filtersDir);
     return entries
@@ -117,11 +143,31 @@ const mapResourceType = (resourceType) => {
 const attachAdblocker = () => {
   if (adblockAttached) return;
   adblockAttached = true;
+
+  // Attach a lightweight request hook that will lazy-initialize the
+  // adblock engine on first real request. This avoids parsing large
+  // filter lists at startup which can spike memory.
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-    if (!adBlockEnabled || !adblockEngine) {
+    if (!adBlockEnabled) {
       callback({});
       return;
     }
+
+    // If engine isn't ready, start async initialization and allow the
+    // request through for now. Initialization runs only once.
+    if (!adblockEngine && !adblockInitializing) {
+      adblockInitializing = true;
+      initAdblocker().catch((err) => {
+        console.error('Adblock init failed:', err);
+        adblockInitializing = false;
+      });
+    }
+
+    if (!adblockEngine) {
+      callback({});
+      return;
+    }
+
     const type = mapResourceType(details.resourceType);
     const sourceUrl = details.referrer || details.initiator || undefined;
     const request = Request.fromRawDetails({
@@ -139,6 +185,8 @@ const attachAdblocker = () => {
 };
 
 const initAdblocker = async () => {
+  if (adblockEngine || adblockInitializing) return;
+  adblockInitializing = true;
   try {
     const filterPaths = await getFilterListPaths();
     const lists = await Promise.all(
@@ -149,6 +197,8 @@ const initAdblocker = async () => {
     attachAdblocker();
   } catch (error) {
     console.error('Failed to initialize adblocker:', error);
+  } finally {
+    adblockInitializing = false;
   }
 };
 
@@ -161,6 +211,11 @@ const createWindow = async () => {
   const savedBounds = toSafeBounds(savedWindowState?.bounds);
   const shouldMaximize = Boolean(savedWindowState?.isMaximized);
   const shouldFullscreen = Boolean(savedWindowState?.isFullScreen);
+
+  // Resolve preload path correctly for packaged app
+  const preloadPath = app.isPackaged
+    ? path.join(app.getAppPath(), 'electron', 'preload.cjs')
+    : path.join(__dirname, 'preload.cjs');
 
   mainWindow = new BrowserWindow({
     width: savedBounds?.width ?? 1280,
@@ -176,7 +231,7 @@ const createWindow = async () => {
     show: false, // prevent flicker until maximized
     icon: appIconPath,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
       webviewTag: true
@@ -184,14 +239,24 @@ const createWindow = async () => {
   });
 
   // load content
+  const distPath = app.isPackaged
+    ? path.join(app.getAppPath(), 'dist', 'index.html')
+    : path.join(__dirname, '../dist/index.html');
+
   if (isDev && devServerUrl) {
     try {
       await mainWindow.loadURL(devServerUrl);
-    } catch {
-      await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    } catch (err) {
+      console.error('Failed to load dev server, falling back to dist:', err);
+      await mainWindow.loadFile(distPath);
     }
   } else {
-    await mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    try {
+      await mainWindow.loadFile(distPath);
+    } catch (err) {
+      console.error('Failed to load app:', err);
+      throw err;
+    }
   }
 
   // show with the last window state
@@ -326,11 +391,53 @@ const registerIpc = () => {
     return [];
   });
 
+
 };
 
+// Global error handlers (synchronous to avoid blocking)
+process.on('uncaughtException', (error) => {
+  const msg = 'Uncaught Exception in main process';
+  console.error(msg, error);
+  log(msg, error);
+  if (!app.isPackaged) {
+    throw error;
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  const msg = 'Unhandled Rejection in main process';
+  console.error(msg, reason);
+  log(msg, reason instanceof Error ? reason : new Error(String(reason)));
+});
+
 app.whenReady().then(async () => {
+  log('App ready, initializing...');
   registerIpc();
-  createWindow(); // Moved up
+  try {
+    await createWindow();
+    
+    // Add webContents error logging
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.on('crashed', () => {
+        log('Renderer process crashed');
+      });
+      
+      mainWindow.webContents.on('render-process-gone', (event, details) => {
+        log(`Render process gone: ${details.reason}`);
+      });
+    }
+    
+    // Use lazy adblock initialization to avoid parsing large filter lists at startup
+    attachAdblocker();
+    log('App initialization complete');
+  } catch (error) {
+    const msg = 'Failed to initialize app';
+    console.error(msg, error);
+    log(msg, error);
+    app.quit();
+    return;
+  }
+
   app.on('web-contents-created', (_event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
       if (mainWindow && url) {
@@ -349,7 +456,6 @@ app.whenReady().then(async () => {
       mainWindow?.webContents.send('browser:focus-address-bar');
     });
   });
-  await initAdblocker(); // Moved down
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
