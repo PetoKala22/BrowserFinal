@@ -61,7 +61,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
       {isOpen && (
         <div
           ref={panelRef}
-          className="absolute bottom-6 left-6 z-30 w-[min(520px,calc(100%-3rem))] rounded-2xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] shadow-xl backdrop-blur-xl"
+          className="absolute bottom-6 left-6 z-30 w-[min(520px,calc(100%-3rem))] rounded-3xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface)] shadow-xl backdrop-blur-xl"
         >
           <div className="flex items-center justify-between px-4 pt-4">
             <div className="text-[0.65rem] uppercase tracking-[0.35em] text-[color:var(--ui-text-subtle)]">

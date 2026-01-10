@@ -4,8 +4,8 @@ import { WidgetGrid } from './widgets/WidgetGrid';
 import { WidgetLibrary } from './widgets/WidgetLibrary';
 const DeveloperPanel = React.lazy(() => import('./DeveloperPanel').then(m => ({ default: m.DeveloperPanel })));
 import { widgetDefinitions, widgetList } from './widgets/widgetRegistry';
-import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';
-
+import type { WidgetInstance, WidgetType } from './widgets/widgetTypes';import { useGlobalWeather } from '@/hooks';
+import { SkyBackground } from './widgets/SkyBackground';
 const STORAGE_KEY = 'newtab-widgets-v1';
 
 const DEFAULT_WIDGETS: WidgetInstance[] = [
@@ -110,6 +110,7 @@ export const NewTabPage: React.FC = () => {
   const saveTimerRef = useRef<number | null>(null);
   const layoutFrameRef = useRef<number | null>(null);
   const pendingLayoutRef = useRef<Layout[] | null>(null);
+  const { skyState } = useGlobalWeather();
 
   useEffect(() => {
     if (saveTimerRef.current !== null) {
@@ -215,6 +216,9 @@ export const NewTabPage: React.FC = () => {
 
   return (
     <div className="w-full h-full text-[color:var(--ui-newtab-text)] relative overflow-hidden">
+      {/* Sky Background */}
+      <SkyBackground state={skyState} />
+
       {/* Background with visual detail (required for blur) */}
       <div className="absolute inset-0 bg-transparent" />
 

@@ -10,7 +10,6 @@ import {
   getLocalTimeString,
   getSeason
 } from '@/lib/sky/skyAstronomy';
-import { useSkyBackground } from '@/lib/sky/useSkyBackground';
 import { SkyStateInput } from '@/lib/sky/skyTypes';
 import {
   WiDaySunny,
@@ -23,6 +22,7 @@ import {
   WiThunderstorm
 } from 'react-icons/wi';
 import { updateDevPanelState } from '@/lib/devPanelState';
+import { SkyBackground } from './SkyBackground';
 
 /* ------------------ Weather Cache & Dedupe ------------------ */
 
@@ -146,24 +146,6 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
   if (code === 3) return <WiCloudy size={iconSize} color={iconColor} />;
   if (code <= 2) return <WiDaySunnyOvercast size={iconSize} color={iconColor} />;
   return <WiDaySunny size={iconSize} color={iconColor} />;
-};
-
-/* ------------------ Sky Layer ------------------ */
-
-const SkyLayer: React.FC<{ state: SkyStateInput }> = ({ state }) => {
-  const { canvasRef, cloudsCanvasRef } = useSkyBackground(state);
-  return (
-    <>
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full"
-      />
-      <canvas
-        ref={cloudsCanvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full"
-      />
-    </>
-  );
 };
 
 /* ------------------ Main Widget ------------------ */
@@ -568,7 +550,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
-      <SkyLayer state={skyState!} />
+      <SkyBackground state={skyState!} />
       <div className="absolute inset-0 bg-black/10" />
 
       <div className="relative z-10 flex h-full flex-col justify-between p-4">

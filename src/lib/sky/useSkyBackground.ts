@@ -15,6 +15,22 @@ const blendLayers = (from: SkyLayerColors, to: SkyLayerColors, t: number): SkyLa
   groundBounce: mixOklab(from.groundBounce, to.groundBounce, t)
 });
 
+/**
+ * Sample the sky color at a normalized vertical position (0 = top, 1 = bottom)
+ */
+const sampleSkyColor = (layers: SkyLayerColors, normalizedY: number): [number, number, number] => {
+  // Sky gradient stops: 0 (upperSky), 0.55 (midSky), 1 (horizonBand)
+  if (normalizedY <= 0.55) {
+    // Interpolate between upperSky and midSky
+    const t = normalizedY / 0.55;
+    return mixOklab(layers.upperSky, layers.midSky, t);
+  } else {
+    // Interpolate between midSky and horizonBand
+    const t = (normalizedY - 0.55) / (1 - 0.55);
+    return mixOklab(layers.midSky, layers.horizonBand, t);
+  }
+};
+
 const getCanvasContext = (canvas: HTMLCanvasElement) => {
   const context = canvas.getContext(
     '2d',
@@ -101,7 +117,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
       // Update and render precipitation
       precipSystem.updateWind(stateRef.current.weather.windSpeed || 0);
       precipSystem.update(dt / 1000, precipitation, precipIntensity);
-      renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity);
+      renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity, currentRef.current);
 
       // Render clouds
       const cloudCover = stateRef.current.weather.cloudCover;
@@ -233,10 +249,12 @@ const renderPrecipitation = (
   ctx: CanvasRenderingContext2D,
   system: PrecipitationSystem,
   precipitationType: 'rain' | 'snow' | 'none',
-  intensity: 'light' | 'moderate' | 'heavy' = 'moderate'
+  intensity: 'light' | 'moderate' | 'heavy' = 'moderate',
+  skyLayers: SkyLayerColors
 ) => {
   const config = PRECIPITATION_CONFIG;
   const particles = system.getParticles();
+  const canvasHeight = ctx.canvas.height;
 
   if (particles.length === 0) return;
 
@@ -251,7 +269,7 @@ const renderPrecipitation = (
     if (particle.type === 'rain') {
       renderRainStreak(ctx, particle, intensity);
     } else {
-      renderSnowflake(ctx, particle, intensity);
+      renderSnowflake(ctx, particle, intensity, skyLayers, canvasHeight);
     }
   }
 
@@ -309,9 +327,15 @@ const renderRainStreak = (ctx: CanvasRenderingContext2D, particle: Particle, int
 };
 
 /**
- * Render a single snowflake with intensity-based opacity
+ * Render a single snowflake with intensity-based opacity and sky-tinted color
  */
-const renderSnowflake = (ctx: CanvasRenderingContext2D, particle: Particle, intensity: 'light' | 'moderate' | 'heavy' = 'moderate') => {
+const renderSnowflake = (
+  ctx: CanvasRenderingContext2D, 
+  particle: Particle, 
+  intensity: 'light' | 'moderate' | 'heavy' = 'moderate',
+  skyLayers: SkyLayerColors,
+  canvasHeight: number
+) => {
   ctx.save();
   ctx.translate(particle.x, particle.y);
 
@@ -336,10 +360,23 @@ const renderSnowflake = (ctx: CanvasRenderingContext2D, particle: Particle, inte
       break;
   }
 
-  // Draw soft-edged snowflake with better visibility
+  // Sample sky color at particle position for realistic tinting
+  const normalizedY = particle.y / canvasHeight;
+  const skyColor = sampleSkyColor(skyLayers, normalizedY);
+  
+  // Create tinted snow color - blend white snow with sky color
+  // Snow should appear whiter in darker skies and more tinted in colorful skies
+  const snowTintFactor = 0.3; // How much the sky color affects the snow
+  const tintedColor: [number, number, number] = [
+    1.0 - (1.0 - skyColor[0]) * snowTintFactor, // Blend towards white
+    1.0 - (1.0 - skyColor[1]) * snowTintFactor,
+    1.0 - (1.0 - skyColor[2]) * snowTintFactor
+  ];
+
+  // Draw soft-edged snowflake with sky-tinted color
   const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, particle.size * 2);
-  grad.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
-  grad.addColorStop(0.6, `rgba(255, 255, 255, ${opacity * 0.6})`);
+  grad.addColorStop(0, `rgba(${Math.floor(tintedColor[0] * 255)}, ${Math.floor(tintedColor[1] * 255)}, ${Math.floor(tintedColor[2] * 255)}, ${opacity})`);
+  grad.addColorStop(0.6, `rgba(${Math.floor(tintedColor[0] * 255)}, ${Math.floor(tintedColor[1] * 255)}, ${Math.floor(tintedColor[2] * 255)}, ${opacity * 0.6})`);
   grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
   ctx.fillStyle = grad;

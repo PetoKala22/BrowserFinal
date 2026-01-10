@@ -258,9 +258,6 @@ export const FocusWidget: React.FC = () => {
     <div className="flex h-full flex-col justify-between rounded-3xl bg-[color:var(--ui-surface-subtle)] backdrop-blur-lg p-4 text-[color:var(--ui-text)] border border-[color:var(--ui-border)]">
       <div className="space-y-4">
         <div>
-          <div className="text-sm font-semibold tracking-tight">
-            Focus timer
-          </div>
         </div>
 
         <div className="flex items-center gap-5 widget-interactive justify-center">
