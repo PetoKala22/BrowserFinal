@@ -192,30 +192,30 @@ export const PRECIPITATION_CONFIG: PrecipitationSystemConfig = {
       rotation: true,
       intensityLevels: {
         light: {
-          spawnRate: 30,
-          lifetime: 4.0,
-          velocity: { y: [150, 220] },
-          size: [2, 4],
-          opacity: [0.3, 0.5],
-          drift: 15,
+          spawnRate: 50,
+          lifetime: 6.0,
+          velocity: { y: [80, 120] },
+          size: [0.8, 1.6],
+          opacity: [0.4, 0.6],
+          drift: 35,
           description: 'Intermittent flakes, low accumulation confidence'
         },
         moderate: {
-          spawnRate: 70,
-          lifetime: 4.5,
-          velocity: { y: [200, 300] },
-          size: [3, 6],
-          opacity: [0.4, 0.65],
-          drift: 25,
+          spawnRate: 120,
+          lifetime: 7.0,
+          velocity: { y: [100, 150] },
+          size: [1.0, 2.2],
+          opacity: [0.5, 0.75],
+          drift: 55,
           description: 'Consistent snowfall with visible accumulation'
         },
         heavy: {
-          spawnRate: 140,
-          lifetime: 5.0,
-          velocity: { y: [250, 400] },
-          size: [4, 9],
-          opacity: [0.5, 0.8],
-          drift: 40,
+          spawnRate: 200,
+          lifetime: 8.0,
+          velocity: { y: [120, 180] },
+          size: [1.2, 2.8],
+          opacity: [0.6, 0.85],
+          drift: 75,
           description: 'Dense snow, wide flake variance, reduced visibility'
         }
       }

@@ -87,7 +87,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
       const { width, height } = sizeRef.current;
       
       // Pass the high-res timestamp 'now' into the renderer
-      renderSkyGradient(ctx, width, height, currentRef.current, stateRef.current, now);
+      const skyResult = renderSkyGradient(ctx, width, height, currentRef.current, stateRef.current, now);
 
       // Render precipitation
       if (!precipitationSystemRef.current) {
@@ -124,7 +124,11 @@ export const useSkyBackground = (state: SkyStateInput) => {
             currentRef.current.upperSky,
             currentRef.current.midSky,
             currentRef.current.horizonBand,
-            stateRef.current.astronomy.sunElevation
+            stateRef.current.astronomy.sunElevation,
+            {
+              ...stateRef.current.weather,
+              lightningEffect: skyResult.lightningEffect
+            }
           );
         }
       } else {

@@ -19,7 +19,7 @@ export const renderSkyGradient = (
   layers: SkyLayerColors,
   state: SkyStateInput,
   time: number
-) => {
+): { lightningEffect: any } => {
   ctx.clearRect(0, 0, width, height);
 
   const { sunElevation, sunAzimuth } = state.astronomy;
@@ -99,6 +99,5 @@ export const renderSkyGradient = (
     ctx.fillRect(0, height * 0.85, width, height * 0.15);
   }
 
-  // 7) Noise overlay
-  overlayNoise(ctx, width, height, fogDensity * 15, time);
+  return { lightningEffect };
 };

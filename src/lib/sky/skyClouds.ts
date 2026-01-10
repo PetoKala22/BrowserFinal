@@ -1,6 +1,8 @@
 // skyClouds.ts
 // WebGL-based cloud renderer using 3D Simplex noise
 
+import { CloudTypeConfig, determineCloudType, CLOUD_TYPE_CONFIGS } from './cloudTypes';
+
 export class SkyCloudsRenderer {
   private gl: WebGLRenderingContext;
   private program: WebGLProgram;
@@ -12,8 +14,14 @@ export class SkyCloudsRenderer {
   private midSkyUniform: WebGLUniformLocation;
   private horizonBandUniform: WebGLUniformLocation;
   private sunElevationUniform: WebGLUniformLocation;
+  private cloudConfigUniform: WebGLUniformLocation;
+  private cloudConfig2Uniform: WebGLUniformLocation;
+  private cloudConfig3Uniform: WebGLUniformLocation;
+  private sizeScaleUniform: WebGLUniformLocation;
+  private lightningIntensityUniform: WebGLUniformLocation;
   private seed: number;
   private canvas: HTMLCanvasElement;
+  private currentCloudConfig: CloudTypeConfig;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -33,6 +41,28 @@ export class SkyCloudsRenderer {
     this.midSkyUniform = this.gl.getUniformLocation(this.program, 'uMidSky')!;
     this.horizonBandUniform = this.gl.getUniformLocation(this.program, 'uHorizonBand')!;
     this.sunElevationUniform = this.gl.getUniformLocation(this.program, 'uSunElevation')!;
+    this.cloudConfigUniform = this.gl.getUniformLocation(this.program, 'uCloudConfig')!;
+    this.cloudConfig2Uniform = this.gl.getUniformLocation(this.program, 'uCloudConfig2')!;
+    this.cloudConfig3Uniform = this.gl.getUniformLocation(this.program, 'uCloudConfig3')!;
+    this.sizeScaleUniform = this.gl.getUniformLocation(this.program, 'uSizeScale')!;
+    this.lightningIntensityUniform = this.gl.getUniformLocation(this.program, 'uLightningIntensity')!;
+
+    // Default to clear skies
+    this.currentCloudConfig = {
+      sizeScale: 1.0,
+      densityScale: 0.1,
+      shapeScale: 1.0,
+      detailScale: 1.0,
+      coverageBias: -0.8,
+      windSpeedMultiplier: 1.0,
+      turbulence: 0.1,
+      brightnessMultiplier: 1.2,
+      contrastMultiplier: 0.8,
+      saturationMultiplier: 1.1,
+      anvilClouds: false,
+      wispyEdges: true,
+      layeredEffect: false
+    };
   }
 
   private createShaderProgram(): WebGLProgram {
@@ -56,6 +86,11 @@ export class SkyCloudsRenderer {
       uniform vec3 uMidSky;
       uniform vec3 uHorizonBand;
       uniform float uSunElevation;
+      uniform vec3 uCloudConfig; // densityScale, shapeScale, detailScale
+      uniform vec3 uCloudConfig2; // coverageBias, windSpeedMultiplier, turbulence
+      uniform vec3 uCloudConfig3; // brightnessMultiplier, contrastMultiplier, saturationMultiplier
+      uniform float uSizeScale;
+      uniform float uLightningIntensity;
 
       varying vec2 vUv;
 
@@ -148,23 +183,23 @@ export class SkyCloudsRenderer {
 
       // Cloud density function
       float cloudDensity(vec3 p) {
-        // Scale to make clouds more vertical (stretched in y)
-        vec3 scaledP = p * vec3(2.0, 3.0, 2.0);
+        // Scale to make clouds more vertical (stretched in y) - configurable shape and size
+        vec3 scaledP = p * vec3(2.0 * uSizeScale, uCloudConfig.y * uSizeScale, 2.0 * uSizeScale); // sizeScale affects overall cloud size, shapeScale affects vertical stretching
         
-        float base = snoise((scaledP + vec3(uSeed)) * 0.6);
-        float detail1 = snoise((scaledP + vec3(uSeed * 1.7)) * 2.0) * 0.3;
-        float detail2 = snoise((scaledP + vec3(uSeed * 3.1)) * 4.0) * 0.15;
-        float detail3 = snoise((scaledP + vec3(uSeed * 5.7)) * 8.0) * 0.075;
+        float base = snoise((scaledP + vec3(uSeed)) * uCloudConfig.z); // detailScale affects noise frequency
+        float detail1 = snoise((scaledP + vec3(uSeed * 1.7)) * uCloudConfig.z * 2.0) * 0.3;
+        float detail2 = snoise((scaledP + vec3(uSeed * 3.1)) * uCloudConfig.z * 4.0) * 0.15;
+        float detail3 = snoise((scaledP + vec3(uSeed * 5.7)) * uCloudConfig.z * 8.0) * 0.075;
 
         float d = base + detail1 + detail2 + detail3;
-        d = smoothstep(0.1, 0.6, d);
+        d = smoothstep(0.1 + uCloudConfig2.x * 0.2, 0.6 + uCloudConfig2.x * 0.2, d); // coverageBias affects threshold
         
         // Add vertical variation for more realistic cloud shapes
         float height = p.y;
         float verticalMask = smoothstep(-0.3, 0.2, height) * (1.0 - smoothstep(0.2, 0.8, height));
         d *= verticalMask;
         
-        return d;
+        return d * uCloudConfig.x; // Apply density scale
       }
 
       // Density gradient normal for proper lighting
@@ -187,8 +222,14 @@ export class SkyCloudsRenderer {
           vec3 pos = ro + rd * t;
 
           // Separate shape motion from lighting space for stability
-          float speed = 0.02 + t * 0.01;
-          vec3 shapePos = pos + vec3(-uTime * speed, 0.0, 0.0);
+          float speed = (0.02 + t * 0.01) * uCloudConfig2.y; // windSpeedMultiplier affects movement
+          // Only apply horizontal turbulence for realistic wind-driven movement
+          vec3 turbulence = vec3(
+            snoise(pos * 0.3 + uTime * 0.05) * uCloudConfig2.z * 0.5, // Gentle horizontal variation
+            0.0, // No vertical movement
+            0.0  // No depth movement
+          );
+          vec3 shapePos = pos + vec3(-uTime * speed, 0.0, 0.0) + turbulence;
           float d = cloudDensity(shapePos);
 
           // Density-based lighting with proper surface normals
@@ -261,23 +302,32 @@ export class SkyCloudsRenderer {
           baseCloudColor = mix(baseCloudColor, baseCloudColor * warmTint, (1.0 - sunResponse));
           baseCloudColor *= luma / max(dot(baseCloudColor, vec3(0.2126, 0.7152, 0.0722)), 0.001);
 
-          // Apply lighting variation
-          vec3 cloudColor = mix(baseCloudColor * 0.7, baseCloudColor, combinedLight);
+          // Apply lighting variation with cloud type adjustments
+          float adjustedLight = pow(combinedLight, 1.0 / uCloudConfig3.y); // contrastMultiplier affects light falloff
+          vec3 cloudColor = mix(baseCloudColor * 0.7 * uCloudConfig3.x, baseCloudColor * uCloudConfig3.x, adjustedLight); // brightnessMultiplier
 
           // Add starlight tinting (subtle)
           cloudColor = mix(cloudColor, starlightColor + baseCloudColor * 0.2, starlightContribution);
+
+          // Lightning illumination - clouds glow brightly during lightning flashes
+          if (uLightningIntensity > 0.01) {
+            vec3 lightningColor = vec3(1.0, 1.0, 0.95); // Bright white-blue lightning color
+            float lightningGlow = uLightningIntensity * d * 2.0; // Intensity scales with cloud density
+            cloudColor = mix(cloudColor, lightningColor, clamp(lightningGlow, 0.0, 0.8));
+          }
 
           // Forward scattering - clouds glow when viewed toward the sun
           float forwardScatter = pow(max(dot(rd, sunDir), 0.0), 6.0);
           cloudColor += forwardScatter * vec3(1.0, 0.9, 0.8) * 0.4 * d;
 
-          // Desaturate slightly for realistic cloud appearance
-          cloudColor = mix(cloudColor, vec3(dot(cloudColor, vec3(0.333))), 0.15);
+          // Apply saturation adjustment
+          float cloudLuma = dot(cloudColor, vec3(0.333));
+          cloudColor = mix(vec3(cloudLuma), cloudColor, uCloudConfig3.z); // saturationMultiplier
 
           float distFade = exp(-t * 0.05);
           cloudColor *= distFade;
 
-          float a = d * 0.25 * (1.0 - alpha);
+          float a = d * 0.4 * (1.0 - alpha);
           col += cloudColor * a;
           alpha += a;
 
@@ -346,7 +396,22 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     return buffer;
   }
 
-  render(time: number, width: number, height: number, upperSky: [number, number, number], midSky: [number, number, number], horizonBand: [number, number, number], sunElevation: number) {
+  render(time: number, width: number, height: number, upperSky: [number, number, number], midSky: [number, number, number], horizonBand: [number, number, number], sunElevation: number, weather?: {
+    weatherCode?: number;
+    cloudCover: number;
+    precipitation: 'none' | 'rain' | 'snow' | 'storm';
+    precipitationAmount?: number;
+    fogDensity: number;
+    visibility: number;
+    windSpeed?: number;
+    lightningEffect?: { intensity: number; centers: { x: number; y: number; intensity: number }[]; radius: number; color?: string };
+  }) {
+    // Update cloud configuration based on weather
+    if (weather) {
+      const cloudType = determineCloudType(weather);
+      this.currentCloudConfig = CLOUD_TYPE_CONFIGS[cloudType];
+    }
+
     this.gl.viewport(0, 0, width, height);
     this.gl.clearColor(0, 0, 0, 0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -364,6 +429,23 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     this.gl.uniform3f(this.midSkyUniform, midSky[0], midSky[1], midSky[2]);
     this.gl.uniform3f(this.horizonBandUniform, horizonBand[0], horizonBand[1], horizonBand[2]);
     this.gl.uniform1f(this.sunElevationUniform, sunElevation);
+    this.gl.uniform3f(this.cloudConfigUniform, 
+      this.currentCloudConfig.densityScale, 
+      this.currentCloudConfig.shapeScale, 
+      this.currentCloudConfig.detailScale
+    );
+    this.gl.uniform3f(this.cloudConfig2Uniform,
+      this.currentCloudConfig.coverageBias,
+      this.currentCloudConfig.windSpeedMultiplier,
+      this.currentCloudConfig.turbulence
+    );
+    this.gl.uniform3f(this.cloudConfig3Uniform,
+      this.currentCloudConfig.brightnessMultiplier,
+      this.currentCloudConfig.contrastMultiplier,
+      this.currentCloudConfig.saturationMultiplier
+    );
+    this.gl.uniform1f(this.sizeScaleUniform, this.currentCloudConfig.sizeScale);
+    this.gl.uniform1f(this.lightningIntensityUniform, weather?.lightningEffect?.intensity || 0.0);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.quadBuffer);
     const positionAttribute = this.gl.getAttribLocation(this.program, 'aPosition');
