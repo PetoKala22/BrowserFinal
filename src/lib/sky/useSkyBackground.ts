@@ -117,7 +117,15 @@ export const useSkyBackground = (state: SkyStateInput) => {
           }
         }
         if (cloudsRendererRef.current) {
-          cloudsRendererRef.current.render(now / 1000, width, height);
+          cloudsRendererRef.current.render(
+            now / 1000,
+            width,
+            height,
+            currentRef.current.upperSky,
+            currentRef.current.midSky,
+            currentRef.current.horizonBand,
+            stateRef.current.astronomy.sunElevation
+          );
         }
       } else {
         if (cloudsRendererRef.current) {

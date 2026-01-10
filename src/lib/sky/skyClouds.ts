@@ -8,6 +8,10 @@ export class SkyCloudsRenderer {
   private timeUniform: WebGLUniformLocation;
   private resolutionUniform: WebGLUniformLocation;
   private seedUniform: WebGLUniformLocation;
+  private upperSkyUniform: WebGLUniformLocation;
+  private midSkyUniform: WebGLUniformLocation;
+  private horizonBandUniform: WebGLUniformLocation;
+  private sunElevationUniform: WebGLUniformLocation;
   private seed: number;
   private canvas: HTMLCanvasElement;
 
@@ -25,6 +29,10 @@ export class SkyCloudsRenderer {
     this.timeUniform = this.gl.getUniformLocation(this.program, 'uTime')!;
     this.resolutionUniform = this.gl.getUniformLocation(this.program, 'uResolution')!;
     this.seedUniform = this.gl.getUniformLocation(this.program, 'uSeed')!;
+    this.upperSkyUniform = this.gl.getUniformLocation(this.program, 'uUpperSky')!;
+    this.midSkyUniform = this.gl.getUniformLocation(this.program, 'uMidSky')!;
+    this.horizonBandUniform = this.gl.getUniformLocation(this.program, 'uHorizonBand')!;
+    this.sunElevationUniform = this.gl.getUniformLocation(this.program, 'uSunElevation')!;
   }
 
   private createShaderProgram(): WebGLProgram {
@@ -44,6 +52,10 @@ export class SkyCloudsRenderer {
       uniform float uTime;
       uniform vec2 uResolution;
       uniform float uSeed;
+      uniform vec3 uUpperSky;
+      uniform vec3 uMidSky;
+      uniform vec3 uHorizonBand;
+      uniform float uSunElevation;
 
       varying vec2 vUv;
 
@@ -155,6 +167,16 @@ export class SkyCloudsRenderer {
         return d;
       }
 
+      // Density gradient normal for proper lighting
+      vec3 densityNormal(vec3 p) {
+        float eps = 0.05;
+        return normalize(vec3(
+          cloudDensity(p + vec3(eps, 0.0, 0.0)) - cloudDensity(p - vec3(eps, 0.0, 0.0)),
+          cloudDensity(p + vec3(0.0, eps, 0.0)) - cloudDensity(p - vec3(0.0, eps, 0.0)),
+          cloudDensity(p + vec3(0.0, 0.0, eps)) - cloudDensity(p - vec3(0.0, 0.0, eps))
+        ));
+      }
+
       // Ray marching function
       vec4 marchClouds(vec3 ro, vec3 rd) {
         float t = 0.0;
@@ -164,25 +186,98 @@ export class SkyCloudsRenderer {
         for (int i = 0; i < 16; i++) {
           vec3 pos = ro + rd * t;
 
-          // Add parallax motion: closer clouds move faster
+          // Separate shape motion from lighting space for stability
           float speed = 0.02 + t * 0.01;
-          pos += vec3(-uTime * speed, 0.0, 0.0);
+          vec3 shapePos = pos + vec3(-uTime * speed, 0.0, 0.0);
+          float d = cloudDensity(shapePos);
 
-          float d = cloudDensity(pos);
-          float light = clamp(d * 1.2, 0.0, 1.0);
+          // Density-based lighting with proper surface normals
+          float densityLight = clamp(d * 1.2, 0.0, 1.0);
 
-          vec3 cloudColor = mix(
-  vec3(0.18, 0.22, 0.32),
-  vec3(0.55, 0.6, 0.7),
-  light
-);
+          // Proper directional lighting using density gradients
+          vec3 sunDir = normalize(vec3(sin(uSunElevation * 3.14159 / 180.0), cos(uSunElevation * 3.14159 / 180.0), 0.0));
+          vec3 n = densityNormal(pos);
+          float sunDot = clamp(dot(n, sunDir), 0.0, 1.0);
 
-          cloudColor = mix(cloudColor, vec3(dot(cloudColor, vec3(0.333))), 1.0);
+          // Self-shadowing toward the sun
+          float shadow = 0.0;
+          vec3 shadowPos = pos;
+          for (int s = 0; s < 4; s++) {
+            shadowPos += sunDir * 0.15;
+            shadow += cloudDensity(shadowPos);
+          }
+          shadow = exp(-shadow * 1.2);
+
+          // Combine lighting components
+          float directionalLight = sunDot;
+          float combinedLight = densityLight * 0.6 + directionalLight * 0.4;
+          combinedLight *= shadow;
+
+          // Atmospheric inertia - clouds respond slower to sun changes
+          float sunResponse = smoothstep(-6.0, 4.0, uSunElevation);
+          sunResponse *= smoothstep(0.2, 0.8, d); // thicker clouds respond more slowly
+
+          // Starlight illumination for nighttime clouds
+          float starlightIntensity = smoothstep(0.0, -6.0, uSunElevation);
+          vec3 starlightColor = vec3(0.8, 0.85, 1.0) * 0.1;
+          float starlightContribution = starlightIntensity * (1.0 - combinedLight * 0.4);
+
+          // Base cloud color with atmospheric inertia
+          vec3 baseCloudColor;
+          float horizonInfluence;
+
+          // Smooth transition zones
+          float dayToDusk = smoothstep(-2.0, 2.0, sunResponse);
+          float duskToNight = smoothstep(-8.0, -4.0, sunResponse);
+
+          // Daytime clouds (bright white)
+          vec3 dayCloudColor = vec3(0.95, 0.95, 0.95);
+          float dayHorizonInfluence = 0.1;
+
+          // Dusk/dawn clouds (warm tinted with luminance preservation)
+          vec3 duskCloudColor = mix(vec3(0.9, 0.85, 0.8), vec3(0.7, 0.6, 0.5), clamp(-sunResponse / 6.0, 0.0, 1.0));
+          float duskHorizonInfluence = 0.4 + clamp(-sunResponse / 6.0, 0.0, 1.0) * 0.3;
+
+          // Night clouds (luminance-driven, not color-driven)
+          float skyLuma = dot(uMidSky, vec3(0.333));
+          vec3 nightCloudColor = vec3(skyLuma) * 0.6;
+          float nightHorizonInfluence = 0.2;
+
+          // Smoothly interpolate between day and dusk
+          vec3 dayDuskColor = mix(duskCloudColor, dayCloudColor, dayToDusk);
+          float dayDuskHorizon = mix(duskHorizonInfluence, dayHorizonInfluence, dayToDusk);
+
+          // Smoothly interpolate between dusk and night
+          baseCloudColor = mix(nightCloudColor, dayDuskColor, duskToNight);
+          horizonInfluence = mix(nightHorizonInfluence, dayDuskHorizon, duskToNight);
+
+          // Mix with sky colors for additional tinting, emphasizing horizon
+          vec3 skyTint = mix(uHorizonBand, mix(uMidSky, uUpperSky, 0.5), 0.3);
+          baseCloudColor = mix(baseCloudColor, skyTint, horizonInfluence);
+
+          // Luminance-preserving warm shift for dusk colors
+          float luma = dot(baseCloudColor, vec3(0.2126, 0.7152, 0.0722));
+          vec3 warmTint = vec3(1.05, 0.95, 0.85);
+          baseCloudColor = mix(baseCloudColor, baseCloudColor * warmTint, (1.0 - sunResponse));
+          baseCloudColor *= luma / max(dot(baseCloudColor, vec3(0.2126, 0.7152, 0.0722)), 0.001);
+
+          // Apply lighting variation
+          vec3 cloudColor = mix(baseCloudColor * 0.7, baseCloudColor, combinedLight);
+
+          // Add starlight tinting (subtle)
+          cloudColor = mix(cloudColor, starlightColor + baseCloudColor * 0.2, starlightContribution);
+
+          // Forward scattering - clouds glow when viewed toward the sun
+          float forwardScatter = pow(max(dot(rd, sunDir), 0.0), 6.0);
+          cloudColor += forwardScatter * vec3(1.0, 0.9, 0.8) * 0.4 * d;
+
+          // Desaturate slightly for realistic cloud appearance
+          cloudColor = mix(cloudColor, vec3(dot(cloudColor, vec3(0.333))), 0.15);
 
           float distFade = exp(-t * 0.05);
           cloudColor *= distFade;
 
-          float a = d * 0.12 * (1.0 - alpha);
+          float a = d * 0.25 * (1.0 - alpha);
           col += cloudColor * a;
           alpha += a;
 
@@ -190,7 +285,7 @@ export class SkyCloudsRenderer {
           t += 0.12;
         }
 
-        alpha *= 0.9;
+        alpha *= 0.95;
 
         return vec4(col, alpha);
       }
@@ -251,7 +346,7 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     return buffer;
   }
 
-  render(time: number, width: number, height: number) {
+  render(time: number, width: number, height: number, upperSky: [number, number, number], midSky: [number, number, number], horizonBand: [number, number, number], sunElevation: number) {
     this.gl.viewport(0, 0, width, height);
     this.gl.clearColor(0, 0, 0, 0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -265,6 +360,10 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     this.gl.uniform1f(this.timeUniform, time);
     this.gl.uniform2f(this.resolutionUniform, width, height);
     this.gl.uniform1f(this.seedUniform, this.seed);
+    this.gl.uniform3f(this.upperSkyUniform, upperSky[0], upperSky[1], upperSky[2]);
+    this.gl.uniform3f(this.midSkyUniform, midSky[0], midSky[1], midSky[2]);
+    this.gl.uniform3f(this.horizonBandUniform, horizonBand[0], horizonBand[1], horizonBand[2]);
+    this.gl.uniform1f(this.sunElevationUniform, sunElevation);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.quadBuffer);
     const positionAttribute = this.gl.getAttribLocation(this.program, 'aPosition');
