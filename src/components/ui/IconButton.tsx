@@ -9,18 +9,20 @@ export const IconButton: React.FC<IconButtonProps> = ({ children, className, act
     <button 
       className={`
         group inline-flex items-center justify-center
-        p-1.5 rounded-lg
-        transition-[background-color,color] duration-150 ease-out
+        p-2 rounded-xl
+        transition-all duration-150 ease-out
         hover:bg-[color:var(--ui-hover)]
-        disabled:opacity-30 disabled:pointer-events-none
+        active:bg-[color:var(--ui-active)] active:scale-95
+        disabled:opacity-30 disabled:pointer-events-none disabled:scale-100
         text-[color:var(--ui-text)]
         electron-no-drag
-        ${active ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)]' : ''}
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--ui-ring)]
+        ${active ? 'bg-[color:var(--ui-active)] text-[color:var(--ui-text)]' : ''}
         ${className || ''}
       `}
       {...props}
     >
-      <span className="transition-transform duration-150 ease-out group-active:scale-[0.90]">
+      <span className="transition-transform duration-150 ease-out group-active:scale-[0.85]">
         {children}
       </span>
     </button>
