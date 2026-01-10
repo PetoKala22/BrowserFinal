@@ -37,13 +37,16 @@ export const SettingsPage: React.FC<any> = ({
   onWallpaperBlurChange,
   adBlockEnabled,
   onAdBlockEnabledChange,
+  permissions,
+  onPermissionsChange,
   searchEngine,
   onSearchEngineChange,
   initialSection,
   hasUnsavedChanges,
   isSaving,
   onSave,
-  onClose
+  onClose,
+  subsection
 }) => {
   const [activeSection, setActiveSection] =
     useState<SettingsSection>(initialSection ?? 'appearance');
@@ -128,6 +131,8 @@ export const SettingsPage: React.FC<any> = ({
                 <PrivacySettingsSection
                   adBlockEnabled={adBlockEnabled}
                   onAdBlockEnabledChange={onAdBlockEnabledChange}
+                  permissions={permissions}
+                  onPermissionsChange={onPermissionsChange}
                 />
               )}
 

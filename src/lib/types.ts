@@ -36,6 +36,28 @@ export enum SearchEngine {
 
 export type BackgroundType = 'wallpaper' | 'solid';
 
+export enum PermissionType {
+  GEOLOCATION = 'geolocation',
+  MICROPHONE = 'microphone',
+  CAMERA = 'camera',
+  NOTIFICATIONS = 'notifications',
+  CLIPBOARD_READ = 'clipboard-read',
+  CLIPBOARD_WRITE = 'clipboard-write'
+}
+
+export interface PermissionRequest {
+  id: string;
+  type: PermissionType;
+  origin: string;
+  tabId: string;
+}
+
+export interface PermissionSetting {
+  type: PermissionType;
+  allowed: boolean;
+  ask: boolean;
+}
+
 export interface AppSettings {
   theme: Theme;
   searchEngine: SearchEngine;
@@ -46,4 +68,5 @@ export interface AppSettings {
   wallpaperBlur: boolean;
   adBlockEnabled: boolean;
   snowColor?: string;
+  permissions?: Record<string, PermissionSetting[]>;
 }

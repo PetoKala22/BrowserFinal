@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadHistory: () => ipcRenderer.invoke('history:load'),
   addHistory: (entry) => ipcRenderer.invoke('history:add', entry),
   clearHistory: () => ipcRenderer.invoke('history:clear'),
+  respondPermission: (id, granted) => ipcRenderer.invoke('permission:respond', id, granted),
   onAdblockStats: (handler) => {
     const listener = (_event, stats) => handler(stats);
     ipcRenderer.on('adblock:stats', listener);
@@ -22,6 +23,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = (_event, url) => handler(url);
     ipcRenderer.on('tabs:new-window', listener);
     return () => ipcRenderer.removeListener('tabs:new-window', listener);
+  },
+  onPermissionRequest: (handler) => {
+    const listener = (_event, request) => handler(request);
+    ipcRenderer.on('permission:request', listener);
+    return () => ipcRenderer.removeListener('permission:request', listener);
   },
   onFocusAddressBar: (handler) => {
     const listener = () => handler();

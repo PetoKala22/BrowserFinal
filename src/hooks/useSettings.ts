@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppSettings, BackgroundType, Theme } from '@/lib/types';
+import { AppSettings, BackgroundType, Theme, PermissionType } from '@/lib/types';
 import { applyTheme, getThemeMode } from '@/utils/themeUtils';
 
 interface UseSettingsResult {
@@ -24,6 +24,8 @@ interface UseSettingsResult {
   setAdBlockEnabled: (enabled: boolean) => void;
   snowColor: string;
   setSnowColor: (color: string) => void;
+  permissions: Record<string, { type: PermissionType; allowed: boolean; ask: boolean }[]>;
+  setPermissions: (permissions: Record<string, { type: PermissionType; allowed: boolean; ask: boolean }[]>) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -47,6 +49,7 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
   const [adBlockEnabled, setAdBlockEnabled] = useState(defaultSettings.adBlockEnabled);
   const [snowColor, setSnowColor] = useState(defaultSettings.snowColor ?? '#FFFFFF');
+  const [permissions, setPermissions] = useState(defaultSettings.permissions ?? {});
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -60,7 +63,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaperColor,
       wallpaperBlur,
       adBlockEnabled,
-      snowColor
+      snowColor,
+      permissions
     }),
     [
       searchEngine,
@@ -70,7 +74,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       wallpaperColor,
       wallpaperBlur,
       adBlockEnabled,
-      snowColor
+      snowColor,
+      permissions
     ]
   );
 
@@ -84,7 +89,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
       savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur ||
       savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled ||
-      savedSettings.snowColor !== currentSettings.snowColor
+      savedSettings.snowColor !== currentSettings.snowColor ||
+      JSON.stringify(savedSettings.permissions) !== JSON.stringify(currentSettings.permissions)
     );
   }, [currentSettings, savedSettings]);
 
@@ -154,6 +160,8 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setAdBlockEnabled,
     snowColor,
     setSnowColor,
+    permissions,
+    setPermissions,
     currentSettings,
     savedSettings,
     setSavedSettings,

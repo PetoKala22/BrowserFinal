@@ -1,5 +1,5 @@
 import type { DetailedHTMLProps, HTMLAttributes } from 'react';
-import type { AppSettings, HistoryItem } from '@/lib/types';
+import type { AppSettings, HistoryItem, PermissionRequest } from '@/lib/types';
 
 export {};
 
@@ -17,8 +17,10 @@ declare global {
     loadHistory: () => Promise<HistoryItem[]>;
     addHistory: (entry: HistoryItem) => Promise<HistoryItem[]>;
     clearHistory: () => Promise<HistoryItem[]>;
+    respondPermission: (id: string, granted: boolean) => Promise<void>;
     onAdblockStats: (handler: (stats: { blocked: number }) => void) => () => void;
     onNewWindow: (handler: (url: string) => void) => () => void;
+    onPermissionRequest: (handler: (request: PermissionRequest) => void) => () => void;
     onFocusAddressBar: (handler: () => void) => () => void;
   }
 

@@ -23,6 +23,7 @@ import {
 } from 'react-icons/wi';
 import { updateDevPanelState } from '@/lib/devPanelState';
 import { SkyBackground } from './SkyBackground';
+import { LuMapPin, LuSettings } from 'react-icons/lu';
 
 /* ------------------ Weather Cache & Dedupe ------------------ */
 
@@ -135,8 +136,8 @@ const weatherCodeToLabel = (code: number) => {
 };
 
 const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
-  const iconSize = 44;
-  const iconColor = 'rgba(255,255,255,0.9)';
+  const iconSize = 52;
+  const iconColor = 'rgba(255,255,255,0.95)';
 
   if (code >= 95) return <WiThunderstorm size={iconSize} color={iconColor} />;
   if (code >= 71 && code <= 86) return <WiSnow size={iconSize} color={iconColor} />;
@@ -156,6 +157,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     location ?? null
   );
   const [error, setError] = useState<string | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const devPanel = useDevPanelState();
   const devWeather = devPanel.weather;
   const now = useDevTime();
@@ -304,7 +306,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       return;
     }
 
-    setError('Set a location to see weather.');
+    setError('Set a location in settings to see weather.');
   }, [
     devWeather.code,
     devWeather.enabled,
@@ -551,20 +553,28 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-3xl text-white">
       <SkyBackground state={skyState!} />
-      <div className="absolute inset-0 bg-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/15" />
 
-      <div className="relative z-10 flex h-full flex-col justify-between p-4">
+      <div className="relative z-10 flex h-full flex-col justify-between p-6">
+        {/* Main weather info */}
         <div className="flex items-start justify-between">
-          <div>
-            <div className="mt-2 text-3xl font-semibold">{state.temperature}</div>
-            <div className="text-sm text-white/80">{state.condition}</div>
+          <div className="flex-1">
+            <div className="text-4xl font-light tracking-tight">{state.temperature}</div>
+            <div className="mt-1 text-base font-medium text-white/90">{state.condition}</div>
           </div>
-          <WeatherIcon code={state.code} />
+          <div className="ml-4 opacity-90">
+            <WeatherIcon code={state.code} />
+          </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-white/80">
-          <span className="truncate">{state.location}</span>
-          <span>{state.highLow}</span>
+        {/* Location and high/low */}
+        <div className="flex items-end justify-between">
+          <div className="text-sm font-medium text-white/90 truncate max-w-[60%]">
+            {state.location}
+          </div>
+          <div className="text-sm font-medium text-white/80">
+            {state.highLow}
+          </div>
         </div>
       </div>
     </div>

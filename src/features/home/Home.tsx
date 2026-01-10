@@ -7,7 +7,8 @@ import { TabBar } from '@/components/Browser/TabBar';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import { SuggestionsBar } from '@/components/Browser/Suggestions';
 import { WindowControls } from '@/components/Browser/WindowControls';
-import { AppSettings, HistoryItem, SearchEngine, Tab, Theme } from '@/lib/types';
+import { PermissionModal } from '@/components/Browser/PermissionModal';
+import { AppSettings, HistoryItem, SearchEngine, Tab, Theme, PermissionRequest } from '@/lib/types';
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
 import { UnsavedChangesDialog } from '@/features/home/components/UnsavedChangesDialog';
@@ -63,6 +64,7 @@ const Home: React.FC = () => {
   });
   const [onboardingClosing, setOnboardingClosing] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(false);
+  const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null);
   const lastActiveUrlRef = useRef<string | null>(null);
   const onboardingTimerRef = useRef<number | null>(null);
   const onboardingIntroTimerRef = useRef<number | null>(null);
@@ -85,6 +87,8 @@ const Home: React.FC = () => {
     setWallpaperBlur,
     adBlockEnabled,
     setAdBlockEnabled,
+    permissions,
+    setPermissions,
     savedSettings,
     setSavedSettings,
     hasUnsavedChanges,
@@ -303,10 +307,19 @@ const Home: React.FC = () => {
     [createTab]
   );
 
+  const handlePermissionRequest = useCallback((request: PermissionRequest) => {
+    setPermissionRequest(request);
+  }, []);
+
   useEffect(() => {
     if (!window.electronAPI?.onNewWindow) return undefined;
     return window.electronAPI.onNewWindow(handleOpenNewTab);
   }, [handleOpenNewTab]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.onPermissionRequest) return undefined;
+    return window.electronAPI.onPermissionRequest(handlePermissionRequest);
+  }, [handlePermissionRequest]);
 
   useEffect(() => {
     const handleOpenSettingsEvent = (event: Event) => {
@@ -496,6 +509,90 @@ const Home: React.FC = () => {
   const handleShieldRef = useCallback((node: HTMLDivElement | null) => {
     shieldRef.current = node;
   }, []);
+
+  const handleAllowPermission = useCallback(() => {
+    if (!permissionRequest || !window.electronAPI?.respondPermission) return;
+    window.electronAPI.respondPermission(permissionRequest.id, true);
+    
+    // Store the permission
+    const origin = new URL(permissionRequest.origin).origin;
+    setPermissions(prev => {
+      const newPerms = { ...prev };
+      if (!newPerms[origin]) {
+        newPerms[origin] = [];
+      }
+      const existing = newPerms[origin].find(p => p.type === permissionRequest.type);
+      if (existing) {
+        existing.allowed = true;
+        existing.ask = false;
+      } else {
+        newPerms[origin].push({
+          type: permissionRequest.type,
+          allowed: true,
+          ask: false
+        });
+      }
+      return newPerms;
+    });
+    
+    setPermissionRequest(null);
+  }, [permissionRequest]);
+
+  const handleDenyPermission = useCallback(() => {
+    if (!permissionRequest || !window.electronAPI?.respondPermission) return;
+    window.electronAPI.respondPermission(permissionRequest.id, false);
+    
+    // Store the permission as denied
+    const origin = new URL(permissionRequest.origin).origin;
+    setPermissions(prev => {
+      const newPerms = { ...prev };
+      if (!newPerms[origin]) {
+        newPerms[origin] = [];
+      }
+      const existing = newPerms[origin].find(p => p.type === permissionRequest.type);
+      if (existing) {
+        existing.allowed = false;
+        existing.ask = false;
+      } else {
+        newPerms[origin].push({
+          type: permissionRequest.type,
+          allowed: false,
+          ask: false
+        });
+      }
+      return newPerms;
+    });
+    
+    setPermissionRequest(null);
+  }, [permissionRequest]);
+
+  const handleClosePermissionModal = useCallback(() => {
+    if (!permissionRequest || !window.electronAPI?.respondPermission) return;
+    window.electronAPI.respondPermission(permissionRequest.id, false);
+    
+    // Store the permission as denied
+    const origin = new URL(permissionRequest.origin).origin;
+    setPermissions(prev => {
+      const newPerms = { ...prev };
+      if (!newPerms[origin]) {
+        newPerms[origin] = [];
+      }
+      const existing = newPerms[origin].find(p => p.type === permissionRequest.type);
+      if (existing) {
+        existing.allowed = false;
+        existing.ask = false;
+      } else {
+        newPerms[origin].push({
+          type: permissionRequest.type,
+          allowed: false,
+          ask: false
+        });
+      }
+      return newPerms;
+    });
+    
+    setPermissionRequest(null);
+  }, [permissionRequest]);
 
   const handleShieldToggle = useCallback(() => {
     setAdBlockOpen((prev) => !prev);
@@ -697,6 +794,8 @@ const Home: React.FC = () => {
                   onWallpaperBlurChange={setWallpaperBlur}
                   adBlockEnabled={adBlockEnabled}
                   onAdBlockEnabledChange={setAdBlockEnabled}
+                  permissions={permissions}
+                  onPermissionsChange={setPermissions}
                   searchEngine={searchEngine}
                   onSearchEngineChange={setSearchEngine}
                   initialSection={settingsSection}
@@ -789,6 +888,13 @@ const Home: React.FC = () => {
           onSaveAndContinue={handleSaveAndContinue}
         />
       )}
+
+      <PermissionModal
+        request={permissionRequest}
+        onAllow={handleAllowPermission}
+        onDeny={handleDenyPermission}
+        onClose={handleClosePermissionModal}
+      />
     </div>
   );
 };

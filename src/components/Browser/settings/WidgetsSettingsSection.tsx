@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { LuCheck, LuChevronDown, LuCloudSun, LuMapPin, LuSearch } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuCloudSun, LuMapPin, LuSearch, LuX } from 'react-icons/lu';
 import type { WeatherLocation } from '@/lib/types';
 import { SettingsGroup } from './SettingsGroup';
 
@@ -115,6 +115,11 @@ export const WidgetsSettingsSection: React.FC = () => {
     setError(null);
   }, []);
 
+  const handleRemoveLocation = useCallback(() => {
+    localStorage.removeItem(WEATHER_LOCATION_KEY);
+    setSelected(null);
+  }, []);
+
   return (
     <div className="space-y-8">
       <SettingsGroup title="Widgets" description="Manage per-widget preferences.">
@@ -155,11 +160,25 @@ export const WidgetsSettingsSection: React.FC = () => {
                   <LuMapPin size={12} />
                   Saved location
                 </div>
-                <div className="mt-3 text-sm font-medium text-[color:var(--ui-text)]">
-                  {selected?.name ?? 'Not set'}
-                </div>
-                <div className="mt-1 text-xs text-[color:var(--ui-text-muted)]">
-                  Used to personalize the weather widget.
+                <div className="mt-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-[color:var(--ui-text)]">
+                      {selected?.name ?? 'Not set'}
+                    </div>
+                    <div className="text-xs text-[color:var(--ui-text-muted)]">
+                      Used to personalize the weather widget.
+                    </div>
+                  </div>
+                  {selected && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLocation}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--ui-text-muted)] hover:bg-[color:var(--ui-hover)] hover:text-[color:var(--ui-text)] transition-colors"
+                      title="Remove location"
+                    >
+                      <LuX size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
 

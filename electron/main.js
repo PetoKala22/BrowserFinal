@@ -35,6 +35,7 @@ let adblockAttached = false;
 let adblockInitializing = false;
 let adblockStats = { blocked: 0 };
 const HISTORY_LIMIT = 300;
+const pendingPermissions = new Map();
 
 // Simple logging function (disabled for now to prevent startup issues)
 const log = (message, error = null) => {
@@ -391,7 +392,13 @@ const registerIpc = () => {
     return [];
   });
 
-
+  ipcMain.handle('permission:respond', async (_event, id, granted) => {
+    const callback = pendingPermissions.get(id);
+    if (callback) {
+      callback(granted);
+      pendingPermissions.delete(id);
+    }
+  });
 };
 
 // Global error handlers (synchronous to avoid blocking)
@@ -454,6 +461,71 @@ app.whenReady().then(async () => {
       if (contents.getType() !== 'webview') return;
       event.preventDefault();
       mainWindow?.webContents.send('browser:focus-address-bar');
+    });
+
+    contents.on('permission-request', (event, permission, callback, details) => {
+      if (contents.getType() !== 'webview') return;
+
+      // Map Electron permission types to our types
+      const permissionMap = {
+        'geolocation': 'geolocation',
+        'media': 'microphone', // media includes microphone/camera
+        'notifications': 'notifications',
+        'clipboard-read': 'clipboard-read',
+        'clipboard-write': 'clipboard-write'
+      };
+
+      const mappedPermission = permissionMap[permission];
+      if (!mappedPermission) {
+        callback(false);
+        return;
+      }
+
+      const id = Math.random().toString(36).slice(2, 9);
+      const origin = details?.origin || contents.getURL();
+
+      pendingPermissions.set(id, callback);
+
+      mainWindow?.webContents.send('permission:request', {
+        id,
+        type: mappedPermission,
+        origin,
+        tabId: 'current' // We could track tab IDs if needed
+      });
+    });
+
+    contents.on('will-download', (event, item, webContents) => {
+      // Set download path to Downloads folder
+      const downloadsPath = app.getPath('downloads');
+      const fileName = item.getFilename();
+      const filePath = path.join(downloadsPath, fileName);
+      item.setSavePath(filePath);
+
+      // Notify the renderer
+      mainWindow?.webContents.send('download:started', {
+        fileName,
+        filePath,
+        url: item.getURL(),
+        totalBytes: item.getTotalBytes()
+      });
+
+      item.on('updated', (event, state) => {
+        if (state === 'progressing') {
+          mainWindow?.webContents.send('download:progress', {
+            fileName,
+            receivedBytes: item.getReceivedBytes(),
+            totalBytes: item.getTotalBytes()
+          });
+        }
+      });
+
+      item.once('done', (event, state) => {
+        mainWindow?.webContents.send('download:completed', {
+          fileName,
+          filePath,
+          state // 'completed', 'cancelled', 'interrupted'
+        });
+      });
     });
   });
 
