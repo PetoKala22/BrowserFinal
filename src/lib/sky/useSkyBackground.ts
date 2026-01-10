@@ -107,7 +107,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
 
       // Render precipitation
       if (!precipitationSystemRef.current) {
-        precipitationSystemRef.current = new PrecipitationSystem(width, height, stateRef.current.weather.windSpeed || 0);
+        precipitationSystemRef.current = new PrecipitationSystem(width, height, stateRef.current.weather.windSpeed || 0, stateRef.current.weather.windDirection || 0);
       }
 
       const precipSystem = precipitationSystemRef.current;
@@ -115,7 +115,7 @@ export const useSkyBackground = (state: SkyStateInput) => {
       const precipIntensity = mapPrecipitationToIntensity(stateRef.current.weather);
 
       // Update and render precipitation
-      precipSystem.updateWind(stateRef.current.weather.windSpeed || 0);
+      precipSystem.updateWind(stateRef.current.weather.windSpeed || 0, stateRef.current.weather.windDirection || 0);
       precipSystem.update(dt / 1000, precipitation, precipIntensity);
       renderPrecipitation(ctx, precipSystem, precipitation, precipIntensity, currentRef.current);
 

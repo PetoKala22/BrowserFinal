@@ -68,17 +68,17 @@ export class PrecipitationSystem {
   private windAngleRadians: number;
   private windStrength: number;
 
-  constructor(width: number, height: number, windSpeed: number = 0) {
+  constructor(width: number, height: number, windSpeed: number = 0, windDirection: number = 12) {
     this.width = width;
     this.height = height;
     this.noiseGenerator = new PerlinNoiseGenerator();
-    this.updateWind(windSpeed);
+    this.updateWind(windSpeed, windDirection);
   }
 
-  updateWind(windSpeed: number = 0) {
+  updateWind(windSpeed: number = 0, windDirection: number = 12) {
     const baseWind = this.config.wind;
-    this.windAngleRadians = (baseWind.directionDegrees * Math.PI) / 180;
-    this.windStrength = baseWind.strength * windSpeed;
+    this.windAngleRadians = (windDirection * Math.PI) / 180;
+    this.windStrength = baseWind.strength * Math.max(windSpeed, 0.5); // Minimum wind speed for some movement
   }
 
   update(deltaTime: number, precipitationType: 'rain' | 'snow' | 'storm' | 'none', intensity: 'light' | 'moderate' | 'heavy' = 'moderate') {
@@ -105,12 +105,15 @@ export class PrecipitationSystem {
       const noiseOffset = (noise - 0.5) * 2; // -1 to 1
 
       if (p.type === 'rain') {
-        // Subtle horizontal noise for rain
-        p.vx += noiseOffset * 20 * deltaTime; // Smooth drift
+        // Horizontal drift based on wind strength
+        const baseDrift = 20;
+        const windDrift = this.windStrength * Math.cos(this.windAngleRadians) * baseDrift;
+        p.vx += (windDrift + noiseOffset * baseDrift) * deltaTime; // Smooth drift
       } else {
-        // More pronounced drift for snow
-        const drift = this.config.types.snow.intensityLevels[intensity].drift || 15;
-        p.vx = Math.cos(this.windAngleRadians) * drift * 0.5 + noiseOffset * drift * deltaTime;
+        // More pronounced drift for snow based on wind
+        const baseDrift = this.config.types.snow.intensityLevels[intensity].drift || 15;
+        const windDrift = this.windStrength * Math.cos(this.windAngleRadians) * baseDrift;
+        p.vx = windDrift * 0.5 + noiseOffset * baseDrift * deltaTime;
 
         // Update rotation for snow
         if (this.config.types.snow.rotation) {

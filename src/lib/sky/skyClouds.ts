@@ -17,8 +17,8 @@ export class SkyCloudsRenderer {
   private cloudConfigUniform: WebGLUniformLocation;
   private cloudConfig2Uniform: WebGLUniformLocation;
   private cloudConfig3Uniform: WebGLUniformLocation;
-  private sizeScaleUniform: WebGLUniformLocation;
-  private lightningIntensityUniform: WebGLUniformLocation;
+  private windSpeedUniform: WebGLUniformLocation;
+  private windDirectionUniform: WebGLUniformLocation;
   private seed: number;
   private canvas: HTMLCanvasElement;
   private currentCloudConfig: CloudTypeConfig;
@@ -46,6 +46,8 @@ export class SkyCloudsRenderer {
     this.cloudConfig3Uniform = this.gl.getUniformLocation(this.program, 'uCloudConfig3')!;
     this.sizeScaleUniform = this.gl.getUniformLocation(this.program, 'uSizeScale')!;
     this.lightningIntensityUniform = this.gl.getUniformLocation(this.program, 'uLightningIntensity')!;
+    this.windSpeedUniform = this.gl.getUniformLocation(this.program, 'uWindSpeed')!;
+    this.windDirectionUniform = this.gl.getUniformLocation(this.program, 'uWindDirection')!;
 
     // Default to clear skies
     this.currentCloudConfig = {
@@ -91,6 +93,8 @@ export class SkyCloudsRenderer {
       uniform vec3 uCloudConfig3; // brightnessMultiplier, contrastMultiplier, saturationMultiplier
       uniform float uSizeScale;
       uniform float uLightningIntensity;
+      uniform float uWindSpeed;
+      uniform float uWindDirection;
 
       varying vec2 vUv;
 
@@ -221,15 +225,17 @@ export class SkyCloudsRenderer {
         for (int i = 0; i < 16; i++) {
           vec3 pos = ro + rd * t;
 
-          // Separate shape motion from lighting space for stability
-          float speed = (0.02 + t * 0.01) * uCloudConfig2.y; // windSpeedMultiplier affects movement
-          // Only apply horizontal turbulence for realistic wind-driven movement
+          // Constant wind speed for smooth, continuous horizontal movement
+          float windRadians = uWindDirection * 3.14159 / 180.0;
+          float windX = cos(windRadians); // Only horizontal component
+          float speed = uWindSpeed * 0.001; // Scale wind speed for appropriate cloud movement
+          // Minimal turbulence for subtle variation, not direction changes
           vec3 turbulence = vec3(
-            snoise(pos * 0.3 + uTime * 0.05) * uCloudConfig2.z * 0.5, // Gentle horizontal variation
+            snoise(pos * 0.3 + uTime * 0.05) * 0.05, // Fixed small horizontal variation
             0.0, // No vertical movement
             0.0  // No depth movement
           );
-          vec3 shapePos = pos + vec3(-uTime * speed, 0.0, 0.0) + turbulence;
+          vec3 shapePos = pos + vec3(-uTime * speed * windX, 0.0, 0.0) + turbulence;
           float d = cloudDensity(shapePos);
 
           // Density-based lighting with proper surface normals
@@ -404,6 +410,7 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     fogDensity: number;
     visibility: number;
     windSpeed?: number;
+    windDirection?: number;
     lightningEffect?: { intensity: number; centers: { x: number; y: number; intensity: number }[]; radius: number; color?: string };
   }) {
     // Update cloud configuration based on weather
@@ -446,6 +453,8 @@ float skyMask = smoothstep(-0.2, 0.6, uv.y);
     );
     this.gl.uniform1f(this.sizeScaleUniform, this.currentCloudConfig.sizeScale);
     this.gl.uniform1f(this.lightningIntensityUniform, weather?.lightningEffect?.intensity || 0.0);
+    this.gl.uniform1f(this.windSpeedUniform, Math.max(weather?.windSpeed || 0.0, 0.5)); // Use real wind speed with minimum
+    this.gl.uniform1f(this.windDirectionUniform, weather?.windDirection || 0.0); // Use real wind direction
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.quadBuffer);
     const positionAttribute = this.gl.getAttribLocation(this.program, 'aPosition');

@@ -10,7 +10,7 @@ export interface IntensityLevel {
   velocity: { y: [number, number] }; // y range in pixels/second
   size: [number, number]; // size range (relative to base)
   opacity: [number, number]; // opacity range (0-1)
-  drift?: number; // horizontal drift for snow (pixels)
+  drift?: number; // maximum horizontal drift amplitude (pixels)
   description: string;
 }
 
@@ -111,7 +111,7 @@ export const PRECIPITATION_CONFIG: PrecipitationSystemConfig = {
       'Intensity is expressed by density and motion, not particle size',
       'Motion must be smooth and predictable',
       'No chaotic turbulence or sudden changes',
-      'Snow is visually conservative due to higher uncertainty'
+      'Snow prioritizes depth ambiguity and gentle nonlinearity'
     ]
   },
 
@@ -123,20 +123,20 @@ export const PRECIPITATION_CONFIG: PrecipitationSystemConfig = {
   },
 
   wind: {
-    directionDegrees: 15,
-    strength: 0.25,
+    directionDegrees: 12,
+    strength: 0.2,
     affects: ['velocity.x'],
     gusts: false
   },
 
   motionNoise: {
     type: 'perlin',
-    scale: 0.35,
-    speed: 0.15,
-    smoothness: 0.9,
+    scale: 0.25,        // long wavelength = gentle float
+    speed: 0.08,        // slow temporal evolution
+    smoothness: 0.95,   // very smooth interpolation
     appliesTo: {
       rain: ['x'],
-      snow: ['x', 'rotation']
+      snow: ['x', 'rotation', 'velocity.y']
     }
   },
 
@@ -148,7 +148,7 @@ export const PRECIPITATION_CONFIG: PrecipitationSystemConfig = {
       enabled: true,
       strength: {
         rain: 0.25,
-        snow: 0.05
+        snow: 0.02
       }
     }
   },
@@ -187,39 +187,40 @@ export const PRECIPITATION_CONFIG: PrecipitationSystemConfig = {
     },
 
     snow: {
-      visualModel: 'flake',
-      gravity: 0,
-      rotation: true,
-      intensityLevels: {
-        light: {
-          spawnRate: 50,
-          lifetime: 6.0,
-          velocity: { y: [80, 120] },
-          size: [0.8, 1.6],
-          opacity: [0.4, 0.6],
-          drift: 35,
-          description: 'Intermittent flakes, low accumulation confidence'
-        },
-        moderate: {
-          spawnRate: 120,
-          lifetime: 7.0,
-          velocity: { y: [100, 150] },
-          size: [1.0, 2.2],
-          opacity: [0.5, 0.75],
-          drift: 55,
-          description: 'Consistent snowfall with visible accumulation'
-        },
-        heavy: {
-          spawnRate: 200,
-          lifetime: 8.0,
-          velocity: { y: [120, 180] },
-          size: [1.2, 2.8],
-          opacity: [0.6, 0.85],
-          drift: 75,
-          description: 'Dense snow, wide flake variance, reduced visibility'
-        }
-      }
+  visualModel: 'flake',
+  gravity: 0,
+  rotation: true,
+  intensityLevels: {
+    light: {
+      spawnRate: 45,
+      lifetime: 7.5,
+      velocity: { y: [35, 90] },
+      size: [0.69, 1.27], // was [0.6, 1.1]
+      opacity: [0.3, 0.55],
+      drift: 30,
+      description: 'Sparse, floating flakes with high depth ambiguity'
+    },
+    moderate: {
+      spawnRate: 110,
+      lifetime: 8.0,
+      velocity: { y: [45, 120] },
+      size: [0.86, 1.55], // was [0.75, 1.35]
+      opacity: [0.35, 0.65],
+      drift: 50,
+      description: 'Layered snowfall with visible depth separation'
+    },
+    heavy: {
+      spawnRate: 180,
+      lifetime: 9.0,
+      velocity: { y: [60, 150] },
+      size: [0.98, 1.84], // was [0.85, 1.6]
+      opacity: [0.4, 0.7],
+      drift: 65,
+      description: 'Dense snowfall with foreground/background velocity stratification'
     }
+  }
+}
+
   },
 
   confidenceEncoding: {

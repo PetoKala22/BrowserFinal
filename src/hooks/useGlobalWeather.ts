@@ -42,6 +42,7 @@ type WeatherState = {
   fogDensity: number;
   precipitationAmount?: number;
   windSpeed?: number;
+  windDirection?: number; // degrees, 0 = north, 90 = east
   precipitationProbability?: number;
   visibility: number;
   latitude: number;
@@ -212,6 +213,7 @@ export const useGlobalWeather = () => {
         precipitationAmount: mapDevPrecipAmount(devWeather.precipitation),
         precipitationProbability: devWeather.precipitation && devWeather.precipitation !== 'none' ? 1 : 0,
         windSpeed: Number.isFinite((devWeather as any).windSpeed) ? (devWeather as any).windSpeed : 0,
+        windDirection: Number.isFinite((devWeather as any).windDirection) ? (devWeather as any).windDirection : 15,
         visibility,
         latitude: coords.latitude,
         longitude: coords.longitude
@@ -242,7 +244,7 @@ export const useGlobalWeather = () => {
     const controller = new AbortController();
     const referenceDate = new Date();
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${storedLocation.latitude}&longitude=${storedLocation.longitude}&current_weather=true&hourly=precipitation,precipitation_probability,windspeed_10m,visibility,cloudcover&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&windspeed_unit=kmh`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${storedLocation.latitude}&longitude=${storedLocation.longitude}&current_weather=true&hourly=precipitation,precipitation_probability,windspeed_10m,winddirection_10m,visibility,cloudcover&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&windspeed_unit=kmh`;
 
     const request = fetch(url, { signal: controller.signal })
       .then((r) => {
@@ -321,6 +323,10 @@ export const useGlobalWeather = () => {
           data.current_weather?.windspeed ?? data.current?.windspeed ??
           (data.hourly && Array.isArray(data.hourly.windspeed_10m) ? data.hourly.windspeed_10m[nearestIdx] : undefined);
 
+        const windDirection =
+          data.current_weather?.winddirection ?? data.current?.winddirection ??
+          (data.hourly && Array.isArray(data.hourly.winddirection_10m) ? data.hourly.winddirection_10m[nearestIdx] : undefined);
+
         const fresh: WeatherState = {
           location: storedLocation.name,
           temperature: `${Math.round(temp)}\u00B0`,
@@ -341,6 +347,7 @@ export const useGlobalWeather = () => {
               ? data.hourly.precipitation_probability[nearestIdx]
               : undefined),
           windSpeed: typeof windSpeed === 'number' ? windSpeed : undefined,
+          windDirection: typeof windDirection === 'number' ? windDirection : 15, // Default if not available
           visibility: visibilityKm ?? fallbackVisibility,
           latitude: storedLocation.latitude,
           longitude: storedLocation.longitude
@@ -387,6 +394,7 @@ export const useGlobalWeather = () => {
         fogDensity: weatherState.fogDensity,
         visibility: weatherState.visibility,
         windSpeed: weatherState.windSpeed ?? 0,
+        windDirection: weatherState.windDirection ?? 15,
         precipitationAmount: weatherState.precipitationAmount,
         precipitationProbability: weatherState.precipitationProbability,
         weatherCode: weatherState.code

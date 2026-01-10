@@ -91,9 +91,9 @@ export const usePrecipitation = ({
 
     // Initialize system
     if (!systemRef.current) {
-      systemRef.current = new PrecipitationSystem(canvas.width, canvas.height, windSpeed);
+      systemRef.current = new PrecipitationSystem(canvas.width, canvas.height, windSpeed, 0); // Default wind direction
     } else {
-      systemRef.current.updateWind(windSpeed);
+      systemRef.current.updateWind(windSpeed, 0); // Default wind direction
     }
 
     const system = systemRef.current;
