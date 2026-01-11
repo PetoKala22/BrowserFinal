@@ -25,7 +25,7 @@ const MenuItem = ({
   onClick
 }: MenuItemProps) => {
   const baseClasses =
-    "flex items-center gap-3 px-3 py-2 mb-0.5 rounded-lg text-sm transition-colors cursor-default";
+    "flex items-center gap-3 px-3 py-2 mb-0.5 rounded-lg text-sm font-sans transition-colors cursor-default";
 
   const stateClasses = active
     ? "bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] font-medium"
@@ -55,7 +55,7 @@ export const Sidebar = memo(
     const isRight = position === "right";
 
     const openClasses = [
-      "h-[calc(100%-4rem)] w-[240px] translate-x-0 opacity-100 rounded-2xl my-8 mx-4"
+      "h-[calc(100%-4rem)] w-[240px] translate-x-0 opacity-100 rounded-3xl my-8 mx-4"
     ].join(" ");
 
     const closedClasses = [
@@ -74,7 +74,7 @@ export const Sidebar = memo(
         ].join(" ")}
       >
         <div className="px-4 mb-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[color:var(--ui-text-muted)]">
+          <span className="text-xs font-sans font-semibold uppercase tracking-wider text-[color:var(--ui-text-muted)]">
             Favorites
           </span>
         </div>

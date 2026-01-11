@@ -236,7 +236,7 @@ const AddressBarInner: React.FC<AddressBarProps> = ({
               ${
                 isFocused
                   ? "bg-[color:var(--ui-surface-strong)] shadow border border-[color:var(--ui-border)]"
-                  : "bg-[color:var(--ui-surface-muted)] hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
+                  : "bg-[color:var(--ui-surface-muted)] shadow hover:bg-[color:var(--ui-surface-muted)] border border-[color:var(--ui-border)]"
               }
               rounded-full`}
           >

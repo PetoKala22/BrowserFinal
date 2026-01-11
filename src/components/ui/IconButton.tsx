@@ -12,8 +12,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ children, className, act
         p-2 rounded-xl
         transition-all duration-150 ease-out
         hover:bg-[color:var(--ui-hover)]
-        active:bg-[color:var(--ui-active)] active:scale-95
-        disabled:opacity-30 disabled:pointer-events-none disabled:scale-100
+        disabled:opacity-30 disabled:pointer-events-none
         text-[color:var(--ui-text)]
         electron-no-drag
         focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--ui-ring)]
@@ -22,7 +21,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ children, className, act
       `}
       {...props}
     >
-      <span className="transition-transform duration-150 ease-out group-active:scale-[0.85]">
+      <span className="transition-transform duration-150 ease-out">
         {children}
       </span>
     </button>

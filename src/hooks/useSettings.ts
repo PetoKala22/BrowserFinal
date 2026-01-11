@@ -3,7 +3,7 @@
  * Splits theme logic, background logic, and search settings
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppSettings, BackgroundType, Theme, PermissionType } from '@/lib/types';
 import { applyTheme, getThemeMode } from '@/utils/themeUtils';
 
@@ -25,7 +25,7 @@ interface UseSettingsResult {
   snowColor: string;
   setSnowColor: (color: string) => void;
   permissions: Record<string, { type: PermissionType; allowed: boolean; ask: boolean }[]>;
-  setPermissions: (permissions: Record<string, { type: PermissionType; allowed: boolean; ask: boolean }[]>) => void;
+  setPermissions: React.Dispatch<React.SetStateAction<Record<string, { type: PermissionType; allowed: boolean; ask: boolean }[]>>>;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;

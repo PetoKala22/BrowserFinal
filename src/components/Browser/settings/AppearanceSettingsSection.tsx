@@ -84,7 +84,7 @@ export const AppearanceSettingsSection: React.FC<
 
             {/* Preview */}
             <div className="mx-auto w-full max-w-4xl overflow-x-hidden">
-              <div className="relative isolate aspect-video overflow-hidden rounded-xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)]">
+              <div className="relative isolate aspect-video overflow-hidden rounded-3xl border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)]">
                 {activeWallpaper ? (
                   <div
                     className={`absolute inset-0 bg-cover bg-center transition-transform duration-300 ${

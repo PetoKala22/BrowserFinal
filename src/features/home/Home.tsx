@@ -776,12 +776,12 @@ const Home: React.FC = () => {
             </div>
           )}
           {historyOpen && (
-            <div className="absolute inset-0 z-10">
+            <div className="absolute inset-0 z-50">
               <HistoryPage items={historyItems} onClear={handleClearHistory} />
             </div>
           )}
           {settingsOpen && (
-            <div className="absolute inset-0 z-10">
+            <div className="absolute inset-0 z-50">
               <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="text-sm text-[color:var(--ui-text-muted)]">Loading settings...</div></div>}>
                 <SettingsPage
                   wallpaper={wallpaper}

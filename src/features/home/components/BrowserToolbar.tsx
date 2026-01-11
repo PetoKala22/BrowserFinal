@@ -71,13 +71,13 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
         <div className="flex items-center gap-4 min-w-[140px] z-10">
           <div className="flex items-center gap-1 pl-1">
             <IconButton onClick={onSidebarToggle} active={sidebarOpen} aria-label="Toggle sidebar">
-              <LuPanelLeft size={18} strokeWidth={2} />
+              <LuPanelLeft size={18} />
             </IconButton>
             <IconButton disabled={!canGoBack} onClick={onGoBack} aria-label="Back">
-              <LuChevronLeft size={18} strokeWidth={2.5} />
+              <LuChevronLeft size={18} />
             </IconButton>
             <IconButton disabled={!canGoForward} onClick={onGoForward} aria-label="Forward">
-              <LuChevronRight size={18} strokeWidth={2.5} />
+              <LuChevronRight size={18} />
             </IconButton>
             <IconButton
               onClick={loading ? onStop : onReload}
@@ -90,14 +90,14 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
 
         <div className="flex items-center gap-1 min-w-[140px] justify-end ml-auto z-10">
           <IconButton onClick={onNewTab} aria-label="New tab">
-            <LuPlus size={16} strokeWidth={2.5} />
+            <LuPlus size={16} />
           </IconButton>
           <IconButton disabled aria-label="Share (coming soon)">
-            <LuShare size={16} strokeWidth={2} />
+            <LuShare size={16} />
           </IconButton>
           <div className="relative" ref={shieldRef}>
             <IconButton onClick={onShieldClick} active={shieldActive} aria-label="Privacy shield">
-              <LuShield size={16} strokeWidth={2.5} />
+              <LuShield size={16} />
             </IconButton>
           </div>
 

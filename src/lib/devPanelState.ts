@@ -158,7 +158,12 @@ export const saveDevPanelState = (state: DevPanelState) => {
   emitChange();
 };
 
-export const updateDevPanelState = (patch: Partial<DevPanelState>) => {
+type DevPanelStatePatch = {
+  time?: Partial<DevPanelTimeState>;
+  weather?: Partial<DevPanelWeatherState>;
+};
+
+export const updateDevPanelState = (patch: DevPanelStatePatch) => {
   const current = loadDevPanelState();
   const next: DevPanelState = normalizeState({
     ...current,

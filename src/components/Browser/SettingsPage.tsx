@@ -57,12 +57,12 @@ export const SettingsPage: React.FC<any> = ({
   }, [initialSection]);
 
   return (
-    <div className="h-full w-full overflow-hidden">
+    <div className="h-full w-full overflow-hidden bg-[color:var(--ui-base)]">
       <div className="flex h-full p-8">
-        <div className="flex h-full w-full gap-6 rounded-2xl bg-[color:var(--ui-surface)] shadow-lg p-4 overflow-hidden">
+        <div className="flex h-full w-full gap-6 rounded-3xl bg-[color:var(--ui-surface)] shadow-lg p-4 overflow-hidden">
 
           {/* Sidebar */}
-          <aside className="flex h-full w-[220px] shrink-0 flex-col rounded-2xl p-3 overflow-hidden">
+          <aside className="flex h-full w-[220px] shrink-0 flex-col p-3 overflow-hidden">
             <div className="text-xs uppercase tracking-wide text-[color:var(--ui-text-subtle)]">
               Settings
             </div>
@@ -72,9 +72,9 @@ export const SettingsPage: React.FC<any> = ({
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`relative w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  className={`relative w-full rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                     activeSection === section.id
-                      ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)]'
+                      ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] shadow-sm font-medium'
                       : 'text-[color:var(--ui-text-muted)] hover:bg-[color:var(--ui-hover)]'
                   }`}
                 >
@@ -88,7 +88,7 @@ export const SettingsPage: React.FC<any> = ({
           </aside>
 
           {/* Content */}
-          <section className="relative flex h-full flex-1 flex-col rounded-2xl bg-[color:var(--ui-surface-strong)] shadow-md overflow-hidden">
+          <section className="relative flex h-full flex-1 flex-col rounded-3xl bg-[color:var(--ui-surface-strong)] shadow-md overflow-hidden">
 
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[color:var(--ui-border)] px-6 py-4">
