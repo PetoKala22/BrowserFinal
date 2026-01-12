@@ -22,6 +22,7 @@ declare global {
     onNewWindow: (handler: (url: string) => void) => () => void;
     onPermissionRequest: (handler: (request: PermissionRequest) => void) => () => void;
     onFocusAddressBar: (handler: () => void) => () => void;
+    onSpotlightOpen: (handler: () => void) => () => void;
   }
 
   interface Window {

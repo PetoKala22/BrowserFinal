@@ -33,5 +33,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const listener = () => handler();
     ipcRenderer.on('browser:focus-address-bar', listener);
     return () => ipcRenderer.removeListener('browser:focus-address-bar', listener);
+  },
+  onSpotlightOpen: (handler) => {
+    const listener = () => handler();
+    ipcRenderer.on('spotlight:open', listener);
+    return () => ipcRenderer.removeListener('spotlight:open', listener);
   }
 });

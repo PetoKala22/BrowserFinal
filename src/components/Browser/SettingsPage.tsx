@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { LuX } from 'react-icons/lu';
 import { SearchEngine } from '@/lib/types';
 import { IconButton } from '@/components/ui/IconButton';
@@ -26,7 +26,7 @@ const settingsSections: { id: SettingsSection; label: string }[] = [
   { id: 'advanced', label: 'Advanced' }
 ];
 
-export const SettingsPage: React.FC<any> = ({
+export const SettingsPage = memo<React.FC<any>>(({
   wallpaper,
   onWallpaperChange,
   wallpaperColor,
@@ -163,4 +163,6 @@ export const SettingsPage: React.FC<any> = ({
       </div>
     </div>
   );
-};
+});
+
+SettingsPage.displayName = 'SettingsPage';

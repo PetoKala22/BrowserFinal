@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, session } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, session, globalShortcut } from 'electron';
 import { FiltersEngine, Request } from '@ghostery/adblocker';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -423,6 +423,11 @@ app.whenReady().then(async () => {
   try {
     await createWindow();
     
+    // Register global shortcuts
+    globalShortcut.register('CommandOrControl+T', () => {
+      mainWindow?.webContents.send('spotlight:open');
+    });
+    
     // Add webContents error logging
     if (mainWindow && mainWindow.webContents) {
       mainWindow.webContents.on('crashed', () => {
@@ -538,6 +543,7 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    globalShortcut.unregisterAll();
     app.quit();
   }
 });

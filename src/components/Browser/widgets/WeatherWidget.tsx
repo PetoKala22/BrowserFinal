@@ -1,5 +1,5 @@
 // WeatherWidget.tsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, memo } from 'react';
 import { WeatherLocation } from '@/lib/types';
 import { useDevPanelState, useDevTime } from '@/lib/devPanelState';
 import {
@@ -24,6 +24,7 @@ import {
 import { updateDevPanelState } from '@/lib/devPanelState';
 import { SkyBackground } from './SkyBackground';
 import { LuMapPin, LuSettings } from 'react-icons/lu';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 /* ------------------ Weather Cache & Dedupe ------------------ */
 
@@ -80,6 +81,27 @@ const writeCachedWeather = (key: string, state: WeatherState) => {
       }
     };
     localStorage.setItem(key, JSON.stringify(payload));
+
+    // Limit cache to 10 entries, remove oldest
+    const allKeys = Object.keys(localStorage).filter(k => k.startsWith(WEATHER_CACHE_PREFIX));
+    if (allKeys.length > 10) {
+      // Sort by cachedAt, remove oldest
+      const keysWithTime = allKeys.map(k => {
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw) as CachedWeatherPayload;
+          return { key: k, time: parsed.cachedAt };
+        } catch {
+          return null;
+        }
+      }).filter(Boolean).sort((a, b) => (a?.time || 0) - (b?.time || 0));
+
+      const toRemove = keysWithTime.slice(0, allKeys.length - 10);
+      toRemove.forEach(item => {
+        if (item) localStorage.removeItem(item.key);
+      });
+    }
   } catch {
     // ignore cache write failures
   }
@@ -151,7 +173,7 @@ const WeatherIcon: React.FC<{ code: number }> = ({ code }) => {
 
 /* ------------------ Main Widget ------------------ */
 
-export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
+export const WeatherWidget = memo<React.FC<WeatherWidgetProps>>(({ location }) => {
   const [state, setState] = useState<WeatherState | null>(null);
   const [resolvedLocation, setResolvedLocation] = useState<WeatherLocation | null>(
     location ?? null
@@ -161,6 +183,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
   const devPanel = useDevPanelState();
   const devWeather = devPanel.weather;
   const now = useDevTime();
+  const { ref, isIntersecting } = useIntersectionObserver({ threshold: 0.1 });
 
   const getStoredLocation = () => {
     try {
@@ -534,6 +557,14 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
     moonPhase
   ]);
 
+  if (!isIntersecting) {
+    return (
+      <div ref={ref} className="h-full w-full bg-gray-200 rounded-3xl flex items-center justify-center">
+        <div className="text-gray-500 text-sm">Weather</div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)] border border-[color:var(--ui-border)]">
@@ -591,4 +622,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
       </div>
     </div>
   );
-};
+});
+
+WeatherWidget.displayName = 'WeatherWidget';

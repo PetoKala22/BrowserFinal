@@ -24,8 +24,8 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ items = [], onClear })
   return (
     <div className="h-full w-full overflow-hidden bg-[color:var(--ui-base)]">
       <div className="flex h-full p-8">
-        <div className="flex h-full w-full gap-6 rounded-3xl bg-[color:var(--ui-surface)] shadow-lg p-4 overflow-hidden">
-          <section className="relative flex h-full flex-1 flex-col rounded-3xl bg-[color:var(--ui-surface-strong)] shadow-md overflow-hidden">
+        <div className="flex h-full w-full gap-6 rounded-3xl bg-[color:var(--ui-surface)] shadow-lg p-3 overflow-hidden">
+          <section className="relative flex h-full flex-1 flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[color:var(--ui-border)] px-6 py-4">
               <div>

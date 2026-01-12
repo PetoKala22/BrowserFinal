@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/Sidebar/Sidebar';
 import { SuggestionsBar } from '@/components/Browser/Suggestions';
 import { WindowControls } from '@/components/Browser/WindowControls';
 import { PermissionModal } from '@/components/Browser/PermissionModal';
+import { SpotlightSearch } from '@/components/Browser/SpotlightSearch';
 import { AppSettings, HistoryItem, SearchEngine, Tab, Theme, PermissionRequest } from '@/lib/types';
 import { INITIAL_TABS } from '@/lib/constants';
 import { BrowserToolbar } from '@/features/home/components/BrowserToolbar';
@@ -49,6 +50,7 @@ const Home: React.FC = () => {
   const [lastExternalUrlById, setLastExternalUrlById] = useState<Record<string, string>>({});
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<
     'appearance' | 'general' | 'search' | 'privacy' | 'advanced'
   >('appearance');
@@ -321,6 +323,14 @@ const Home: React.FC = () => {
     if (!window.electronAPI?.onPermissionRequest) return undefined;
     return window.electronAPI.onPermissionRequest(handlePermissionRequest);
   }, [handlePermissionRequest]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.onSpotlightOpen) return undefined;
+    return window.electronAPI.onSpotlightOpen(() => {
+      handleNewTab();
+      setSpotlightOpen(true);
+    });
+  }, [handleNewTab]);
 
   useEffect(() => {
     const handleOpenSettingsEvent = (event: Event) => {
@@ -687,10 +697,11 @@ const Home: React.FC = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+T: New tab
+      // Ctrl+T: New tab and open spotlight search
       if (event.ctrlKey && event.key === 't') {
         event.preventDefault();
         handleNewTab();
+        setSpotlightOpen(true);
       }
       // Ctrl+W: Close tab
       else if (event.ctrlKey && event.key === 'w') {
@@ -721,8 +732,8 @@ const Home: React.FC = () => {
       // Ctrl+Shift+I: Toggle dev tools (handled by Electron)
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [tabs, activeTabId, handleNewTab, handleCloseTab]);
 
   return (
@@ -801,7 +812,7 @@ const Home: React.FC = () => {
           position="left"
         />
 
-        <main className="flex-1 relative bg-transparent overflow-hidden rounded-t-2xl">
+        <main className="flex-1 relative bg-transparent overflow-hidden rounded-t-3xl">
           {!settingsOpen && (
             <div className="h-full w-full">
               <BrowserContent
@@ -936,6 +947,17 @@ const Home: React.FC = () => {
         onAllow={handleAllowPermission}
         onDeny={handleDenyPermission}
         onClose={handleClosePermissionModal}
+      />
+
+      <SpotlightSearch
+        isOpen={spotlightOpen}
+        onClose={() => setSpotlightOpen(false)}
+        onNavigate={handleNavigate}
+        searchEngine={savedSettings.searchEngine}
+        tabs={tabs}
+        historyItems={historyItems}
+        historySorted={historySorted}
+        topSites={topSites}
       />
     </div>
   );
