@@ -39,6 +39,7 @@ declare global {
     reload: () => void;
     stop: () => void;
     insertCSS: (css: string) => Promise<string>;
+    removeInsertedCSS?: (key: string) => Promise<void>;
     executeJavaScript: (code: string, userGesture?: boolean) => Promise<any>;
   }
 }

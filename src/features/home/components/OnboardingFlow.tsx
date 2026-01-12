@@ -3,7 +3,7 @@ import { SearchEngine } from '@/lib/types';
 import { solidColorOptions } from '@/lib/appearance';
 import { SettingsGroup } from '@/components/Browser/settings/SettingsGroup';
 import { SearchSettingsSection } from '@/components/Browser/settings/SearchSettingsSection';
-import { PrivacySettingsSection } from '@/components/Browser/settings/PrivacySettingsSection';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 type StepId = 'welcome' | 'wallpaper' | 'search' | 'adblock';
 
@@ -378,14 +378,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         );
       case 'adblock':
         return (
-          <div className="space-y-4">
-            <PrivacySettingsSection
-              adBlockEnabled={adBlockEnabled}
-              onAdBlockEnabledChange={onAdBlockEnabledChange}
-            />
-            <p className="text-xs text-[color:var(--ui-text-muted)]">
-              You can change this later in Settings.
-            </p>
+          <div className="w-full flex flex-col items-center">
+            <div className="w-full max-w-3xl">
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-[color:var(--ui-border)] bg-[color:var(--ui-surface-subtle)] px-5 py-4">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-[color:var(--ui-text)]">Enable ad blocker</div>
+                  <div className="mt-1 text-xs text-[color:var(--ui-text-muted)]">Enable the built-in ad blocker to reduce intrusive ads. You can change this later in Settings.</div>
+                </div>
+
+                <div className="flex-shrink-0">
+                  <ToggleSwitch
+                    checked={adBlockEnabled}
+                    onChange={onAdBlockEnabledChange}
+                    ariaLabel="Toggle ad blocker"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         );
       default:

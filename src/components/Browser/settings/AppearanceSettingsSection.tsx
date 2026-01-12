@@ -1,5 +1,5 @@
 import React from 'react';
-import { solidColorOptions } from '@/lib/appearance';
+import { solidColorOptions, DEFAULT_WALLPAPER_COLOR } from '@/lib/appearance';
 import { SettingsGroup } from './SettingsGroup';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
@@ -155,7 +155,7 @@ export const AppearanceSettingsSection: React.FC<
                   {solidColorOptions.map((color) => {
                     const isDefault = color === 'default';
                     const isSelected = isDefault
-                      ? !wallpaperColor
+                      ? wallpaperColor === DEFAULT_WALLPAPER_COLOR
                       : wallpaperColor === color;
 
                     return (
@@ -163,7 +163,7 @@ export const AppearanceSettingsSection: React.FC<
                         key={color}
                         onClick={() =>
                           onWallpaperColorChange(
-                            isDefault ? '' : color
+                            isDefault ? DEFAULT_WALLPAPER_COLOR : color
                           )
                         }
                         className={`relative h-6 w-6 rounded-full border transition ${
@@ -173,7 +173,7 @@ export const AppearanceSettingsSection: React.FC<
                         }`}
                         style={{
                           backgroundColor: isDefault
-                            ? '#181716'
+                            ? DEFAULT_WALLPAPER_COLOR
                             : color
                         }}
                       />

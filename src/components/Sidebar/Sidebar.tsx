@@ -25,7 +25,7 @@ const MenuItem = ({
   onClick
 }: MenuItemProps) => {
   const baseClasses =
-    "flex items-center gap-3 px-3 py-2 mb-0.5 rounded-lg text-sm font-sans transition-colors cursor-default";
+    "flex items-center gap-3 px-3 py-2 mb-0.5 rounded-xl text-sm font-sans transition-colors cursor-default";
 
   const stateClasses = active
     ? "bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] font-medium"

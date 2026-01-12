@@ -544,8 +544,20 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ location }) => {
 
   if (!state) {
     return (
-      <div className="flex h-full w-full items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] text-xs text-[color:var(--ui-text-muted)]">
-        Loading weather...
+      <div className="flex h-full w-full flex-col items-center justify-center rounded-3xl bg-[color:var(--ui-surface-subtle)] p-6 border border-[color:var(--ui-border)]">
+        <div className="flex flex-col items-center space-y-4 w-full">
+          {/* Weather icon skeleton */}
+          <div className="w-12 h-12 bg-[color:var(--ui-surface)] rounded-full animate-pulse" />
+          
+          {/* Temperature skeleton */}
+          <div className="w-16 h-8 bg-[color:var(--ui-surface)] rounded animate-pulse" />
+          
+          {/* Condition skeleton */}
+          <div className="w-24 h-4 bg-[color:var(--ui-surface)] rounded animate-pulse" />
+          
+          {/* High/Low skeleton */}
+          <div className="w-20 h-3 bg-[color:var(--ui-surface)] rounded animate-pulse" />
+        </div>
       </div>
     );
   }

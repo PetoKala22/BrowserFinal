@@ -144,10 +144,9 @@ export const WidgetsSettingsSection: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 text-xs text-[color:var(--ui-text-muted)]">
               {expanded ? 'Hide' : 'Edit'}
-              <LuChevronDown
-                size={14}
-                className={`transition ${expanded ? 'rotate-180' : ''}`}
-              />
+              <span className={`transition ${expanded ? 'rotate-180' : ''}`}>
+                <LuChevronDown size={14} />
+              </span>
             </div>
           </div>
         </button>

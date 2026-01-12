@@ -68,7 +68,7 @@ export const PrivacySettingsSection: React.FC<PrivacySettingsSectionProps> = ({
               {origin}
             </div>
             <div className="space-y-2">
-              {perms.map((perm) => (
+              {(perms as { type: PermissionType; allowed: boolean; ask: boolean }[]).map((perm) => (
                 <div key={perm.type} className="flex items-center justify-between">
                   <div className="text-sm text-[color:var(--ui-text)]">
                     {getPermissionDisplayName(perm.type)}

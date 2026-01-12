@@ -9,20 +9,20 @@ import { SkyBackground } from './widgets/SkyBackground';
 const STORAGE_KEY = 'newtab-widgets-v1';
 
 const DEFAULT_WIDGETS: WidgetInstance[] = [
-  { id: 'widget-notes', type: 'notes' }
+  { id: 'widget-weather', type: 'weather' }
 ];
 
 const DEFAULT_LAYOUT: Layout[] = [
   {
-    i: 'widget-notes',
+    i: 'widget-weather',
     x: 4,
     y: 0,
-    w: widgetDefinitions.notes.defaultSize.w,
-    h: widgetDefinitions.notes.defaultSize.h,
-    minW: widgetDefinitions.notes.minW,
-    minH: widgetDefinitions.notes.minH,
-    maxW: widgetDefinitions.notes.maxW,
-    maxH: widgetDefinitions.notes.maxH
+    w: widgetDefinitions.weather.defaultSize.w,
+    h: widgetDefinitions.weather.defaultSize.h,
+    minW: widgetDefinitions.weather.minW,
+    minH: widgetDefinitions.weather.minH,
+    maxW: widgetDefinitions.weather.maxW,
+    maxH: widgetDefinitions.weather.maxH
   }
 ];
 

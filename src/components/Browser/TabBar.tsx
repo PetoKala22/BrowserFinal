@@ -60,7 +60,7 @@ export const TabBar = memo<TabBarProps>(({
                {tab.favicon ? (
                  <img src={tab.favicon} alt="" className="w-3.5 h-3.5 opacity-80" />
                ) : (
-                 <LuGlobe size={14} className="opacity-50" />
+                 <span className="opacity-50"><LuGlobe size={14} /></span>
                )}
             </div>
             {tab.loading && (
@@ -86,7 +86,7 @@ export const TabBar = memo<TabBarProps>(({
                 transition-opacity
               `}
             >
-              <LuX size={14} className="text-[color:var(--ui-text-subtle)]" />
+              <span className="text-[color:var(--ui-text-subtle)]"><LuX size={14} /></span>
             </button>
             
             {/* Separator (visual trick for non-active tabs) */}

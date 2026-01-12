@@ -22,6 +22,7 @@ import {
   sortHistoryItems,
   storageUtils
 } from '@/utils';
+import { DEFAULT_WALLPAPER_COLOR } from '@/lib/appearance';
 
 const WALLPAPER_NOTICE_SEEN_KEY = 'wallpaperNoticeSeen';
 const WALLPAPER_NOTICE_TARGET_KEY = 'wallpaperNoticeTarget';
@@ -34,8 +35,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   searchEngine: SearchEngine.GOOGLE,
   customSearchUrl: '',
   backgroundType: 'wallpaper',
-  wallpaper: '',
-  wallpaperColor: '',
+    wallpaper: '',
+    wallpaperColor: DEFAULT_WALLPAPER_COLOR,
   wallpaperBlur: false,
   adBlockEnabled: true
 };
@@ -682,6 +683,47 @@ const Home: React.FC = () => {
       setOnboardingVisible(true);
     }, 1000);
   }, [onboardingOpen]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+T: New tab
+      if (event.ctrlKey && event.key === 't') {
+        event.preventDefault();
+        handleNewTab();
+      }
+      // Ctrl+W: Close tab
+      else if (event.ctrlKey && event.key === 'w') {
+        event.preventDefault();
+        const activeTab = tabs.find(tab => tab.id === activeTabId);
+        if (activeTab && tabs.length > 1) {
+          handleCloseTab(activeTab.id);
+        }
+      }
+      // Ctrl+L: Focus address bar
+      else if (event.ctrlKey && event.key === 'l') {
+        event.preventDefault();
+        // Address bar focus would be handled by the AddressBar component
+      }
+      // Ctrl+H: Toggle history
+      else if (event.ctrlKey && event.key === 'h') {
+        event.preventDefault();
+        setHistoryOpen(prev => !prev);
+        setSettingsOpen(false);
+      }
+      // Ctrl+, : Open settings
+      else if (event.ctrlKey && event.key === ',') {
+        event.preventDefault();
+        setSettingsOpen(true);
+        setHistoryOpen(false);
+      }
+      // F11: Toggle fullscreen (handled by Electron)
+      // Ctrl+Shift+I: Toggle dev tools (handled by Electron)
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [tabs, activeTabId, handleNewTab, handleCloseTab]);
 
   return (
       <div className="relative isolate flex h-screen w-screen flex-col overflow-hidden text-sm select-none font-sans text-[color:var(--ui-text)] bg-[color:var(--ui-base)]">

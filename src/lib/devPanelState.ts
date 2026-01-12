@@ -61,8 +61,8 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const normalizeState = (state: Partial<DevPanelState> | null): DevPanelState => {
-  const time = state?.time ?? {};
-  const weather = state?.weather ?? {};
+  const time = (state?.time ?? {}) as Partial<DevPanelTimeState>;
+  const weather = (state?.weather ?? {}) as Partial<DevPanelWeatherState>;
   const normalizeTime = (value: unknown, fallback: string) => {
     if (typeof value !== 'string') return fallback;
     return /^\d{2}:\d{2}$/.test(value) ? value : fallback;

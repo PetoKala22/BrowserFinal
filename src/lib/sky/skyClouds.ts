@@ -17,6 +17,8 @@ export class SkyCloudsRenderer {
   private cloudConfigUniform: WebGLUniformLocation;
   private cloudConfig2Uniform: WebGLUniformLocation;
   private cloudConfig3Uniform: WebGLUniformLocation;
+  private sizeScaleUniform: WebGLUniformLocation;
+  private lightningIntensityUniform: WebGLUniformLocation;
   private windSpeedUniform: WebGLUniformLocation;
   private windDirectionUniform: WebGLUniformLocation;
   private seed: number;
