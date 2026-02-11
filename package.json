@@ -1,5 +1,5 @@
 {
-  "name": "safari-esque-browser-ui",
+  "name": "nook",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,17 +11,22 @@
     "electron": "electron .",
     "electron:dev": "concurrently -k -r \"npm run dev\" \"npm run electron:serve\"",
     "electron:serve": "cross-env VITE_DEV_SERVER_URL=http://localhost:3000 wait-on http://localhost:3000 && electron .",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "build:release": "cross-env KEEP_LOCALES=en-US KEEP_CHROME_PAKS=0 npm run electron:build && node electron/printReleaseSize.cjs",
+    "dist-size": "node electron/printReleaseSize.cjs"
   },
   "dependencies": {
+    "@ghostery/adblocker": "^2.13.2",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "react-router-dom": "^7.9.1"
+    "react-grid-layout": "^1.5.3",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.2",
@@ -35,13 +40,18 @@
     "wait-on": "^8.0.2"
   },
   "build": {
-    "appId": "com.example.safariesquebrowserui",
+    "appId": "com.nook.nookbrowser",
+    "productName": "Nook",
+    "icon": "src/assets/AppIcon.ico",
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "electron/filters/**/*",
       "package.json"
     ],
     "asar": true,
+    "compression": "maximum",
+    "afterPack": "electron/afterPack.cjs",
     "directories": {
       "output": "release",
       "buildResources": "src/assets"

@@ -6,12 +6,12 @@ module.exports = {
     './src/app/**/*.{ts,tsx}',
     './src/components/**/*.{ts,tsx}',
     './src/features/**/*.{ts,tsx}',
-    './src/styles/**/*.{css}'
+    './src/styles/**/*.css'
   ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif']
+        sans: ['"Inter"', 'sans-serif']
       },
       colors: {
         safari: {

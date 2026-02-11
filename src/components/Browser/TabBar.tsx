@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { X, Plus, Globe } from 'lucide-react';
+import { LuX, LuGlobe } from 'react-icons/lu';
 import { Tab } from '@/lib/types';
 
 interface TabBarProps {
@@ -7,7 +7,6 @@ interface TabBarProps {
   activeTabId: string;
   onSwitch: (id: string) => void;
   onClose: (id: string, e: React.MouseEvent) => void;
-  onNewTab: () => void;
   orientation?: 'horizontal' | 'vertical';
 }
 
@@ -16,18 +15,19 @@ export const TabBar = memo<TabBarProps>(({
   activeTabId,
   onSwitch,
   onClose,
-  onNewTab,
   orientation = 'horizontal'
 }) => {
   const isVertical = orientation === 'vertical';
 
   return (
     <div
+      role="tablist"
+      aria-orientation={isVertical ? 'vertical' : 'horizontal'}
       className={[
-        "electron-no-drag",
+        "electron-no-drag mb-1",
         isVertical
           ? "flex flex-col gap-1 overflow-y-auto no-scrollbar"
-          : "bg-[color:var(--ui-surface)] rounded-lg backdrop-blur-xl flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5 mb-1"
+          : "flex items-center h-[32px] space-x-1 overflow-x-auto no-scrollbar mx-2 p-0.5"
       ].join(" ")}
     >
       {tabs.map((tab) => {
@@ -36,11 +36,21 @@ export const TabBar = memo<TabBarProps>(({
           <div
             key={tab.id}
             onClick={() => onSwitch(tab.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSwitch(tab.id);
+              }
+            }}
+            role="tab"
+            tabIndex={isActive ? 0 : -1}
+            aria-selected={isActive}
+            aria-label={tab.title || tab.url}
             className={`
-              group relative flex items-center rounded-lg px-2.5 text-xs select-none cursor-default transition-all duration-200
+              group relative flex items-center rounded-full px-2.5 text-xs select-none cursor-pointer transition-all duration-200
               ${isVertical ? 'w-full h-9' : 'min-w-[140px] max-w-[240px] flex-1 h-full'}
               ${isActive 
-                ? 'bg-[color:var(--ui-surface-strong)] shadow-sm text-[color:var(--ui-text)]' 
+                ? 'bg-[color:var(--ui-surface)] shadow-sm text-[color:var(--ui-text)]' 
                 : 'text-[color:var(--ui-text-muted)] hover:text-[color:var(--ui-text)]'
               }
             `}
@@ -50,27 +60,34 @@ export const TabBar = memo<TabBarProps>(({
                {tab.favicon ? (
                  <img src={tab.favicon} alt="" className="w-3.5 h-3.5 opacity-80" />
                ) : (
-                 <Globe size={14} className="opacity-50" />
+                 <span className="opacity-50"><LuGlobe size={14} /></span>
                )}
             </div>
+            {tab.loading && (
+              <div className="mr-2 flex h-3 w-3 items-center justify-center">
+                <div className="h-3 w-3 animate-spin rounded-full border border-[color:var(--ui-border)] border-t-[color:var(--ui-accent)]" />
+              </div>
+            )}
 
             {/* Title */}
             <span className="truncate flex-1 font-medium">{tab.title}</span>
 
             {/* Close Button - Only visible on hover or if active */}
-            <div
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onClose(tab.id, e);
-                }}
-                className={`
-                    ml-1 rounded-lg p-0.5 hover:bg-[color:var(--ui-hover)]
-                    ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-                    transition-opacity
-                `}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose(tab.id, e);
+              }}
+              aria-label={`Close ${tab.title || tab.url}`}
+              className={`
+                ml-1 rounded-full p-0.5 hover:bg-[color:var(--ui-hover)]
+                ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                transition-opacity
+              `}
             >
-                <X size={14} className="text-[color:var(--ui-text-subtle)]" />
-            </div>
+              <span className="text-[color:var(--ui-text-subtle)]"><LuX size={14} /></span>
+            </button>
             
             {/* Separator (visual trick for non-active tabs) */}
             {!isVertical && !isActive && (

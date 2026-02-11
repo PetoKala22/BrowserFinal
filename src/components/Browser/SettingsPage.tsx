@@ -1,294 +1,168 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { Layout, SearchEngine } from '@/lib/types';
+import React, { useEffect, useState, memo } from 'react';
+import { LuX } from 'react-icons/lu';
+import { SearchEngine } from '@/lib/types';
 import { IconButton } from '@/components/ui/IconButton';
+import { AppearanceSettingsSection } from './settings/AppearanceSettingsSection';
+import { SearchSettingsSection } from './settings/SearchSettingsSection';
+import { PrivacySettingsSection } from './settings/PrivacySettingsSection';
+import { GeneralSettingsSection } from './settings/GeneralSettingsSection';
+import { AdvancedSettingsSection } from './settings/AdvancedSettingsSection';
+import { WidgetsSettingsSection } from './settings/WidgetsSettingsSection';
 
-interface SettingsPageProps {
-  layout: Layout;
-  onLayoutChange: (layout: Layout) => void;
-  wallpaper: string;
-  onWallpaperChange: (wallpaper: string) => void;
-  wallpaperBlur: boolean;
-  onWallpaperBlurChange: (blur: boolean) => void;
-  searchEngine: SearchEngine;
-  onSearchEngineChange: (engine: SearchEngine) => void;
-  customSearchUrl: string;
-  onCustomSearchUrlChange: (url: string) => void;
-  hasUnsavedChanges: boolean;
-  isSaving: boolean;
-  onSave: () => void;
-  onClose: () => void;
-}
-
-type SettingsSection = 'general' | 'appearance' | 'search' | 'privacy' | 'advanced';
+type SettingsSection =
+  | 'general'
+  | 'appearance'
+  | 'widgets'
+  | 'search'
+  | 'privacy'
+  | 'advanced';
 
 const settingsSections: { id: SettingsSection; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'appearance', label: 'Appearance' },
+  { id: 'widgets', label: 'Widgets' },
   { id: 'search', label: 'Search engine' },
   { id: 'privacy', label: 'Privacy' },
   { id: 'advanced', label: 'Advanced' }
 ];
 
-const layoutOptions = [
-  { id: Layout.GENERIC, label: 'Generic' },
-  { id: Layout.SIDEBAR, label: 'Sidebar' }
-];
-
-const searchOptions = [
-  { id: SearchEngine.GOOGLE, label: 'Google', description: 'Fast results with broad coverage.' },
-  { id: SearchEngine.YAHOO, label: 'Yahoo', description: 'Classic search with news integrations.' },
-  { id: SearchEngine.DUCKDUCKGO, label: 'DuckDuckGo', description: 'Privacy-focused search.' },
-  { id: SearchEngine.BING, label: 'Bing', description: 'Microsoft search experience.' },
-  { id: SearchEngine.CUSTOM, label: 'Custom', description: 'Use a custom search URL.' }
-];
-
-const SettingsGroup: React.FC<{
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}> = ({ title, description, children }) => (
-  <div className="space-y-3">
-    <div>
-      <div className="text-xs uppercase tracking-wide text-[color:var(--ui-text-subtle)]">
-        {title}
-      </div>
-      {description && (
-        <div className="mt-1 text-xs text-[color:var(--ui-text-muted)]">
-          {description}
-        </div>
-      )}
-    </div>
-    {children}
-  </div>
-);
-
-export const SettingsPage: React.FC<SettingsPageProps> = ({
-  layout,
-  onLayoutChange,
+export const SettingsPage = memo<React.FC<any>>(({
   wallpaper,
   onWallpaperChange,
+  wallpaperColor,
+  onWallpaperColorChange,
+  backgroundType,
+  onBackgroundTypeChange,
   wallpaperBlur,
   onWallpaperBlurChange,
+  adBlockEnabled,
+  onAdBlockEnabledChange,
+  permissions,
+  onPermissionsChange,
   searchEngine,
   onSearchEngineChange,
-  customSearchUrl,
-  onCustomSearchUrlChange,
+  initialSection,
   hasUnsavedChanges,
   isSaving,
   onSave,
-  onClose
+  onClose,
+  subsection
 }) => {
   const [activeSection, setActiveSection] =
-    useState<SettingsSection>('appearance');
+    useState<SettingsSection>(initialSection ?? 'appearance');
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setActiveSection(initialSection);
+  }, [initialSection]);
 
   return (
-    <div className="h-full w-full">
-      <div className="flex h-full gap-6 p-8">
+    <div className="h-full w-full overflow-hidden bg-[color:var(--ui-base)]">
+      <div className="flex h-full p-8">
+        <div className="flex h-full w-full gap-6 rounded-3xl bg-[color:var(--ui-surface)] shadow-lg p-4 overflow-hidden">
 
-        {/* Sidebar */}
-        <aside className="w-[220px] shrink-0 rounded-2xl bg-[color:var(--ui-surface)] backdrop-blur-xl p-3">
-          <div className="text-xs uppercase tracking-wide text-[color:var(--ui-text-subtle)]">
-            Settings
-          </div>
+          {/* Sidebar */}
+          <aside className="flex h-full w-[220px] shrink-0 flex-col p-3 overflow-hidden">
+            <div className="text-xs uppercase tracking-wide text-[color:var(--ui-text-subtle)]">
+              Settings
+            </div>
 
-          <nav className="mt-3 flex flex-col gap-1">
-            {settingsSections.map(section => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`relative rounded-lg px-3 py-2 text-sm text-left transition-colors
-                  ${
+            <nav className="mt-3 flex-1 overflow-y-auto space-y-1 pr-1">
+              {settingsSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`relative w-full rounded-xl px-3 py-2 text-left text-sm transition-colors ${
                     activeSection === section.id
-                      ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)]'
+                      ? 'bg-[color:var(--ui-surface-strong)] text-[color:var(--ui-text)] shadow-sm font-medium'
                       : 'text-[color:var(--ui-text-muted)] hover:bg-[color:var(--ui-hover)]'
                   }`}
-              >
-                {activeSection === section.id && (
-                  <span className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-[color:var(--ui-accent)]" />
-                )}
-                <span className="pl-2">{section.label}</span>
-              </button>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Content */}
-        <section className="relative flex-1 rounded-2xl bg-[color:var(--ui-surface-strong)] backdrop-blur-xl p-6 overflow-y-auto">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-[color:var(--ui-text)]">
-                Settings
-              </div>
-              <div className="text-xs text-[color:var(--ui-text-muted)] capitalize">
-                {activeSection}
-              </div>
-            </div>
-            <IconButton onClick={onClose}>
-              <X size={16} />
-            </IconButton>
-          </div>
-
-          {activeSection === 'appearance' && (
-            <div className="space-y-10">
-
-              {/* Layout */}
-              <SettingsGroup title="Layout">
-                <div className="inline-flex rounded-xl bg-[color:var(--ui-surface)] p-1">
-                  {layoutOptions.map(option => (
-                    <button
-                      key={option.id}
-                      onClick={() => onLayoutChange(option.id)}
-                      className={`px-4 py-2 rounded-lg text-sm transition
-                        ${
-                          layout === option.id
-                            ? 'bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)]'
-                            : 'text-[color:var(--ui-text-muted)] hover:bg-[color:var(--ui-hover)]'
-                        }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </SettingsGroup>
-
-              {/* Wallpaper */}
-              <SettingsGroup title="Wallpaper">
-                <div className="rounded-xl p-4 bg-[color:var(--ui-surface)]">
-                  {wallpaper ? (
-                    <div className="overflow-hidden rounded-lg">
-                      <div
-                        className={`h-24 w-full bg-cover bg-center transition ${
-                          wallpaperBlur ? 'blur-sm scale-105' : ''
-                        }`}
-                        style={{ backgroundImage: `url(${wallpaper})` }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-24 rounded-lg bg-[color:var(--ui-surface-subtle)] flex items-center justify-center text-xs text-[color:var(--ui-text-muted)]">
-                      No wallpaper selected
-                    </div>
+                >
+                  {activeSection === section.id && (
+                    <span className="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-[color:var(--ui-accent)]" />
                   )}
-
-                  <div className="mt-4 flex items-center gap-3 flex-wrap">
-                    <label className="cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold hover:bg-[color:var(--ui-hover)]">
-                      Upload
-                      <input
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            if (typeof reader.result === 'string') {
-                              onWallpaperChange(reader.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                          e.currentTarget.value = '';
-                        }}
-                      />
-                    </label>
-
-                    <button
-                      onClick={() => onWallpaperChange('')}
-                      className="rounded-lg px-3 py-2 text-xs hover:bg-[color:var(--ui-hover)]"
-                    >
-                      Remove
-                    </button>
-
-                    <button
-                      onClick={() => onWallpaperBlurChange(!wallpaperBlur)}
-                      className={`ml-auto rounded-full px-3 py-1 text-xs transition
-                        ${
-                          wallpaperBlur
-                            ? 'bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)]'
-                            : 'bg-[color:var(--ui-surface-muted)]'
-                        }`}
-                    >
-                      Blur
-                    </button>
-                  </div>
-                </div>
-              </SettingsGroup>
-            </div>
-          )}
-
-          {activeSection === 'search' && (
-            <div className="space-y-8">
-              <SettingsGroup title="Default search engine">
-                <div className="space-y-2">
-                  {searchOptions.map(option => (
-                    <button
-                      key={option.id}
-                      onClick={() => onSearchEngineChange(option.id)}
-                      className={`w-full rounded-xl px-4 py-3 text-left transition
-                        ${
-                          searchEngine === option.id
-                            ? 'bg-[color:var(--ui-surface-strong)]'
-                            : 'hover:bg-[color:var(--ui-hover)]'
-                        }`}
-                    >
-                      <div className="text-sm font-medium text-[color:var(--ui-text)]">
-                        {option.label}
-                      </div>
-                      <div className="text-xs text-[color:var(--ui-text-muted)]">
-                        {option.description}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                <div
-                  className={`overflow-hidden transition-all ${
-                    searchEngine === SearchEngine.CUSTOM
-                      ? 'max-h-40 opacity-100 mt-4'
-                      : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <input
-                    type="text"
-                    value={customSearchUrl}
-                    onChange={e => onCustomSearchUrlChange(e.target.value)}
-                    placeholder="https://example.com/search?q={query}"
-                    spellCheck={false}
-                    className="w-full rounded-xl bg-[color:var(--ui-surface)] px-3 py-2 text-sm text-[color:var(--ui-text)] placeholder:text-[color:var(--ui-text-subtle)]"
-                  />
-                  <div className="mt-2 text-xs text-[color:var(--ui-text-muted)]">
-                    Use {'{query}'} as the placeholder.
-                  </div>
-                </div>
-              </SettingsGroup>
-            </div>
-          )}
-
-          {activeSection !== 'appearance' && activeSection !== 'search' && (
-            <div className="text-sm text-[color:var(--ui-text-muted)]">
-              This section is coming soon.
-            </div>
-          )}
-
-          {/* Sticky Save Bar */}
-          {hasUnsavedChanges && (
-            <div className="sticky bottom-4 mt-10 flex justify-end">
-              <div className="flex items-center gap-3 rounded-full bg-[color:var(--ui-surface-strong)] backdrop-blur px-4 py-2 shadow-sm">
-                <span className="text-xs text-[color:var(--ui-text-muted)]">
-                  Unsaved changes
-                </span>
-                <button
-                  onClick={onSave}
-                  disabled={isSaving}
-                  className="rounded-full px-4 py-1 text-xs font-semibold bg-[color:var(--ui-accent)] text-[color:var(--ui-accent-contrast)] hover:brightness-95"
-                >
-                  {isSaving ? 'Saving…' : 'Save'}
+                  <span className="pl-2">{section.label}</span>
                 </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Content */}
+          <section className="relative flex h-full flex-1 flex-col rounded-3xl bg-[color:var(--ui-surface-strong)] shadow-md overflow-hidden">
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[color:var(--ui-border)] px-6 py-4">
+              <div>
+                <div className="text-sm font-semibold text-[color:var(--ui-text)]">
+                  Settings
+                </div>
+                <div className="text-xs capitalize text-[color:var(--ui-text-muted)]">
+                  {activeSection}
+                </div>
               </div>
+              <IconButton onClick={onClose}>
+                <LuX size={16} />
+              </IconButton>
             </div>
-          )}
-        </section>
+
+            {/* Scrollable Content */}
+            <div className="relative flex-1 overflow-y-auto px-6 py-6 pb-28">
+              {activeSection === 'appearance' && (
+                <AppearanceSettingsSection
+                  wallpaper={wallpaper}
+                  onWallpaperChange={onWallpaperChange}
+                  wallpaperColor={wallpaperColor}
+                  onWallpaperColorChange={onWallpaperColorChange}
+                  backgroundType={backgroundType}
+                  onBackgroundTypeChange={onBackgroundTypeChange}
+                  wallpaperBlur={wallpaperBlur}
+                  onWallpaperBlurChange={onWallpaperBlurChange}
+                />
+              )}
+
+              {activeSection === 'search' && (
+                <SearchSettingsSection
+                  searchEngine={searchEngine}
+                  onSearchEngineChange={onSearchEngineChange}
+                />
+              )}
+
+              {activeSection === 'privacy' && (
+                <PrivacySettingsSection
+                  adBlockEnabled={adBlockEnabled}
+                  onAdBlockEnabledChange={onAdBlockEnabledChange}
+                  permissions={permissions}
+                  onPermissionsChange={onPermissionsChange}
+                />
+              )}
+
+              {activeSection === 'general' && <GeneralSettingsSection />}
+              {activeSection === 'widgets' && <WidgetsSettingsSection />}
+              {activeSection === 'advanced' && <AdvancedSettingsSection />}
+            </div>
+
+            {/* Sticky Save Bar */}
+            {hasUnsavedChanges && (
+              <div className="pointer-events-none absolute bottom-6 right-6 z-10">
+                <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-[color:var(--ui-surface-strong)] px-4 py-2 shadow-sm backdrop-blur">
+                  <span className="text-xs text-[color:var(--ui-text-muted)]">
+                    Unsaved changes
+                  </span>
+                  <button
+                    onClick={onSave}
+                    disabled={isSaving}
+                    className="rounded-full bg-[color:var(--ui-accent)] px-4 py-1 text-xs font-semibold text-[color:var(--ui-accent-contrast)] hover:brightness-95"
+                  >
+                    {isSaving ? 'Saving' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );
-};
+});
+
+SettingsPage.displayName = 'SettingsPage';

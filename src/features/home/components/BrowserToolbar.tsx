@@ -1,9 +1,16 @@
-import React, { memo } from 'react';
-import { ChevronLeft, ChevronRight, PanelLeft, Plus, Share } from 'lucide-react';
-import { AddressBar } from '@/components/Browser/AddressBar';
+import React, { memo, useLayoutEffect, useRef } from 'react';
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuPanelLeft,
+  LuPlus,
+  LuRotateCw,
+  LuShare,
+  LuX,
+  LuShield
+} from 'react-icons/lu';
 import { WindowControls } from '@/components/Browser/WindowControls';
 import { IconButton } from '@/components/ui/IconButton';
-import { SearchEngine } from '@/lib/types';
 
 interface BrowserToolbarProps {
   sidebarOpen: boolean;
@@ -12,14 +19,14 @@ interface BrowserToolbarProps {
   canGoForward: boolean;
   onGoBack: () => void;
   onGoForward: () => void;
-  address: string;
-  onNavigate: (url: string) => void;
   onReload: () => void;
   onStop: () => void;
   loading: boolean;
-  searchEngine: SearchEngine;
-  customSearchUrl: string;
   onNewTab: () => void;
+  onShieldLayout?: (rect: DOMRect) => void;
+  onShieldClick?: () => void;
+  shieldActive?: boolean;
+  onShieldRef?: (node: HTMLDivElement | null) => void;
 }
 
 export const BrowserToolbar = memo<BrowserToolbarProps>(
@@ -30,52 +37,71 @@ export const BrowserToolbar = memo<BrowserToolbarProps>(
     canGoForward,
     onGoBack,
     onGoForward,
-    address,
-    onNavigate,
     onReload,
     onStop,
     loading,
-    searchEngine,
-    customSearchUrl,
-    onNewTab
+    onNewTab,
+    onShieldLayout,
+    onShieldClick,
+    shieldActive,
+    onShieldRef
   }) => {
+    const shieldRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+      if (!onShieldLayout) return;
+      const update = () => {
+        const node = shieldRef.current;
+        if (!node) return;
+        onShieldLayout(node.getBoundingClientRect());
+      };
+      update();
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }, [onShieldLayout]);
+
+    useLayoutEffect(() => {
+      if (!onShieldRef) return;
+      onShieldRef(shieldRef.current);
+      return () => onShieldRef(null);
+    }, [onShieldRef]);
+
     return (
-      <div className="h-[42px] flex items-center w-full px-2 gap-2 electron-no-drag relative bg-[color:var(--ui-surface)] backdrop-blur-xl">
+      <div className="h-[32px] flex items-center w-full gap-2 electron-no-drag relative">
         <div className="flex items-center gap-4 min-w-[140px] z-10">
-          <div className="flex items-center gap-1">
-            <IconButton onClick={onSidebarToggle} active={sidebarOpen}>
-              <PanelLeft size={18} strokeWidth={2} />
+          <div className="flex items-center gap-1 pl-1">
+            <IconButton onClick={onSidebarToggle} active={sidebarOpen} aria-label="Toggle sidebar">
+              <LuPanelLeft size={18} />
             </IconButton>
-            <IconButton disabled={!canGoBack} onClick={onGoBack}>
-              <ChevronLeft size={18} strokeWidth={2.5} />
+            <IconButton disabled={!canGoBack} onClick={onGoBack} aria-label="Back">
+              <LuChevronLeft size={18} />
             </IconButton>
-            <IconButton disabled={!canGoForward} onClick={onGoForward}>
-              <ChevronRight size={18} strokeWidth={2.5} />
+            <IconButton disabled={!canGoForward} onClick={onGoForward} aria-label="Forward">
+              <LuChevronRight size={18} />
+            </IconButton>
+            <IconButton
+              onClick={loading ? onStop : onReload}
+              aria-label={loading ? 'Stop loading' : 'Reload'}
+            >
+              {loading ? <LuX size={16} /> : <LuRotateCw size={16} />}
             </IconButton>
           </div>
         </div>
 
-        <div className="absolute left-1/2 -translate-x-1/2 w-[440px] max-w-[60vw]">
-          <AddressBar
-            url={address}
-            onNavigate={onNavigate}
-            onReload={onReload}
-            onStop={onStop}
-            loading={loading}
-            searchEngine={searchEngine}
-            customSearchUrl={customSearchUrl}
-          />
-        </div>
-
-        <div className="flex items-center gap-1 min-w-[140px] justify-end pr-1 ml-auto z-10">
-          <IconButton>
-            <Share size={16} strokeWidth={2} />
+        <div className="flex items-center gap-1 min-w-[140px] justify-end ml-auto z-10">
+          <IconButton onClick={onNewTab} aria-label="New tab">
+            <LuPlus size={16} />
           </IconButton>
-          <IconButton onClick={onNewTab}>
-            <Plus size={16} strokeWidth={2.5} />
+          <IconButton disabled aria-label="Share (coming soon)">
+            <LuShare size={16} />
           </IconButton>
+          <div className="relative" ref={shieldRef}>
+            <IconButton onClick={onShieldClick} active={shieldActive} aria-label="Privacy shield">
+              <LuShield size={16} />
+            </IconButton>
+          </div>
 
-          <div className="ml-2 pl-2">
+          <div className="ml-2 pl-2 self-start">
             <WindowControls />
           </div>
         </div>

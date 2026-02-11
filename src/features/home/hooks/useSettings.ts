@@ -1,17 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppSettings, Layout, Theme } from '@/lib/types';
+import { AppSettings, BackgroundType, Theme } from '@/lib/types';
 
 interface UseSettingsResult {
   searchEngine: AppSettings['searchEngine'];
   setSearchEngine: (engine: AppSettings['searchEngine']) => void;
   customSearchUrl: string;
   setCustomSearchUrl: (url: string) => void;
-  layout: Layout;
-  setLayout: (layout: Layout) => void;
+  backgroundType: BackgroundType;
+  setBackgroundType: (type: BackgroundType) => void;
   wallpaper: string;
   setWallpaper: (wallpaper: string) => void;
+  wallpaperColor: string;
+  setWallpaperColor: (color: string) => void;
   wallpaperBlur: boolean;
   setWallpaperBlur: (blur: boolean) => void;
+  adBlockEnabled: boolean;
+  setAdBlockEnabled: (enabled: boolean) => void;
+  snowColor: string;
+  setSnowColor: (color: string) => void;
   currentSettings: AppSettings;
   savedSettings: AppSettings;
   setSavedSettings: (settings: AppSettings) => void;
@@ -27,9 +33,14 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     defaultSettings.searchEngine
   );
   const [customSearchUrl, setCustomSearchUrl] = useState(defaultSettings.customSearchUrl);
-  const [layout, setLayout] = useState<Layout>(defaultSettings.layout);
+  const [backgroundType, setBackgroundType] = useState<BackgroundType>(
+    defaultSettings.backgroundType
+  );
   const [wallpaper, setWallpaper] = useState(defaultSettings.wallpaper);
+  const [wallpaperColor, setWallpaperColor] = useState(defaultSettings.wallpaperColor);
   const [wallpaperBlur, setWallpaperBlur] = useState(defaultSettings.wallpaperBlur);
+  const [adBlockEnabled, setAdBlockEnabled] = useState(defaultSettings.adBlockEnabled);
+  const [snowColor, setSnowColor] = useState(defaultSettings.snowColor ?? '#FFFFFF');
   const [savedSettings, setSavedSettings] = useState<AppSettings>(defaultSettings);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -38,11 +49,23 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       theme: Theme.SYSTEM,
       searchEngine,
       customSearchUrl,
-      layout,
+      backgroundType,
       wallpaper,
-      wallpaperBlur
+      wallpaperColor,
+      wallpaperBlur,
+      adBlockEnabled,
+      snowColor
     }),
-    [searchEngine, customSearchUrl, layout, wallpaper, wallpaperBlur]
+    [
+      searchEngine,
+      customSearchUrl,
+      backgroundType,
+      wallpaper,
+      wallpaperColor,
+      wallpaperBlur,
+      adBlockEnabled,
+      snowColor
+    ]
   );
 
   const hasUnsavedChanges = useMemo(() => {
@@ -50,9 +73,12 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       savedSettings.theme !== currentSettings.theme ||
       savedSettings.searchEngine !== currentSettings.searchEngine ||
       savedSettings.customSearchUrl !== currentSettings.customSearchUrl ||
-      savedSettings.layout !== currentSettings.layout ||
+      savedSettings.backgroundType !== currentSettings.backgroundType ||
       savedSettings.wallpaper !== currentSettings.wallpaper ||
-      savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur
+      savedSettings.wallpaperColor !== currentSettings.wallpaperColor ||
+      savedSettings.wallpaperBlur !== currentSettings.wallpaperBlur ||
+      savedSettings.adBlockEnabled !== currentSettings.adBlockEnabled ||
+      savedSettings.snowColor !== currentSettings.snowColor
     );
   }, [currentSettings, savedSettings]);
 
@@ -72,6 +98,12 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       '--ui-text',
       '--ui-text-muted',
       '--ui-text-subtle',
+      '--ui-newtab-text',
+      '--ui-newtab-text-muted',
+      '--ui-newtab-text-shadow',
+      '--ui-newtab-clock-pill',
+      '--ui-newtab-clock-shadow',
+      '--ui-overlay-text-shadow',
       '--ui-accent',
       '--ui-accent-contrast'
     ];
@@ -103,11 +135,14 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
         g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, 0.08)),
         b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, 0.08))
       };
+      const borderMix = isDark ? 0.22 : 0.18;
       const borderTint = {
-        r: clamp(mix(surfaceTint.r, isDark ? 255 : 0, isDark ? 0.18 : 0.12)),
-        g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, isDark ? 0.18 : 0.12)),
-        b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, isDark ? 0.18 : 0.12))
+        r: clamp(mix(surfaceTint.r, isDark ? 255 : 0, borderMix)),
+        g: clamp(mix(surfaceTint.g, isDark ? 255 : 0, borderMix)),
+        b: clamp(mix(surfaceTint.b, isDark ? 255 : 0, borderMix))
       };
+      const borderAlpha = isDark ? 0.32 : 0.24;
+      const ringAlpha = isDark ? 0.46 : 0.34;
 
       root.style.setProperty('--ui-base', makeRgba(base, 1));
       root.style.setProperty('--ui-surface', makeRgba(surfaceTint, isDark ? 0.72 : 0.68));
@@ -116,13 +151,45 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       root.style.setProperty('--ui-surface-subtle', makeRgba(surfaceTint, isDark ? 0.35 : 0.3));
       root.style.setProperty('--ui-hover', makeRgba(hoverTint, isDark ? 0.78 : 0.72));
       root.style.setProperty('--ui-hover-strong', makeRgba(hoverTint, isDark ? 0.88 : 0.82));
-      root.style.setProperty('--ui-border', makeRgba(borderTint, isDark ? 0.28 : 0.2));
-      root.style.setProperty('--ui-ring', makeRgba(borderTint, isDark ? 0.4 : 0.3));
+      root.style.setProperty('--ui-border', makeRgba(borderTint, borderAlpha));
+      root.style.setProperty('--ui-ring', makeRgba(borderTint, ringAlpha));
       root.style.setProperty('--ui-text', isDark ? '#f8fafc' : '#0f172a');
       root.style.setProperty('--ui-text-muted', isDark ? '#cbd5e1' : '#475569');
       root.style.setProperty('--ui-text-subtle', isDark ? '#94a3b8' : '#64748b');
+      root.style.setProperty('--ui-newtab-text', isDark ? '#f8fafc' : '#0f172a');
+      root.style.setProperty(
+        '--ui-newtab-text-muted',
+        isDark ? 'rgba(226, 232, 240, 0.85)' : 'rgba(15, 23, 42, 0.78)'
+      );
+      root.style.setProperty(
+        '--ui-newtab-text-shadow',
+        isDark ? '0 1px 12px rgba(0, 0, 0, 0.55)' : '0 1px 10px rgba(255, 255, 255, 0.35)'
+      );
+      root.style.setProperty(
+        '--ui-newtab-clock-pill',
+        isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)'
+      );
+      root.style.setProperty(
+        '--ui-newtab-clock-shadow',
+        isDark ? '0 10px 28px rgba(0, 0, 0, 0.6)' : '0 8px 24px rgba(255, 255, 255, 0.35)'
+      );
+      root.style.setProperty(
+        '--ui-overlay-text-shadow',
+        isDark ? '0 1px 10px rgba(0, 0, 0, 0.55)' : '0 1px 8px rgba(255, 255, 255, 0.35)'
+      );
 
       if (avg) {
+        const pillTarget = isDark ? 255 : 0;
+        const pillTint = {
+          r: clamp(mix(avg.r, pillTarget, 0.6)),
+          g: clamp(mix(avg.g, pillTarget, 0.6)),
+          b: clamp(mix(avg.b, pillTarget, 0.6))
+        };
+        root.style.setProperty(
+          '--ui-newtab-clock-pill',
+          makeRgba(pillTint, isDark ? 0.22 : 0.18)
+        );
+
         const liftTarget = isDark ? 255 : 0;
         const accent = {
           r: clamp(mix(avg.r, liftTarget, 0.18)),
@@ -138,10 +205,58 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
 
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 
-    if (!wallpaper) {
-      const shouldUseDark = theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark);
+    const parseHexColor = (value: string) => {
+      const hex = value.replace('#', '');
+      if (![3, 6].includes(hex.length)) return null;
+      const expand = hex.length === 3;
+      const r = parseInt(expand ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+      const g = parseInt(expand ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+      const b = parseInt(expand ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+      if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+      return { r, g, b };
+    };
+
+    const activeWallpaper = backgroundType === 'wallpaper' ? wallpaper : '';
+    const activeColor = backgroundType === 'solid' ? wallpaperColor : '';
+
+    if (!activeWallpaper && !activeColor) {
       clearDynamicVars();
-      root.classList.toggle('dark', shouldUseDark);
+      root.classList.toggle('dark', true);
+      root.style.setProperty('--ui-wallpaper-overlay', 'rgba(0, 0, 0, 0.35)');
+      root.style.setProperty('--ui-base', '#181716');
+      root.style.setProperty('--ui-surface', 'rgba(30, 29, 27, 0.82)');
+      root.style.setProperty('--ui-surface-strong', 'rgba(36, 35, 33, 0.88)');
+      root.style.setProperty('--ui-surface-muted', 'rgba(36, 35, 33, 0.72)');
+      root.style.setProperty('--ui-surface-subtle', 'rgba(42, 41, 38, 0.55)');
+      root.style.setProperty('--ui-hover', 'rgba(212, 188, 150, 0.14)');
+      root.style.setProperty('--ui-hover-strong', 'rgba(212, 188, 150, 0.22)');
+      root.style.setProperty('--ui-border', '#34322E');
+      root.style.setProperty('--ui-ring', '#B8996E');
+      root.style.setProperty('--ui-text', '#E6E3DE');
+      root.style.setProperty('--ui-text-muted', '#B7B3AC');
+      root.style.setProperty('--ui-text-subtle', '#8C8882');
+      root.style.setProperty('--ui-newtab-text', '#F5F2ED');
+      root.style.setProperty('--ui-newtab-text-muted', 'rgba(230, 227, 222, 0.78)');
+      root.style.setProperty('--ui-newtab-text-shadow', '0 1px 12px rgba(0, 0, 0, 0.55)');
+      root.style.setProperty('--ui-newtab-clock-pill', 'rgba(255, 255, 255, 0.16)');
+      root.style.setProperty('--ui-newtab-clock-shadow', '0 10px 28px rgba(0, 0, 0, 0.6)');
+      root.style.setProperty('--ui-overlay-text-shadow', '0 1px 10px rgba(0, 0, 0, 0.55)');
+      root.style.setProperty('--ui-accent', '#C2A67E');
+      root.style.setProperty('--ui-accent-contrast', '#1E1D1B');
+      return;
+    }
+
+    if (!activeWallpaper && activeColor) {
+      const avg = parseHexColor(activeColor.trim());
+      if (!avg) {
+        const shouldUseDark = theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark);
+        clearDynamicVars();
+        root.classList.toggle('dark', shouldUseDark);
+        return;
+      }
+      const luma = (0.2126 * avg.r + 0.7152 * avg.g + 0.0722 * avg.b) / 255;
+      const shouldUseDark = luma < 0.55;
+      applyTheme(shouldUseDark, avg);
       return;
     }
 
@@ -192,20 +307,28 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
       clearDynamicVars();
       root.classList.toggle('dark', theme === Theme.DARK || (theme === Theme.SYSTEM && prefersDark));
     };
-    img.src = wallpaper;
+    img.src = activeWallpaper;
 
     return () => {
       cancelled = true;
     };
-  }, [theme, wallpaper]);
+  }, [theme, backgroundType, wallpaper, wallpaperColor]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.setAdBlockEnabled) return;
+    window.electronAPI.setAdBlockEnabled(adBlockEnabled).catch(() => undefined);
+  }, [adBlockEnabled]);
 
   const applySettings = useCallback((settings: AppSettings) => {
     setTheme(Theme.SYSTEM);
     setSearchEngine(settings.searchEngine);
     setCustomSearchUrl(settings.customSearchUrl);
-    setLayout(settings.layout);
+    setBackgroundType(settings.backgroundType);
     setWallpaper(settings.wallpaper);
+    setWallpaperColor(settings.wallpaperColor);
     setWallpaperBlur(settings.wallpaperBlur);
+    setAdBlockEnabled(settings.adBlockEnabled);
+    setSnowColor(settings.snowColor ?? '#FFFFFF');
   }, []);
 
   useEffect(() => {
@@ -238,12 +361,18 @@ export const useSettings = (defaultSettings: AppSettings): UseSettingsResult => 
     setSearchEngine,
     customSearchUrl,
     setCustomSearchUrl,
-    layout,
-    setLayout,
+    backgroundType,
+    setBackgroundType,
     wallpaper,
     setWallpaper,
+    wallpaperColor,
+    setWallpaperColor,
     wallpaperBlur,
     setWallpaperBlur,
+    adBlockEnabled,
+    setAdBlockEnabled,
+    snowColor,
+    setSnowColor,
     currentSettings,
     savedSettings,
     setSavedSettings,

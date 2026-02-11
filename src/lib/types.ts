@@ -14,6 +14,12 @@ export interface HistoryItem {
   timestamp: number;
 }
 
+export interface WeatherLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 export enum Theme {
   LIGHT = 'light',
   DARK = 'dark',
@@ -28,16 +34,39 @@ export enum SearchEngine {
   CUSTOM = 'custom'
 }
 
-export enum Layout {
-  GENERIC = 'generic',
-  SIDEBAR = 'sidebar'
+export type BackgroundType = 'wallpaper' | 'solid';
+
+export enum PermissionType {
+  GEOLOCATION = 'geolocation',
+  MICROPHONE = 'microphone',
+  CAMERA = 'camera',
+  NOTIFICATIONS = 'notifications',
+  CLIPBOARD_READ = 'clipboard-read',
+  CLIPBOARD_WRITE = 'clipboard-write'
+}
+
+export interface PermissionRequest {
+  id: string;
+  type: PermissionType;
+  origin: string;
+  tabId: string;
+}
+
+export interface PermissionSetting {
+  type: PermissionType;
+  allowed: boolean;
+  ask: boolean;
 }
 
 export interface AppSettings {
   theme: Theme;
   searchEngine: SearchEngine;
   customSearchUrl: string;
-  layout: Layout;
+  backgroundType: BackgroundType;
   wallpaper: string;
+  wallpaperColor: string;
   wallpaperBlur: boolean;
+  adBlockEnabled: boolean;
+  snowColor?: string;
+  permissions?: Record<string, PermissionSetting[]>;
 }
